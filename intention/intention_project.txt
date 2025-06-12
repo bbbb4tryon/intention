@@ -1,0 +1,543 @@
+==================== ./App/intentionApp.swift ====================
+//
+//  intentionApp.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/5/25.
+//
+
+import SwiftUI
+
+@main
+struct intentionApp: App {
+    var body: some Scene {
+        WindowGroup {
+            FocusSessionActiveV()
+        }
+    }
+}
+
+
+
+==================== ./Features/Soc/ShareService.swift ====================
+//
+//  ShareService.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/11/25.
+//
+
+import SwiftUI
+
+struct ShareService: View {
+    var body: some View {
+        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+    }
+}
+
+#Preview {
+    ShareService()
+}
+
+
+
+==================== ./Features/F/FocusInputsTile.swift ====================
+//
+//  FocusInputsTile.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/11/25.
+//
+
+import SwiftUI
+
+struct FocusInputsTile: View {
+    var body: some View {
+        Text("Tile")
+    }
+}
+
+#Preview {
+    FocusInputsTile()
+}
+
+
+
+==================== ./Features/F/FocusTimerActor.swift ====================
+//
+//  FocusTimerActor.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/11/25.
+//
+
+import Foundation
+
+// Concurrency-Safe timer
+// Manages session timer logic: 20 min intervals and session windows
+actor FocusTimerActor {
+    private(set) var sessionStart: Date?
+    private(set) var currentTiles: [TileM] = [] // NOTE: adding = [] dismisses 'has no initializers'
+    
+    func startSession() {
+        sessionStart = Date()
+        currentTiles = []
+    }
+    
+    func addTile(_ tile: TileM) -> Bool {
+        guard currentTiles.count < 2 else { return false }  // Limit per 20 min
+        currentTiles.append(tile)
+        return true
+    }
+    
+    func shouldCheckIn() -> Bool {
+        guard let start = sessionStart else { return false }
+        return Date().timeIntervalSince(start) >= 1200      // 20 min
+    }
+    
+    func resetSession() {
+        sessionStart = Date()
+        currentTiles = []
+    }
+}
+
+
+
+==================== ./Features/F/FocusSessionVM.swift ====================
+//
+//  FocusSessionVM.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/11/25.
+//
+
+import SwiftUI
+
+// ViewModel talks to FocusTimerActor and drive the UI
+@MainActor
+final class FocusSessionVM: ObservableObject {
+    @Published var tileText: String = ""
+    @Published var tiles: [TileM] = []
+    @Published var canAdd: Bool = true
+    @Published var sessionActive: Bool = false
+    
+    private let timer = FocusTimerActor()
+    
+    func startSession() async {
+        await timer.startSession()
+        sessionActive = true
+    }
+    
+    func submitTile() async {
+        let trimmed = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        
+        let tile = TileM(text: trimmed)
+        let success = await timer.addTile(tile)     //NOTE: - Initialization of immutable value 'success' was never used; consider replacing with assignment to '_' or removing it... is Dismissed by adding if conditions below
+        
+        if success {
+            tiles.append(tile)
+            tileText = ""
+            canAdd = tiles.count < 2
+        }
+    }
+}
+
+
+
+==================== ./Features/F/FocusSessionActiveV.swift ====================
+//
+//  FocusSessionActiveV.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/11/25.
+//
+
+import SwiftUI
+
+// FocusSessionActiveV <--> ContentView
+// MARK: - Folder Layout (Feature-Based, SwiftUI + UIKit + Actors)
+
+/*
+📂 intention
+├── App/
+│   └── IntentionApp.swift                    // App entry point
+│
+├── Features/
+│   ├── FocusSession/
+│   │   ├── FocusSessionView.swift            // UI: shows active session and tiles
+│   │   ├── FocusSessionViewModel.swift       // ObservableObject with tile logic
+│   │   ├── FocusTimerActor.swift             // concurrency-safe singleton actor managing 20-min windows
+│   │   └── FocusTile.swift                   // model for input tiles
+│   │
+│   ├── Mindfulness/
+│   │   └── MindfulnessView.swift             // triggered after 2 sessions
+│   │
+│   ├── SocialSharing/
+│   │   └── ShareService.swift                // sharing logic (US/China)
+│   │
+│   ├── Profile/
+│   │   └── ProfileView.swift                 // view history of completed todos
+│   │
+│   └── Archive/
+│       └── ArchiveActor.swift                // manages sliding archive list
+│
+├── Shared/
+│   ├── Components/ - buttons, modals, etc
+│   │   └── TileInputView.swift               // reusable tile-as-input UI
+│   ├── Helpers/    - utilities STATELESS
+│   │   └── DateHelper.swift
+│   ├── Extensions/ - utilities
+│   │   └── View+Glow.swift, .hexColor                   //
+│   ├── Services/   - utilities PERSISTENCE, networking, 3rd party APIs
+│   │   └── AppIconProvider.swift
+│   └── Resources/
+│       └── Colors.xcassets, LaunchScreen, etc
+│
+├── Protocols or Generics/
+│   └── for abstraction, later
+│
+├── ViewModels/
+│   └── observableObjects, logic containers
+|
+├── Models/ - codeable structs or domain-layer types
+│   └── Tile.swift, TodoItem.swift
+│
+├── Actors/
+│   └── concurrency-safe singleton or shared logic
+│
+├── Actors/
+│   └── concurrency-safe singleton or shared logic
+
+ 
+*/
+import SwiftUI
+
+struct FocusSessionActiveV: View {
+    @StateObject var viewModel = FocusSessionVM()
+    
+    var body: some View {
+        VStack(spacing: 16) {
+//            Helper_AppIconV()
+//                .clipShape(Circle())
+//                .glow(color: .intTan, radius: 12)
+            Text("Intention, Tracked")
+                .font(.title2.bold())
+            
+            TextField("Enter intention", text: $viewModel.tileText)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .disabled(!viewModel.canAdd)    // opaque until 2 added
+            
+            Button("Submit"){
+                Task { await viewModel.submitTile() }
+            }
+            .disabled(!viewModel.canAdd)
+            .buttonStyle(.borderedProminent)
+            
+            if viewModel.sessionActive {
+                Text("Session started...")
+                    .foregroundStyle(.gray)
+            }
+            
+            List(viewModel.tiles) {tile in
+                Text(tile.text)
+            }
+        }
+        .padding()
+        .task {
+            await viewModel.startSession()
+        }
+        
+        /*  - a double-sheet, edits and slides - do I need it?
+        .sheet(
+            isPresented: viewStore.binding(
+                get: \.isSheetPresented,
+                send: { _ in .setSheet(.none)}
+            )) {
+                self.sheetContent(for: viewStore.currentSheet)
+            }
+         */
+    }
+
+}
+
+#Preview {
+    FocusSessionActiveV()
+}
+
+
+
+==================== ./Features/Arch/ArchiveSlidesActor.swift ====================
+//
+//  ArchiveSlidesActor.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/11/25.
+//
+
+import SwiftUI
+
+struct ArchiveSlidesActor: View {
+    var body: some View {
+        Text("Manages Sliding Archive List")
+            .font(.largeTitle)
+    }
+}
+
+#Preview {
+    ArchiveSlidesActor()
+}
+
+
+
+==================== ./Features/M/RecalibrateV.swift ====================
+//
+//  RecalibrateV.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/11/25.
+//
+
+import SwiftUI
+
+struct RecalibrateV: View {
+    var body: some View {
+        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+    }
+}
+
+#Preview {
+    RecalibrateV()
+}
+
+
+
+==================== ./Features/P/ProfileV.swift ====================
+//
+//  ProfileV.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/11/25.
+//
+
+import SwiftUI
+
+struct ProfileV: View {
+    var body: some View {
+        Text("Profile")
+            .font(.largeTitle)
+    }
+}
+
+#Preview {
+    ProfileV()
+}
+
+
+
+==================== ./Shared/Resources/Bundle+AppIcon.swift ====================
+//
+//  AppIcon.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/5/25.
+//
+
+import SwiftUI
+import UIKit
+
+extension Bundle {
+    var appIconFileName: String? {
+        guard let icons = infoDictionary?["CFBundleIcons"] as? [String: Any],
+              let primaryIcon = icons["CFBundlePrimaryIcon"] as? [String: Any],
+              let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String],
+              let iconFileName = iconFiles.last
+        else { return nil }
+        return iconFileName
+    }
+    
+    // Convenience key/computed property to load the app icon (as a UIImage)
+    var appIcon: UIImage? {
+        guard let appIconFileName = appIconFileName else { return nil }
+        return UIImage(named: appIconFileName)      // already GETS and returns the image... do NOT need map
+    }
+//    don't need the flatMap and map chain in the View's body because the intermediate optional states are already handled by your appIcon computed property
+}
+
+
+
+==================== ./Shared/Extensions/View+Glow.swift ====================
+//
+//  View+Glow.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/11/25.
+//
+
+import SwiftUI
+
+extension View {
+    func glow(color: Color = .intTan, radius: CGFloat = 20) -> some View {
+        self
+            .shadow(color: Color.intTan, radius: radius / 3)
+    }
+}
+
+#Preview {
+    FocusSessionActiveV()
+}
+
+
+
+==================== ./Shared/Utilities/DateConfig.swift ====================
+//
+//  DateConfig.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/11/25.
+//
+
+import Foundation
+
+
+
+==================== ./Shared/Components/Sheet.swift ====================
+//
+//  Sheet.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/11/25.
+//
+
+//import Foundation
+//import SwiftUI
+//
+//// Define `Sheet` *inside* of `State`
+//enum Sheet: Equatable {
+//    case none
+//    case edit
+//    case new
+//}
+//
+//// Adds `currentSheet` to the state
+//var currentSheet: Sheet = .none
+//
+//// Adds a helper - cleaner binding
+//var isSheetPresented: Bool {
+//    currentSheet != .none
+//}
+//
+//// Adds `setSheet` action
+//case setSheet(State.Sheet)
+//
+
+
+
+==================== ./Shared/Helpers/Helper_AppIconV.swift ====================
+//
+//  Helper_AppIconV.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/5/25.
+//
+
+import SwiftUI
+
+// MARK: - AppIconView
+struct Helper_AppIconV: View {
+    var body: some View {
+        //safely unwraps uiimage from bundle extension
+        if let uiImage = AppIconProvider.icon {
+            // Good: have a non-optional UIImage to create a SwiftUI Image
+            Image(uiImage: uiImage)
+                .resizable()
+                .aspectRatio(contentMode: .fit) // maintain aspect ratio
+        } else {
+            Image(systemName: "app.fill")   // Generic app icon SF Symbol
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .foregroundStyle(.intGreen)
+        }
+    }
+}
+
+#Preview {
+    Helper_AppIconV()
+        .frame(width: 100, height: 100)
+        .padding()
+}
+
+
+
+==================== ./Shared/Services/AppIconProvider.swift ====================
+//
+//  AppIconProvider.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/10/25.
+//
+
+import UIKit
+
+struct AppIconProvider {
+    // Returns runtime display of icon
+    static var icon: UIImage? {
+        return UIImage(named: "RuntimeAppIcon") // From AppDisplayIcon.imageset
+    }
+}
+
+
+
+
+==================== ./Models/TileM.swift ====================
+//
+//  TileM.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/11/25.
+//
+
+
+import Foundation
+
+// Representative of a single user-created "intention" tile
+struct TileM: Identifiable, Codable, Sendable {
+    // FIXME: LET instead of VAR?
+    var id: UUID = UUID()
+    var text: String
+    var timeStamp: Date = Date()
+}
+
+
+
+==================== ./Models/ToDoItemM.swift ====================
+//
+//  ToDoItemM.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 6/11/25.
+//
+
+import Foundation
+
+
+
+==================== ./Info.plist ====================
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>UILaunchScreen</key>
+	<dict>
+	    <key>UIImageRespectsSafeAreaInsets</key>
+    	<false/>
+    	<key>UIImageName</key>
+    	<string>Launchscreen-logo</string> <!-- Must be in a .imageset -->
+    	<key>UIColorName</key>
+    	<string>Launchscreen-background</string>
+	</dict>
+</dict>
+</plist>
+
+
+
