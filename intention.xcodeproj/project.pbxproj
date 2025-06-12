@@ -10,9 +10,20 @@
 		7787866E2DF236D4004EDBEF /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = 7787866D2DF236D4004EDBEF /* Documentation.docc */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		779290732DFB449C00F93B23 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7787864F2DF220C5004EDBEF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 778786562DF220C5004EDBEF;
+			remoteInfo = intention;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		778786572DF220C5004EDBEF /* intention.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = intention.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7787866D2DF236D4004EDBEF /* Documentation.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = Documentation.docc; sourceTree = "<group>"; };
+		7792906F2DFB449C00F93B23 /* IntentionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IntentionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -34,10 +45,22 @@
 			path = intention;
 			sourceTree = "<group>";
 		};
+		779290702DFB449C00F93B23 /* IntentionTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = IntentionTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		778786542DF220C5004EDBEF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7792906C2DFB449C00F93B23 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -52,6 +75,7 @@
 			children = (
 				7787866D2DF236D4004EDBEF /* Documentation.docc */,
 				778786592DF220C5004EDBEF /* intention */,
+				779290702DFB449C00F93B23 /* IntentionTests */,
 				778786582DF220C5004EDBEF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -60,6 +84,7 @@
 			isa = PBXGroup;
 			children = (
 				778786572DF220C5004EDBEF /* intention.app */,
+				7792906F2DFB449C00F93B23 /* IntentionTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -89,6 +114,29 @@
 			productReference = 778786572DF220C5004EDBEF /* intention.app */;
 			productType = "com.apple.product-type.application";
 		};
+		7792906E2DFB449C00F93B23 /* IntentionTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 779290752DFB449C00F93B23 /* Build configuration list for PBXNativeTarget "IntentionTests" */;
+			buildPhases = (
+				7792906B2DFB449C00F93B23 /* Sources */,
+				7792906C2DFB449C00F93B23 /* Frameworks */,
+				7792906D2DFB449C00F93B23 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				779290742DFB449C00F93B23 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				779290702DFB449C00F93B23 /* IntentionTests */,
+			);
+			name = IntentionTests;
+			packageProductDependencies = (
+			);
+			productName = IntentionTests;
+			productReference = 7792906F2DFB449C00F93B23 /* IntentionTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -102,6 +150,10 @@
 					778786562DF220C5004EDBEF = {
 						CreatedOnToolsVersion = 16.4;
 						LastSwiftMigration = 1640;
+					};
+					7792906E2DFB449C00F93B23 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 778786562DF220C5004EDBEF;
 					};
 				};
 			};
@@ -120,12 +172,20 @@
 			projectRoot = "";
 			targets = (
 				778786562DF220C5004EDBEF /* intention */,
+				7792906E2DFB449C00F93B23 /* IntentionTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		778786552DF220C5004EDBEF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7792906D2DFB449C00F93B23 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -143,7 +203,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7792906B2DFB449C00F93B23 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		779290742DFB449C00F93B23 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 778786562DF220C5004EDBEF /* intention */;
+			targetProxy = 779290732DFB449C00F93B23 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		778786602DF220C7004EDBEF /* Debug */ = {
@@ -334,6 +409,42 @@
 			};
 			name = Release;
 		};
+		779290762DFB449C00F93B23 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 343T42D9R8;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "-.IntentionTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/intention.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/intention";
+			};
+			name = Debug;
+		};
+		779290772DFB449C00F93B23 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 343T42D9R8;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "-.IntentionTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/intention.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/intention";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -351,6 +462,15 @@
 			buildConfigurations = (
 				778786632DF220C7004EDBEF /* Debug */,
 				778786642DF220C7004EDBEF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		779290752DFB449C00F93B23 /* Build configuration list for PBXNativeTarget "IntentionTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				779290762DFB449C00F93B23 /* Debug */,
+				779290772DFB449C00F93B23 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
