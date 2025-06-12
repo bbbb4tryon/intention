@@ -1,0 +1,33 @@
+**Daily WIP branch workflow:**
+
+**Morning (start new WIP branch):**
+```bash
+git checkout main
+git pull origin main  # get latest changes
+git checkout -b wip-today  # or wip-YYYY-MM-DD
+```
+
+**Throughout the day:**
+```bash
+# Make changes, then commit as needed
+git add .
+git commit -m "WIP: feature progress"
+# intention_project.txt changes ignored automatically
+```
+
+**End of day (merge to main):**
+```bash
+git checkout main
+git merge wip-today
+git push origin main
+git branch -d wip-today  # delete the WIP branch locally
+```
+
+**Alternative (cleaner history):**
+```bash
+git checkout main  
+git merge --squash wip-today  # combines all WIP commits into one
+git commit -m "Today's work: [description]"
+git push origin main
+git branch -d wip-today
+```
