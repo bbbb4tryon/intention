@@ -19,7 +19,7 @@ struct RecalibrateV: View {
             Text("Recalibrate")
                 .foregroundStyle(palette.text)
             Section {
-                Picker("Options".styledHeader(font: fontTheme, color: palette.text), selection: $recalibrationTheme) {
+                Picker("Options", selection: $recalibrationTheme) {
                     ForEach(RecalibrationTheme.allCases, id: \.self) { theme in
                         Text(theme.displayName).tag(theme)
                             .font(fontTheme.toFont(.body))
