@@ -55,6 +55,22 @@ import SwiftUI
 │   │   └── AppIconProvider.swift
 │   └── Resources/
 │       └── Colors.xcassets, LaunchScreen, etc
+│   └── DesignSystem/
+│       └── Typography/
+│          ├── AppFontTheme.swift           // font enum
+│          ├── Font+Theme.swift             // toFont(), styledHeader()
+│
+│       └── Colors/
+│          ├── AppColorTheme.swift          // main palette
+│          ├── ScreenName.swift             // enum case .focusSession, .profile, etc.
+│          ├── ColorTheme+Screen.swift      // ScreenColorPalette + .colors(for:)
+│
+│       └── Layout/
+│          ├── Layout+Constants.swift       // cornerRadius, padding, etc.
+│          ├── View+Glow.swift              // animation & shadows
+│
+│       └── Buttons/
+│          ├── ButtonConfig+Style.swift     // reusable button style
 │
 ├── Protocols or Generics/
 │   └── for abstraction, later
@@ -93,40 +109,71 @@ import SwiftUI
 
  1. Where are resources for quickly getting up to speed EXCEPT apple documentation, which is not my favorite resource to start anything on?
  2. I think a generic test result is best, that is, instead of the test requiring the specific text, I'd rather have test require not empty, not gobbledegook, not malicious and with character and string-length limits or other limits.
+ 
+ int_brown    #A29877    Serious, grounded — titles, text, nav
+ int_green    #226E64    Primary action, intentionality, focus, actions/buttons
+ int_mint    #8FD8BC    Calm, welcoming — perfect for profile
+ int_moss    #B7CFAF    Soft support — secondary elements
+ int_sea_green    #50D7B7    Dynamic/energetic — timers, progress, Animations
+ int_tan    #E9DCBC    Neutral background (light mode)
+ int_tan (Dark)    #7F7457    Neutral background (dark mode)
  */
 import SwiftUI
 
+enum ActiveSessionError: Error, Equatable {
+    case submitFailed
+}
+
 struct FocusSessionActiveV: View {
+    @AppStorage("colorTheme") private var colorTheme: AppColorTheme = .default
+    @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
+
     @StateObject var viewModel = FocusSessionVM()
     
     var body: some View {
-        VStack(spacing: 16) {
-//            Helper_AppIconV()
-//                .clipShape(Circle())
-//                .glow(color: .intTan, radius: 12)
+        
+        let palette = colorTheme.colors(for: .homeActiveIntentions)
+        
+        VStack(spacing: Layout.verticalSpacing){
+            //            Helper_AppIconV()
+            //                .clipShape(Circle())
+            //                .glow(color: .intTan, radius: 12)
             Text("Intention, Tracked")
-                .font(.title2.bold())
+                .styledHeader(font: fontTheme, color: palette.text)
+                
             
             TextField("Enter intention", text: $viewModel.tileText)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .disabled(!viewModel.canAdd)    // opaque until 2 added
             
             Button("Submit"){
-                Task { await viewModel.submitTile() }
+                Task {
+                    guard ((try? await viewModel.submitTile()) != nil) else {
+                        throw ActiveSessionError.submitFailed
+                    }
+                   
+                }
             }
             .disabled(!viewModel.canAdd)
             .buttonStyle(.borderedProminent)
             
-            if viewModel.sessionActive {
-                Text("Session started...")
-                    .foregroundStyle(.gray)
-            }
-            
+                if viewModel.tiles.count < 2 {
+                    Text("Press Enter When Done")
+                } else if viewModel.tiles.count == 2 && viewModel.sessionActive {
+                    Text("Session started...")
+                        .foregroundStyle(.gray)
+                        .animation(
+                            .easeInOut.delay(0.1)
+                        )
+                    
+                }
+                    
             List(viewModel.tiles) {tile in
                 Text(tile.text)
             }
         }
-        .padding()
+        .padding(.horizontal, Layout.horizontalPadding)
+        .navigationTitle("Home - Active Intentions")
         .task {
             await viewModel.startSession()
         }

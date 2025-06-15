@@ -6,6 +6,7 @@
 //
 
 import XCTest
+@testable import intention
 
 final class IntentionTests: XCTestCase {
 

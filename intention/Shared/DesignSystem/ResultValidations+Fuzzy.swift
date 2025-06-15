@@ -8,6 +8,7 @@
 import Foundation
 
 // MARK: - non-fragile assertions and Generic Result Validations
+
 //  validating length, preventing problem characters
 extension String {
     var isValidTitle: Bool {

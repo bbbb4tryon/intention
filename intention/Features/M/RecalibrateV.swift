@@ -8,8 +8,28 @@
 import SwiftUI
 
 struct RecalibrateV: View {
+    @AppStorage("colorTheme") private var colorTheme: AppColorTheme = .default
+    @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        
+        let palette = colorTheme.colors(for: .recalibrate)
+        
+        VStack {
+            Text("Recalibrate")
+                .foregroundStyle(palette.text)
+            Section {
+                Picker("Options".styledHeader(font: fontTheme, color: palette.text), selection: $recalibrationTheme) {
+                    ForEach(RecalibrationTheme.allCases, id: \.self) { theme in
+                        Text(theme.displayName).tag(theme)
+                            .font(fontTheme.toFont(.body))
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+            }
+        }
+        .padding()
+        .background(colorTheme.background)
     }
 }
 
