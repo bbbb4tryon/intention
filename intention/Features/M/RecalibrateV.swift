@@ -10,6 +10,8 @@ import SwiftUI
 struct RecalibrateV: View {
     @AppStorage("colorTheme") private var colorTheme: AppColorTheme = .default
     @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
+    @ObservedObject var viewModel: RecalibrationVM
+    @State private var recalibrationChoice: RecalibrationTheme = .breathing
     
     var body: some View {
         
@@ -19,18 +21,37 @@ struct RecalibrateV: View {
             Text("Recalibrate")
                 .styledHeader(font: fontTheme, color: palette.primary)
             
-            //            Text(viewModel.instruction)
-            Text("viewModel.instruction")
-                .styledBody(font: fontTheme, color: palette.text)
+            Picker("Method", selection: $recalibrationChoice) {
+                ForEach(RecalibrationTheme.allCases, id: \.self) { theme in
+                    Text(theme.displayName).tag(theme)
+                }
+            }
+            .pickerStyle(SegmentedPickerStyle())
             
-            //            Text("Time Remaining: \(v.timeRemaing.formatted()) sec")
-            Text("Time Remaining")
+            
+            Button("Begin Recalibration") {
+                viewModel.start(mode: recalibrationChoice)
+            }
+            .mainActionStyle()
+            
+//            Text("\(recalibrationChoice.rawValue.capitalized)")
+//                .styledTitle(font: fontTheme, color: palette.primary)
+            
+            ForEach(recalibrationChoice.instruction, id: \.self) { line in
+                Text("• \(line)")
+                    .styledBody(font: fontTheme, color: palette.text)
+            }
+            
+            Text("Time Remaining: \(viewModel.timeRemaining.formatted()) sec")
                 .styledBody(font: fontTheme, color: palette.text)
-            //
-            //            if viewModel.phase == .finished {
-            //                Text("Tap Back home")
-            //                Text("Tap to post to social")
-            //            }
+                .multilineTextAlignment(.center)
+
+            if viewModel.phase == .finished {
+                Text("Tap Back home")
+                    .styledTitle(font: fontTheme, color: palette.primary)
+                Text("Tap to post to social")
+                    .styledTitle(font: fontTheme, color: palette.primary)
+            }
             
             Button("Exit") {
                 viewModel.stop()
@@ -39,15 +60,15 @@ struct RecalibrateV: View {
         }
         .padding()
         .onAppear {
-            viewModel.start(mode: theme)
+            viewModel.start(mode: recalibrationChoice)
         }
-        //        .background(colorTheme.background)
+        .background(palette.background)
         .background(.ultraThinMaterial)
         .cornerRadius(20)
         .padding()
     }
 }
-
 #Preview {
-    RecalibrateV()
+    RecalibrateV(viewModel: RecalibrationVM())
 }
+

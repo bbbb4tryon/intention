@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// Global palette
 enum AppColorTheme: String, CaseIterable {
     case `default`, sea, fire
     
@@ -34,12 +35,12 @@ enum AppColorTheme: String, CaseIterable {
         }
     }
     
-//    var ?: Color {
-//        switch self {
-//        case .default: return .intBrown
-//        case .sea: return .??.opacity(0.15)
-//        case .fire: return .??.opacity(0.1)
-//    }
+    var body: Color {
+        switch self {
+        case .default: return .intBrown
+        case .sea: return .??.opacity(0.15)
+        case .fire: return .??.opacity(0.1)
+    }
     
     var accent: Color {
         switch self {

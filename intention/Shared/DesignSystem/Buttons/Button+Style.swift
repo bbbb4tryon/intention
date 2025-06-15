@@ -8,7 +8,6 @@ import SwiftUI
 // Visual consistency
 struct ButtonConfig_Style: ButtonStyle {
     var color: Color = .intGreen
-    var color: AppThemeManager.shared.color.primary
     
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

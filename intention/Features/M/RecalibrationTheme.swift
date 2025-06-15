@@ -7,15 +7,39 @@
 
 import SwiftUI
 
-enum RecalibrationTheme: String {
+enum RecalibrationTheme: String, CaseIterable {
     case balancing, breathing
     
     var displayName: String {
         switch self {
-        case .balancing: return "Stand on one foot until you tip over,then switch, then repeat. Made more mentally involved by closing one or both eyes."
-        case .breathing: return "Close your eyes and become aware of your breathing. Focus your attention on your stomach. Four a count of four seconds, pulling your inhale down from your nose into your belly, pause for four seconds, then, for four seconds, push your exhale out of your mouth. Pause for four seconds, repeat."
+        case .balancing: return "Balancing Reset"
+        case .breathing: return "Breathing Reset"
+        }
+    }
+    
+    var instruction: [String] {
+        switch self {
+        case .balancing:
+            return [
+                "Stand on one foot.",
+                "Tip over? Switch feet.",
+                "Eyes closed = expert mode.",
+                "Switch every minute!"
+            ]
+        case .breathing:
+            return [
+                "Inhale for 4 seconds.",
+                "Pause for 4 seconds.",
+                "Exhale for 4 seconds.",
+                "Pause. Repeat for 4 minutes."
+            ]
+        }
+    }
+    
+    var imageName: String {
+        switch self {
+        case .balancing: return "figure.stand"
+        case .breathing: return "lungs.fill"
         }
     }
 }
-
-

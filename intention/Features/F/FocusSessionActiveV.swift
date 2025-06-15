@@ -127,8 +127,12 @@ enum ActiveSessionError: Error, Equatable {
 struct FocusSessionActiveV: View {
     @AppStorage("colorTheme") private var colorTheme: AppColorTheme = .default
     @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
+    
+    @State private var showRecalibrationModal = false
+    @State private var selectedChoice: RecalibrationTheme = .breathing
 
     @StateObject var viewModel = FocusSessionVM()
+    @StateObject private var recalibrationVM = RecalibrationVM()
     
     var body: some View {
         
@@ -138,9 +142,10 @@ struct FocusSessionActiveV: View {
             //            Helper_AppIconV()
             //                .clipShape(Circle())
             //                .glow(color: .intTan, radius: 12)
+            Text.stylingExtension("Intention, Tracked", palette: palette)
+            Text.stylingExtension("Uses StylingExtension and palette", palette: palette)
             Text("Intention, Tracked")
-                .styledHeader(font: fontTheme, color: palette.text)
-                
+//                .foregroundStyle(font: toFont(fontTheme).titleFont)
             
             TextField("Enter intention", text: $viewModel.tileText)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -176,6 +181,9 @@ struct FocusSessionActiveV: View {
         .navigationTitle("Home - Active Intentions")
         .task {
             await viewModel.startSession()
+        }
+        .sheet(isPresented: $showRecalibrationModal) {
+            RecalibrateV(viewModel: recalibrationVM, recalibrationChoice: selectedChoice)
         }
         
         /*  - a double-sheet, edits and slides - do I need it?

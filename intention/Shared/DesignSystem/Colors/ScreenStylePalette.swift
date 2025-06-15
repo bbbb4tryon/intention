@@ -1,5 +1,5 @@
 //
-//  ScreenAwareDesignPalette.swift
+//  ScreenStylePalette.swift
 //  intention
 //
 //  Created by Benjamin Tryon on 6/14/25.
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-//  defines and matches `AppColorTheme` to roles-based variables per screen
-struct ScreenAwareDesignPalette {
+//  describes feature context
+struct ScreenStylePalette {
     let primary: Color
     let background: Color
     let accent: Color
@@ -19,7 +19,7 @@ enum ScreenName {
 }
 
 extension AppColorTheme {
-    func colors(for screen: ScreenName) -> ScreenAwareDesignPalette {
+    func colors(for screen: ScreenName) -> ScreenStylePalette {
         switch screen {
         case .homeActiveIntentions:
             return .init(primary: .intGreen, background: .intTan, accent: .intSeaGreen, text: .intBrown)
