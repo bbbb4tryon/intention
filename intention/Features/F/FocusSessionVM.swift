@@ -21,6 +21,7 @@ final class FocusSessionVM: ObservableObject {
     @Published var tiles: [TileM] = []
     @Published var canAdd: Bool = true
     @Published var sessionActive: Bool = false
+    @Published var showRecalibrate: Bool = false
     
     private let timer = FocusTimerActor()
     
@@ -45,8 +46,15 @@ final class FocusSessionVM: ObservableObject {
             tiles.append(tile)
             tileText = ""
             canAdd = tiles.count < 2
+            checkRecalibrationNeeded()
         } else {
             canAdd = false
+        }
+    }
+    
+    func checkRecalibrationNeeded() {
+        if tiles.count == 2 {
+            showRecalibrate = true
         }
     }
 }

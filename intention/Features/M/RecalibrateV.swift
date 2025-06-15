@@ -15,21 +15,36 @@ struct RecalibrateV: View {
         
         let palette = colorTheme.colors(for: .recalibrate)
         
-        VStack {
+        VStack(spacing: 24) {
             Text("Recalibrate")
-                .foregroundStyle(palette.text)
-            Section {
-                Picker("Options", selection: $recalibrationTheme) {
-                    ForEach(RecalibrationTheme.allCases, id: \.self) { theme in
-                        Text(theme.displayName).tag(theme)
-                            .font(fontTheme.toFont(.body))
-                    }
-                }
-                .pickerStyle(SegmentedPickerStyle())
+                .styledHeader(font: fontTheme, color: palette.primary)
+            
+            //            Text(viewModel.instruction)
+            Text("viewModel.instruction")
+                .styledBody(font: fontTheme, color: palette.text)
+            
+            //            Text("Time Remaining: \(v.timeRemaing.formatted()) sec")
+            Text("Time Remaining")
+                .styledBody(font: fontTheme, color: palette.text)
+            //
+            //            if viewModel.phase == .finished {
+            //                Text("Tap Back home")
+            //                Text("Tap to post to social")
+            //            }
+            
+            Button("Exit") {
+                viewModel.stop()
             }
+            .notMainActionStyle()
         }
         .padding()
-        .background(colorTheme.background)
+        .onAppear {
+            viewModel.start(mode: theme)
+        }
+        //        .background(colorTheme.background)
+        .background(.ultraThinMaterial)
+        .cornerRadius(20)
+        .padding()
     }
 }
 
