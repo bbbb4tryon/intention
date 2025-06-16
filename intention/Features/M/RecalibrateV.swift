@@ -18,43 +18,49 @@ struct RecalibrateV: View {
         let palette = colorTheme.colors(for: .recalibrate)
         
         VStack(spacing: 24) {
-            Text("Recalibrate")
-                .styledHeader(font: fontTheme, color: palette.primary)
+            // Header
+            Text.styled("Recalibrate", as: .header, using: fontTheme, in: palette)
             
+            // Picker
             Picker("Method", selection: $recalibrationChoice) {
                 ForEach(RecalibrationTheme.allCases, id: \.self) { theme in
-                    Text(theme.displayName).tag(theme)
+                    Text.styled("\(theme.displayName)", as: .label, using: fontTheme, in: palette)
+                            .tag(theme)
                 }
             }
             .pickerStyle(SegmentedPickerStyle())
             
-            
-            Button("Begin Recalibration") {
+            // Begin Button
+            Button(action: {
                 viewModel.start(mode: recalibrationChoice)
+            }) {
+                Text.styled("Begin", as: .action, using: fontTheme, in: palette)
             }
             .mainActionStyle()
             
-//            Text("\(recalibrationChoice.rawValue.capitalized)")
-//                .styledTitle(font: fontTheme, color: palette.primary)
+            // Current Choice Label
+            Text.styled(recalibrationChoice.rawValue.capitalized, as: .secondary, using: fontTheme, in: palette)
             
+            // Instruction List
             ForEach(recalibrationChoice.instruction, id: \.self) { line in
-                Text("• \(line)")
-                    .styledBody(font: fontTheme, color: palette.text)
+                Text.styled("• \(line)", as: .label, using: fontTheme, in: palette)
             }
             
-            Text("Time Remaining: \(viewModel.timeRemaining.formatted()) sec")
-                .styledBody(font: fontTheme, color: palette.text)
+            // Coundown Displayed
+            Text.styled("Time Remaining: \(viewModel.timeRemaining.formatted()) sec", as: .label, using: fontTheme, in: palette)
                 .multilineTextAlignment(.center)
 
+            // Conditional UI when finished
             if viewModel.phase == .finished {
-                Text("Tap Back home")
-                    .styledTitle(font: fontTheme, color: palette.primary)
-                Text("Tap to post to social")
-                    .styledTitle(font: fontTheme, color: palette.primary)
+                Text.styled("Tap Back home", as: .secondary, using: fontTheme, in: palette)
+                Text.styled("Tap to post to social", as: .secondary, using: fontTheme, in: palette)
             }
             
-            Button("Exit") {
+            // Exit Button
+            Button(action: {
                 viewModel.stop()
+            }) {
+                Text("Exit")
             }
             .notMainActionStyle()
         }

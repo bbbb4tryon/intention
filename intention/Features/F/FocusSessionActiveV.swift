@@ -142,10 +142,7 @@ struct FocusSessionActiveV: View {
             //            Helper_AppIconV()
             //                .clipShape(Circle())
             //                .glow(color: .intTan, radius: 12)
-            Text.stylingExtension("Intention, Tracked", palette: palette)
-            Text.stylingExtension("Uses StylingExtension and palette", palette: palette)
-            Text("Intention, Tracked")
-//                .foregroundStyle(font: toFont(fontTheme).titleFont)
+            Text.styled("Intention, Tracked", as: .header, using: fontTheme, in: palette)
             
             TextField("Enter intention", text: $viewModel.tileText)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -172,18 +169,23 @@ struct FocusSessionActiveV: View {
                         )
                     
                 }
-                    
-            List(viewModel.tiles) {tile in
-                Text(tile.text)
+            VStack {
+                List(viewModel.tiles) {tile in
+                    Text(tile.text)
+                }
+                .listStyle(.grouped)
             }
+            .background(palette.background.colorInvert())
         }
+        
+        .background(palette.background)
         .padding(.horizontal, Layout.horizontalPadding)
         .navigationTitle("Home - Active Intentions")
         .task {
             await viewModel.startSession()
         }
         .sheet(isPresented: $showRecalibrationModal) {
-            RecalibrateV(viewModel: recalibrationVM, recalibrationChoice: selectedChoice)
+            RecalibrateV(viewModel: recalibrationVM) // NOTE: NEED recalibrationChoice: selectedChoice?
         }
         
         /*  - a double-sheet, edits and slides - do I need it?

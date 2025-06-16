@@ -18,8 +18,8 @@ struct SettingsV: View {
         //            Text.pageTitle("Settings")
         //        } content: {
         
-        let palette = colorTheme.colors(for: .settings)
         
+        let palette = colorTheme.colors(for: .settings)
         NavigationView {
             Form {
                 Section(header: Text("Preferences")) {
@@ -50,7 +50,6 @@ struct SettingsV: View {
                 }
             }
             .navigationTitle("Settings")
-            .background(colorTheme.background.ignoresSafeArea())
         }
     }
 }

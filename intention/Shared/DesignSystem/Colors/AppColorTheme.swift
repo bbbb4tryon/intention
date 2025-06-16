@@ -18,37 +18,6 @@ enum AppColorTheme: String, CaseIterable {
         case .fire: return "Fire"
         }
     }
-    
-    var primary: Color {
-        switch self {
-        case .default: return .intGreen
-        case .sea: return .teal
-        case .fire: return .orange
-        }
-    }
-    
-    var background: Color {
-        switch self {
-        case .default: return .intTan
-        case .sea: return .mint.opacity(0.15)
-        case .fire: return .pink.opacity(0.1)
-        }
-    }
-    
-    var body: Color {
-        switch self {
-        case .default: return .intBrown
-        case .sea: return .??.opacity(0.15)
-        case .fire: return .??.opacity(0.1)
-    }
-    
-    var accent: Color {
-        switch self {
-        case .default: return .intMoss
-        case .sea: return .cyan
-        case .fire: return .red
-        }
-    }
 }
 
 /* NOTE: default color:

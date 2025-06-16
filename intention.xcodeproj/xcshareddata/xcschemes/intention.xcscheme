@@ -35,7 +35,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "779290612DFB431A00F93B23"
+               BlueprintIdentifier = "7792906E2DFB449C00F93B23"
                BuildableName = "IntentionTests.xctest"
                BlueprintName = "IntentionTests"
                ReferencedContainer = "container:intention.xcodeproj">
