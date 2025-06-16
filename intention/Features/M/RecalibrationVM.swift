@@ -30,7 +30,7 @@ final class RecalibrationVM: ObservableObject {
         countdownTask = Task {
             for await _ in Timer.publish(every: 1, on: .main, in: .common).autoconnect().values {
                 await tick(mode: mode)
-                if timeRemaining <= 0 { break }
+                if timeRemaining <= 0 { break } // exit loop when time runs out
             }
         }
     }
@@ -59,5 +59,12 @@ final class RecalibrationVM: ObservableObject {
         countdownTask?.cancel()
         countdownTask = nil
         phase = .notStarted
+    }
+    
+    // Helper to format time into MM:SS
+    var formattedTime: String {
+        let minutes = timeRemaining / 60
+        let seconds = timeRemaining % 60
+        return String(format: "%02d:%02d", minutes, seconds)
     }
 }

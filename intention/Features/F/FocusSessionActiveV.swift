@@ -128,10 +128,10 @@ struct FocusSessionActiveV: View {
     @AppStorage("colorTheme") private var colorTheme: AppColorTheme = .default
     @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
     
+//    @State private var focusTimerActor = FocusTimerActor()
     @State private var showRecalibrationModal = false
-    @State private var selectedChoice: RecalibrationTheme = .breathing
 
-    @StateObject var viewModel = FocusSessionVM()
+    @StateObject var viewModel = FocusSessionVM()   // ViewModel is the source of truth
     @StateObject private var recalibrationVM = RecalibrationVM()
     
     var body: some View {
@@ -139,36 +139,48 @@ struct FocusSessionActiveV: View {
         let palette = colorTheme.colors(for: .homeActiveIntentions)
         
         VStack(spacing: Layout.verticalSpacing){
+            
             //            Helper_AppIconV()
             //                .clipShape(Circle())
             //                .glow(color: .intTan, radius: 12)
+            
+            
             Text.styled("Intention, Tracked", as: .header, using: fontTheme, in: palette)
+            
+            Spacer()    // pushes content towards center-top
             
             TextField("Enter intention", text: $viewModel.tileText)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .disabled(!viewModel.canAdd)    // opaque until 2 added
+                .padding(.bottom, 5)            // small padding to separate visually?
             
-            Button("Submit"){
-                Task {
-                    guard ((try? await viewModel.submitTile()) != nil) else {
+            Button(action: {
+                Task {      // beginSessionFlow() which handles tile submission and timer start
+                    guard ((try? await viewModel.beginSessionFlow()) != nil) else {
                         throw ActiveSessionError.submitFailed
                     }
-                   
                 }
+            }) {
+                Text("Begin")
             }
-            .disabled(!viewModel.canAdd)
+            .mainActionStyle()
+            .disabled(!viewModel.canAdd && viewModel.phase == .running) // Disables button if countdown already running
             .buttonStyle(.borderedProminent)
             
-                if viewModel.tiles.count < 2 {
-                    Text("Press Enter When Done")
-                } else if viewModel.tiles.count == 2 && viewModel.sessionActive {
-                    Text("Session started...")
-                        .foregroundStyle(.gray)
-                        .animation(
-                            .easeInOut.delay(0.1)
-                        )
-                    
-                }
+            // Countdown display
+            Text.styled("\(viewModel.formattedTime)", as: .caption, using: fontTheme, in: palette)
+//                .font(.system(size: 80, weight: .bold, design: .monospaced)) // Large, fixed-width font
+        
+            if viewModel.tiles.count < 2 {
+                Text("Press Enter When Done")
+            } else if viewModel.tiles.count == 2 && viewModel.sessionActive {
+                Text("Session started...")
+                    .foregroundStyle(.gray)
+                    .animation(.easeInOut.delay(0.1))
+            } else if viewModel.tiles.count == 2 && viewModel.sessionActive {
+                Text("Session complete! Ready for recalibration?")
+            }
+            
             VStack {
                 List(viewModel.tiles) {tile in
                     Text(tile.text)
@@ -181,24 +193,10 @@ struct FocusSessionActiveV: View {
         .background(palette.background)
         .padding(.horizontal, Layout.horizontalPadding)
         .navigationTitle("Home - Active Intentions")
-        .task {
-            await viewModel.startSession()
-        }
         .sheet(isPresented: $showRecalibrationModal) {
             RecalibrateV(viewModel: recalibrationVM) // NOTE: NEED recalibrationChoice: selectedChoice?
         }
-        
-        /*  - a double-sheet, edits and slides - do I need it?
-        .sheet(
-            isPresented: viewStore.binding(
-                get: \.isSheetPresented,
-                send: { _ in .setSheet(.none)}
-            )) {
-                self.sheetContent(for: viewStore.currentSheet)
-            }
-         */
     }
-
 }
 
 #Preview {

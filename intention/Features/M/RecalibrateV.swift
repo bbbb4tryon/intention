@@ -12,7 +12,9 @@ struct RecalibrateV: View {
     @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
     @ObservedObject var viewModel: RecalibrationVM
     @State private var recalibrationChoice: RecalibrationTheme = .breathing
-    
+        
+    @StateObject private var recalibrationVM = RecalibrationVM()
+        
     var body: some View {
         
         let palette = colorTheme.colors(for: .recalibrate)

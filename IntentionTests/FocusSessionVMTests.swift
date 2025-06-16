@@ -12,7 +12,7 @@ import XCTest
 final class FocusSessionVMTests: XCTestCase {
     func testSubmitTileTrimsText() async throws {
         let vm = FocusSessionVM()
-        await vm.startSession()
+        await vm.startAppendTileSession()
         vm.tileText = "   Meditate"
         
         try await vm.submitTile()
@@ -23,7 +23,7 @@ final class FocusSessionVMTests: XCTestCase {
     
     func testSubmitEmptyTileThrows() async throws {
         let vm = FocusSessionVM()
-        await vm.startSession()
+        await vm.startAppendTileSession()
         vm.tileText = "   "
         
         do {
