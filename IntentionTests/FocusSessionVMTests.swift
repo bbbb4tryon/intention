@@ -15,7 +15,7 @@ final class FocusSessionVMTests: XCTestCase {
         await vm.startAppendTileSession()
         vm.tileText = "   Meditate"
         
-        try await vm.submitTile()
+        try await vm.addTileAndPrepareForSession()
         
         XCTAssertEqual(vm.tiles.count, 1)
         XCTAssertEqual(vm.tiles.first?.text, "Meditate")
@@ -27,7 +27,7 @@ final class FocusSessionVMTests: XCTestCase {
         vm.tileText = "   "
         
         do {
-            try await vm.submitTile()
+            try await vm.addTileAndPrepareForSession()
             XCTFail("Expected empty input to throw")
         } catch FocusSessionError.emptyInput {
             // ✅ expected

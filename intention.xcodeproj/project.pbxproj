@@ -21,9 +21,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		778786572DF220C5004EDBEF /* intention.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = intention.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		778786572DF220C5004EDBEF /* intention.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = intention.app; path = "/Users/bentryon_home/Development/argonne_2025/intention/build/Debug-iphoneos/intention.app"; sourceTree = "<absolute>"; };
 		7787866D2DF236D4004EDBEF /* Documentation.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = Documentation.docc; sourceTree = "<group>"; };
-		7792906F2DFB449C00F93B23 /* IntentionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IntentionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7792906F2DFB449C00F93B23 /* IntentionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = IntentionTests.xctest; path = "/Users/bentryon_home/Development/argonne_2025/intention/build/Debug-iphoneos/intention.app/PlugIns/IntentionTests.xctest"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -76,17 +76,7 @@
 				7787866D2DF236D4004EDBEF /* Documentation.docc */,
 				778786592DF220C5004EDBEF /* intention */,
 				779290702DFB449C00F93B23 /* IntentionTests */,
-				778786582DF220C5004EDBEF /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		778786582DF220C5004EDBEF /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				778786572DF220C5004EDBEF /* intention.app */,
-				7792906F2DFB449C00F93B23 /* IntentionTests.xctest */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -167,7 +157,7 @@
 			mainGroup = 7787864E2DF220C5004EDBEF;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 778786582DF220C5004EDBEF /* Products */;
+			productRefGroup = 7787864E2DF220C5004EDBEF;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
