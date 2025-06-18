@@ -121,7 +121,7 @@ import SwiftUI
 import SwiftUI
 
 enum ActiveSessionError: Error, Equatable {
-    case submitFailed
+    case submitFailed, sessionAlreadyRunning
 }
 
 struct FocusSessionActiveV: View {
@@ -137,22 +137,22 @@ struct FocusSessionActiveV: View {
         let palette = colorTheme.colors(for: .homeActiveIntentions)
         
         VStack {
-            
-            //            Helper_AppIconV()
-            //                .clipShape(Circle())
-            //                .glow(color: .intTan, radius: 12)
-            
-            
-            Text.styled("Intention, Tracked", as: .header, using: fontTheme, in: palette)
-            
+            Group {
+                Helper_AppIconV()
+                    .clipShape(Circle())
+                    .glow(color: .intTan, radius: 12)
+                Text.styled("Intention, Tracked", as: .header, using: fontTheme, in: palette)
+                    .font(.largeTitle).bold()
+            }
             Spacer()    // pushes content towards center-top
             
             // MARK: - Textfield for intention tile text input
             TextField("Enter intention", text: $viewModel.tileText)
-                .padding(.bottom, 5)        // small padding to separate visually?
                 .textFieldStyle(RoundedBorderTextFieldStyle())
-                .disabled(viewModel.phase == .running)
-                .disabled(viewModel.tiles.count == 2)
+                .disabled(viewModel.tiles.count == 2 && viewModel.phase == .running)
+                .padding(.horizontal)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.sentences)
             
             // MARK: Main Action Button (Add or Begin)
             if !viewModel.showRecalibrate && viewModel.phase != .running {
@@ -160,9 +160,13 @@ struct FocusSessionActiveV: View {
                     Task {
                         do {
                             if viewModel.tiles.count < 2 {      // Logic adding tiles
-                                try await viewModel.addTileAndPrepareForSession()
+                                guard ((try?  await viewModel.addTileAndPrepareForSession()) != nil) else {
+                                    throw FocusSessionError.badTrigger_Overall
+                                }
                             } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { // Logic starting session
-                                try await viewModel.beginOverallSession()
+                                guard ((try? await viewModel.beginOverallSession()) != nil) else {
+                                    throw ActiveSessionError.sessionAlreadyRunning
+                                }
                             }
                         } catch FocusSessionError.emptyInput {
                             debugPrint("Error: empty input for tile.")
@@ -178,21 +182,28 @@ struct FocusSessionActiveV: View {
                 }) {
                     // MARK: Button label changes based on tile count
                     Text(viewModel.tiles.count < 2 ? "Add" : "Begin")
+                        .padding(.vertical,1)
+                        .frame(maxWidth: .infinity)
                 }
                 .mainActionStyle()
                 // Disable if no text in TextField when trying to Add, OR if 2 tiles are added and already started (though not visibile on UI)
                 .disabled(viewModel.tiles.count < 2 && viewModel.tileText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .buttonStyle(.borderedProminent)
                 
-                // MARK: Countdown display (user-facing)
-                Text.styled("\(viewModel.formattedTime)", as: .caption, using: fontTheme, in: palette)
-                //.font(.system(size: 80, weight: .bold, design: .monospaced)) // Large, fixed-width font //FIXME: NEED THIS?
-                
-                // MARK: - Action Button + Tile Control Flow & Button opacity/activeness
-                // Most constrained state: Session is fully complete, time for recalibration
-                if viewModel.showRecalibrate {
-                    VStack {
+                // MARK: Countdown Display (user-facing)
+                if viewModel.phase == .running || viewModel.phase == .finished {
+                    Text.styled("\(viewModel.formattedTime)", as: .largeTitle, using: fontTheme, in: palette)
+                        .font(.system(size: 80, weight: .bold, design: .monospaced)) // Explicitly large, fixed-width font
+                        .id("countdownTimer") // Use an ID to ensure smooth updates
+                        .transition(.opacity) // Smooth transition if it appears/disappears
+                }
+                // MARK: Message and Action Area
+                VStack(spacing: 15){
+                    // Most constrained state: Session is fully complete, time for recalibration
+                    if viewModel.showRecalibrate {
                         Text.styled("Session complete! Ready for recalibration?", as: .header, using: fontTheme, in: palette)
+                            .multilineTextAlignment(.center)
+                            .padding(.bottom, 10)
                         // if yes, send to recalibration; if no, send back to text input screen
                         
                         Button("Recalibrate Now"){  // <- button acknowledges prompt; sheet presented logic at bottom
@@ -206,20 +217,14 @@ struct FocusSessionActiveV: View {
                                 await viewModel.resetSessionStateForNewStart()
                             }
                         }.mainActionStyle()
-                    }
-                    // Second most constrained state:
-                    //  2 tiles logged, *first* 20-min chunk has ended; overall session still in progress
-                    //  currentSessionChunk is 1 and phase/chunk 2 not running
-                } else if viewModel.tiles.count == 2 && viewModel.currentSessionChunk == 1 && viewModel.phase == .finished {
-                    VStack {
+                        
+                        // Second most constrained state:
+                    } else if viewModel.tiles.count == 2 && viewModel.currentSessionChunk == 1 && viewModel.phase == .finished {
+                        
+                        // State: First 20-min chunk completed, Overall Session paused
                         Text.styled("Completed the first intended item!", as: .header, using: fontTheme, in: palette)
-                        
-                        Button("Start Next 20 Minutes")
-                        {
-                            viewModel.startCurrent20MinCountdown()
-                        }
-                        .mainActionStyle()
-                        
+                            .multilineTextAlignment(.center)
+                            .padding(.bottom, 5)
                         
                         Button("Start Next Intention")
                         {
@@ -233,7 +238,7 @@ struct FocusSessionActiveV: View {
                             print("`Start Next Intention` button pressed")
                         }.mainActionStyle()
                         
-                        //FIXME: End session early button - styling????
+                        
                         Button("End Session Early") {
                             Task {
                                 guard ((try? await viewModel.resetSessionStateForNewStart()) != nil) else {
@@ -242,43 +247,129 @@ struct FocusSessionActiveV: View {
                             }
                             debugPrint("EndSession button pressed, User ended session early.")
                             print("Session ended early.")
-                        }.notMainActionStyle()
-                            .buttonStyle(.bordered)
-                            .foregroundStyle(.red)
+                        }
+                        .buttonStyle(.bordered)
+                        .foregroundStyle(.red)
+                        .tint(.red)
+                        
+                    } else if viewModel.phase == .running {
+                        
+                        // General state: 1st or 2nd tile are active, both countdown OverallSession are running
+                        Text("Session in progress...")
+                            .foregroundStyle(.gray)
+                            .animation(.easeInOut.delay(0.1))
+                    } else if viewModel.tiles.count < 2 && (viewModel.tiles.count == 2 && viewModel.phase == .notStarted) {
+                        
+                        Text("Add your first (or second) intention above")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                        // Initial state:0 or 1 tile added only
+                        Text("Enter Your Intention and Press `\(viewModel.tiles.count < 2 ? "Add" : "Begin")`")
+                            .font(.caption)
+                            .foregroundStyle(.gray)
+                            .multilineTextAlignment(.center)
                     }
-                    // General state:
-                    //  1st or 2nd tile are active, their countdown and the Overall Session countdown are running
-                } else if viewModel.phase == .running {
-                    Text("Session in progress...")
-                        .foregroundStyle(.gray)
-                        .animation(.easeInOut.delay(0.1))
-                    // Initial state:
-                    //      No tiles added yet, or only one tile added, or 2 tiles have been added but session hasn't begun
-                } else if viewModel.tiles.count < 2 && (viewModel.tiles.count == 2 && viewModel.phase == .notStarted) {
-                    Text("Enter Your Intention and Press `\(viewModel.tiles.count < 2 ? "Add" : "Begin")`")
-                        .font(.caption)
-                        .foregroundStyle(.gray)
-                }
+                }   // End of conditionals and Vstack
+                .padding(.horizontal)   // Padding for entire section
+                .animation(.default, value: viewModel.phase) // Animate phase changes
+                .animation(.default, value: viewModel.tiles.count) // Animate tile count changes
                 
+                Spacer()    // Pushes content away from bottom
                 // MARK: - List: Tile container
                 VStack {
-                    List(viewModel.tiles) {tile in
-                        Text(tile.text)
+                    if viewModel.tiles.isEmpty {
+                        Text("No intentions added yet.")
+                            .font(.caption)
+                            .foregroundStyle(.gray)
+                            .padding()
+                    } else {
+                        List(viewModel.tiles) {tile in
+                            Text(tile.text)
+                                .font(fontTheme.bodyFont)    // Apply a consistent font to list items
+                                .padding(.vertical, 4)      // Little bit, for readability
+                        }
+                        .listStyle(.insetGrouped)
+                        .frame(height: viewModel.tiles.isEmpty ? 50 : CGFloat(viewModel.tiles.count) * 60) // Dynamiclly adjusts
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .padding(.horizontal)
                     }
-                    .listStyle(.grouped)
                 }
-                .background(palette.background)
-            }
+                .background(palette.background.opacity(0.8))    // Subtle background
+                .cornerRadius(10)       // Match clipshape
+                .shadow(radius: 5)
+            }      // End of main VStack
         }
-        .background(palette.background)
-        .padding(.horizontal, Layout.horizontalPadding)
-        .navigationTitle("Home - Active Intentions")
+        .background(palette.background.ignoresSafeArea())
+        .navigationTitle("")    // Hides default navigation title
+        //                .navigationTitle("Home - Active Intentions")
         .sheet(isPresented: $viewModel.showRecalibrate){
             RecalibrateV(viewModel: recalibrationVM) // FIXME: NEED recalibrationChoice: selectedChoice?
         }
     }
 }
 
-#Preview {
+#Preview("Initial State") {
     FocusSessionActiveV()
+}
+#Preview("After 1st Tile Added") {
+    // State: First tile added, ready for second
+       let viewModel = FocusSessionVM()
+       viewModel.tiles = [TileM(text: "My First Intention")]
+       viewModel.tileText = "Second Intention" // Simulate text already typed
+       viewModel.canAdd = true // Still can add
+       return FocusSessionActiveV(viewModel: viewModel)
+}
+#Preview("2 Tiles Added - Ready to Begin") {
+    // State: Two tiles added, ready to "Begin"
+    let viewModel = FocusSessionVM()
+    viewModel.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+    viewModel.canAdd = false // Cannot add more
+    viewModel.phase = .notStarted // No countdown running yet
+    return FocusSessionActiveV(viewModel: viewModel)
+}
+
+#Preview("1st Chunk Running") {
+    // State: Countdown for first chunk is running
+    let viewModel = FocusSessionVM()
+    viewModel.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+    viewModel.canAdd = false
+    viewModel.phase = .running
+    viewModel.countdownRemaining = 600 // 10 minutes left
+    viewModel.currentSessionChunk = 0 // Still on the first chunk
+    return FocusSessionActiveV(viewModel: viewModel)
+}
+
+#Preview("1st Chunk Completed - Prompt for 2nd") {
+    // State: First chunk finished, ready for second
+    let viewModel = FocusSessionVM()
+    viewModel.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+    viewModel.canAdd = false
+    viewModel.phase = .finished // First chunk completed
+    viewModel.countdownRemaining = 0 // Timer hit zero
+    viewModel.currentSessionChunk = 1 // Moved to next chunk
+    return FocusSessionActiveV(viewModel: viewModel)
+}
+
+#Preview("2nd Chunk Running"){
+    // State: Countdown for second chunk is running
+    let viewModel = FocusSessionVM()
+    viewModel.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+    viewModel.canAdd = false
+    viewModel.phase = .running
+    viewModel.countdownRemaining = 300 // 5 minutes left
+    viewModel.currentSessionChunk = 1 // Second chunk in progress
+    return FocusSessionActiveV(viewModel: viewModel)
+}
+
+#Preview("Session Complete - Recalibrate Prompt"){
+    // State: Session complete, show recalibration modal prompt
+    let viewModel = FocusSessionVM()
+    viewModel.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+    viewModel.canAdd = false
+    viewModel.phase = .finished // Second chunk completed
+    viewModel.countdownRemaining = 0
+    viewModel.currentSessionChunk = 2 // Both chunks completed
+    viewModel.showRecalibrate = true // Trigger recalibration modal
+    return FocusSessionActiveV(viewModel: viewModel)
 }

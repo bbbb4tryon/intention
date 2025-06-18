@@ -6,6 +6,10 @@
 
 import SwiftUI
 // Visual consistency
+
+//private extension ButtonStyle {
+//    var foregroundColor: Color { }
+//}
 struct ButtonConfig_Style: ButtonStyle {
     var color: Color = .intGreen
     

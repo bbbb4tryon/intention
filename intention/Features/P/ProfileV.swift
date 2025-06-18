@@ -21,14 +21,18 @@ struct ProfileV: View {
 //            Text.pageTitle("Profile")
 //        } content: {
             VStack(spacing:20){
-                Text("You")
-                    .styledTitle(font: fontTheme, color: palette.text)
-
-                Section(header: Text("History")){
-                    ForEach(0..<12) { i in
-                        Text("\(i)")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(palette.accent.ignoresSafeArea())
+                List {
+                    
+                    Section {
+                        ForEach(0..<12) { i in
+                            Text("\(i)")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    } header: {
+                        Text("History")
+                    }
+                    footer: {
+                        Text("Pull to refresh, scroll to review")
                     }
                 }
             }

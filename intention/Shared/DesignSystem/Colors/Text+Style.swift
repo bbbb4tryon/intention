@@ -16,6 +16,7 @@ enum TextRole {
     case caption
     case secondary
     case action
+    case largeTitle
 }
 
 // MARK: - Text Extension for Semantic Styling
@@ -40,6 +41,7 @@ extension Text {
         case .caption: return .caption
         case .secondary: return .subheadline
         case .action: return .headline
+        case .largeTitle: return .largeTitle
         }
     }
 
@@ -49,6 +51,7 @@ extension Text {
         case .secondary, .caption: return palette.accent
         case .label: return palette.primary
         case .action: return palette.accent
+        case .largeTitle: return palette.text
         }
     }
 }

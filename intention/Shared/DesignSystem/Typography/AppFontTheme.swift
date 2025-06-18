@@ -26,6 +26,14 @@ enum AppFontTheme: String, CaseIterable {
         }
     }
     
+    var largeTitle: Font {
+        switch self {
+        case .serif: return .system(.largeTitle, design: .serif).bold()
+        case .rounded: return .system(.largeTitle, design: .rounded).bold()
+        case .mono: return .system(.largeTitle, design: .monospaced).bold()
+        }
+    }
+    
     
     var bodyFont: Font {
         switch self {
