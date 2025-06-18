@@ -25,4 +25,10 @@ extension Text {
             .font(font.toFont(.body))
             .foregroundStyle(color)
     }
+    
+    func stylingCountdowns(font: AppFontTheme, color: Color) -> some View {
+        self
+            .font(font.toFont(.body))
+            .foregroundStyle(color)
+    }
 }

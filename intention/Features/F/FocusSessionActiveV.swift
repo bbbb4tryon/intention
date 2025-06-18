@@ -135,177 +135,200 @@ struct FocusSessionActiveV: View {
     var body: some View {
         
         let palette = colorTheme.colors(for: .homeActiveIntentions)
-        
-        VStack {
-            Group {
-                Helper_AppIconV()
-                    .clipShape(Circle())
-                    .glow(color: .intTan, radius: 12)
-                Text.styled("Intention, Tracked", as: .header, using: fontTheme, in: palette)
-                    .font(.largeTitle).bold()
-            }
-            Spacer()    // pushes content towards center-top
-            
-            // MARK: - Textfield for intention tile text input
-            TextField("Enter intention", text: $viewModel.tileText)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .disabled(viewModel.tiles.count == 2 && viewModel.phase == .running)
-                .padding(.horizontal)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.sentences)
-            
-            // MARK: Main Action Button (Add or Begin)
-            if !viewModel.showRecalibrate && viewModel.phase != .running {
-                Button(action: {
-                    Task {
-                        do {
-                            if viewModel.tiles.count < 2 {      // Logic adding tiles
-                                guard ((try?  await viewModel.addTileAndPrepareForSession()) != nil) else {
-                                    throw FocusSessionError.badTrigger_Overall
-                                }
-                            } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { // Logic starting session
-                                guard ((try? await viewModel.beginOverallSession()) != nil) else {
-                                    throw ActiveSessionError.sessionAlreadyRunning
-                                }
-                            }
-                        } catch FocusSessionError.emptyInput {
-                            debugPrint("Error: empty input for tile.")
-                            print("Must have input")
-                        } catch FocusSessionError.tooManyTiles {
-                            debugPrint("Error: too many tiles")
-                            print("Two list item limit")
-                        } catch FocusSessionError.unexpected {
-                            debugPrint("Error: FocusSessionError.unexpected: \(FocusSessionError.unexpected)")
-                            print("An unexpected error occured: contact the developer")
-                        }
-                    }
-                }) {
-                    // MARK: Button label changes based on tile count
-                    Text(viewModel.tiles.count < 2 ? "Add" : "Begin")
-                        .padding(.vertical,1)
-                        .frame(maxWidth: .infinity)
-                }
-                .mainActionStyle()
-                // Disable if no text in TextField when trying to Add, OR if 2 tiles are added and already started (though not visibile on UI)
-                .disabled(viewModel.tiles.count < 2 && viewModel.tileText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .buttonStyle(.borderedProminent)
+        NavigationView {
+            VStack(spacing: 20){
+//                    Helper_AppIconV()
+//                        .clipShape(Circle())
+//                        .glow(color: .intTan, radius: 12)
+                    Text.styled("Intention, Tracked", as: .header, using: fontTheme, in: palette)
+                        .font(.largeTitle).bold()
+                        .padding(.bottom, 10)
                 
-                // MARK: Countdown Display (user-facing)
-                if viewModel.phase == .running || viewModel.phase == .finished {
-                    Text.styled("\(viewModel.formattedTime)", as: .largeTitle, using: fontTheme, in: palette)
-                        .font(.system(size: 80, weight: .bold, design: .monospaced)) // Explicitly large, fixed-width font
-                        .id("countdownTimer") // Use an ID to ensure smooth updates
-                        .transition(.opacity) // Smooth transition if it appears/disappears
-                }
-                // MARK: Message and Action Area
-                VStack(spacing: 15){
-                    // Most constrained state: Session is fully complete, time for recalibration
-                    if viewModel.showRecalibrate {
-                        Text.styled("Session complete! Ready for recalibration?", as: .header, using: fontTheme, in: palette)
-                            .multilineTextAlignment(.center)
-                            .padding(.bottom, 10)
-                        // if yes, send to recalibration; if no, send back to text input screen
-                        
-                        Button("Recalibrate Now"){  // <- button acknowledges prompt; sheet presented logic at bottom
-                            debugPrint("Recalibrate model presented?")
-                        }.mainActionStyle()
-                        
-                        Button("Start a new session"){
-                            viewModel.showRecalibrate = false   // Dismiss the sheet
-                            // Reset VM and clear tiles
-                            Task {
-                                await viewModel.resetSessionStateForNewStart()
-                            }
-                        }.mainActionStyle()
-                        
-                        // Second most constrained state:
-                    } else if viewModel.tiles.count == 2 && viewModel.currentSessionChunk == 1 && viewModel.phase == .finished {
-                        
-                        // State: First 20-min chunk completed, Overall Session paused
-                        Text.styled("Completed the first intended item!", as: .header, using: fontTheme, in: palette)
-                            .multilineTextAlignment(.center)
-                            .padding(.bottom, 5)
-                        
-                        Button("Start Next Intention")
-                        {
-                            viewModel.showRecalibrate = false   // Dismisses the sheet
-                            Task {
-                                guard ((try? await viewModel.startCurrent20MinCountdown()) != nil) else {
-                                    throw ActiveSessionError.submitFailed
-                                }    // Start the countdown for the second chunk
-                            }
-                            debugPrint("NextIntention button pressed.")
-                            print("`Start Next Intention` button pressed")
-                        }.mainActionStyle()
-                        
-                        
-                        Button("End Session Early") {
-                            Task {
-                                guard ((try? await viewModel.resetSessionStateForNewStart()) != nil) else {
-                                    throw ActiveSessionError.submitFailed
-                                }
-                            }
-                            debugPrint("EndSession button pressed, User ended session early.")
-                            print("Session ended early.")
-                        }
-                        .buttonStyle(.bordered)
-                        .foregroundStyle(.red)
-                        .tint(.red)
-                        
-                    } else if viewModel.phase == .running {
-                        
-                        // General state: 1st or 2nd tile are active, both countdown OverallSession are running
-                        Text("Session in progress...")
-                            .foregroundStyle(.gray)
-                            .animation(.easeInOut.delay(0.1))
-                    } else if viewModel.tiles.count < 2 && (viewModel.tiles.count == 2 && viewModel.phase == .notStarted) {
-                        
-                        Text("Add your first (or second) intention above")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                        // Initial state:0 or 1 tile added only
-                        Text("Enter Your Intention and Press `\(viewModel.tiles.count < 2 ? "Add" : "Begin")`")
-                            .font(.caption)
-                            .foregroundStyle(.gray)
-                            .multilineTextAlignment(.center)
-                    }
-                }   // End of conditionals and Vstack
-                .padding(.horizontal)   // Padding for entire section
-                .animation(.default, value: viewModel.phase) // Animate phase changes
-                .animation(.default, value: viewModel.tiles.count) // Animate tile count changes
+                Spacer()    // pushes content towards center-top
                 
-                Spacer()    // Pushes content away from bottom
-                // MARK: - List: Tile container
-                VStack {
-                    if viewModel.tiles.isEmpty {
-                        Text("No intentions added yet.")
-                            .font(.caption)
-                            .foregroundStyle(.gray)
-                            .padding()
-                    } else {
-                        List(viewModel.tiles) {tile in
+                // MARK: - Textfield for intention tile text input
+                TextField("Enter intention", text: $viewModel.tileText)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .disabled(viewModel.tiles.count == 2 && viewModel.phase == .running)
+                    .padding(.horizontal)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.sentences)
+                
+                // MARK: Main Action Button (Add or Begin)
+                if !viewModel.showRecalibrate && viewModel.phase != .running {
+                    Button(action: {
+                        Task {
+                            do {
+                                if viewModel.tiles.count < 2 {      // Logic adding tiles
+                                    guard ((try?  await viewModel.addTileAndPrepareForSession()) != nil) else {
+                                        throw FocusSessionError.badTrigger_Overall
+                                    }
+                                } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { // Logic starting session
+                                    guard ((try? await viewModel.beginOverallSession()) != nil) else {
+                                        throw ActiveSessionError.sessionAlreadyRunning
+                                    }
+                                }
+                            } catch FocusSessionError.emptyInput {
+                                debugPrint("Error: empty input for tile.")
+                                print("Must have input")
+                            } catch FocusSessionError.tooManyTiles {
+                                debugPrint("Error: too many tiles")
+                                print("Two list item limit")
+                            } catch FocusSessionError.unexpected {
+                                debugPrint("Error: FocusSessionError.unexpected: \(FocusSessionError.unexpected)")
+                                print("An unexpected error occured: contact the developer")
+                            }
+                        }
+                    }) {
+                        Text(viewModel.tiles.count < 2 ? "Add" : "Begin")
+                            .font(.headline)
+                            .padding(.vertical,8)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .mainActionStyle()
+                    // Disable if empty, or 2 tiles already aadded
+                    .disabled(viewModel.tiles.count < 2 && viewModel.tileText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .buttonStyle(.borderedProminent)
+                    .padding(.horizontal)
+                    
+                    // MARK: Countdown Display (user-facing)
+                    if viewModel.phase == .running || viewModel.phase == .finished {
+                        Text.styled("\(viewModel.formattedTime)", as: .largeTitle, using: fontTheme, in: palette)
+                            .font(.system(size: 80, weight: .bold, design: .monospaced)) // Explicit: fixed-width font
+                            .id("countdownTimer") // Use an ID to ensure smooth updates
+                            .transition(.opacity) // Smooth transition if it appears/disappears
+                        //FIXME: ModifiersFont+Style see the countdown style?
+                    }
+                    
+                    // MARK: - Dynamic Message and Action Area
+                    VStack(spacing: 15){
+                        // Most constrained state: Session is fully complete, time for recalibration
+                        if viewModel.showRecalibrate {
+                            Text.styled("Session complete! Ready for recalibration?", as: .header, using: fontTheme, in: palette)
+                                .multilineTextAlignment(.center)
+                                .padding(.bottom, 10)
+                            // if yes, send to recalibration; if no, send back to text input screen
+                            
+                            Button("Recalibrate Now"){  // <- button acknowledges prompt; sheet presented logic at bottom
+                                debugPrint("Recalibrate model presented?")
+                            }.mainActionStyle()
+                            
+                            Button("Start a new session"){
+                                viewModel.showRecalibrate = false   // Dismiss the sheet
+                                // Reset VM and clear tiles
+                                Task {
+                                    await viewModel.resetSessionStateForNewStart()
+                                }
+                            }.mainActionStyle()
+                            
+                            // Second most constrained state:
+                        } else if viewModel.tiles.count == 2 && viewModel.currentSessionChunk == 1 && viewModel.phase == .finished {
+                            
+                            // State: First 20-min chunk completed, Overall Session paused
+                            Text.styled("Completed the first intended item!", as: .header, using: fontTheme, in: palette)
+                                .multilineTextAlignment(.center)
+                                .padding(.bottom, 5)
+                            
+                            Text("Ready to focus on your next intention for 20 minutes?")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.bottom, 10)
+                            
+                            Button("Start Next Intention")
+                            {
+                                viewModel.showRecalibrate = false   // Dismisses the sheet
+                                Task {
+                                    guard ((try? await viewModel.startCurrent20MinCountdown()) != nil) else {
+                                        throw ActiveSessionError.submitFailed
+                                    }    // Start the countdown for the second chunk
+                                }
+                                debugPrint("NextIntention button pressed.")
+                                print("`Start Next Intention` button pressed")
+                            }.mainActionStyle()
+                            
+                            
+                            Button("End Session Early") {
+                                Task {
+                                    guard ((try? await viewModel.resetSessionStateForNewStart()) != nil) else {
+                                        throw ActiveSessionError.submitFailed
+                                    }
+                                }
+                                debugPrint("EndSession button pressed, User ended session early.")
+                                print("Session ended early.")
+                            }
+                            .buttonStyle(.bordered)
+                            .foregroundStyle(.red)
+                            .tint(.red)
+                            
+                        } else if viewModel.phase == .running {
+                            
+                            // General state: 1st or 2nd tile are active, both countdown OverallSession are running
+                            Text("Session in progress...")
+                                .foregroundStyle(.gray)
+                                .animation(.easeInOut.delay(0.1))
+                        } else if viewModel.tiles.count < 2 && (viewModel.tiles.count == 2 && viewModel.phase == .notStarted) {
+                            
+                            Text("Add your first (or second) intention above")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                            // Initial state:0 or 1 tile added only
+                            Text("Enter Your Intention and Press `\(viewModel.tiles.count < 2 ? "Add" : "Begin")`")
+                                .font(.caption)
+                                .foregroundStyle(.gray)
+                                .multilineTextAlignment(.center)
+                        }
+                    }   // End of conditionals and Vstack
+                    .padding(.horizontal)   // Padding for entire section
+                    .animation(.default, value: viewModel.phase) // Animate phase changes
+                    .animation(.default, value: viewModel.tiles.count) // Animate tile count changes
+                    
+                    Spacer()    // Pushes content away from bottom
+                    
+                    // MARK: - Fixed-size List: Tile container
+                    VStack(spacing: 8) {        // tile spacing
+                        ForEach(viewModel.tiles) { tile in
                             Text(tile.text)
-                                .font(fontTheme.bodyFont)    // Apply a consistent font to list items
-                                .padding(.vertical, 4)      // Little bit, for readability
+                                .font(.body)
+                                .padding(10)    // Padding inside each tile
+                                .frame(maxWidth: .infinity, alignment: .leading)    // Align text to left
+                                .background(palette.primary.opacity(0.1))           // For tile
+                                .cornerRadius(8)                                    // For tile
+                                .transition(.opacity.animation(.easeIn(duration: 0.3))) // Fade in animation
                         }
-                        .listStyle(.insetGrouped)
-                        .frame(height: viewModel.tiles.isEmpty ? 50 : CGFloat(viewModel.tiles.count) * 60) // Dynamiclly adjusts
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .padding(.horizontal)
+                        .padding(.horizonal)    // Padding for the ForEach content
+                        
+                        // Blank slots and fixed presence for list
+                        ForEach(0..<(2 - viewModel.tiles.count), id: \.self) { _ in
+                            Text("").hidden()                               // Hidden text, creates space
+                                .frame(maxWidth: .infinity, alignment: .leading)    // Align to left
+                                .padding(10)
+                                .background(palette.background.opacity(0.05))
+                                .cornerRadius(10)
+                                .overlay(                   // Empty slot dashed border
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(palette.secondary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
+                                )
+                                .padding(.horizontal)
+                        }
                     }
-                }
-                .background(palette.background.opacity(0.8))    // Subtle background
-                .cornerRadius(10)       // Match clipshape
-                .shadow(radius: 5)
-            }      // End of main VStack
-        }
-        .background(palette.background.ignoresSafeArea())
-        .navigationTitle("")    // Hides default navigation title
-        //                .navigationTitle("Home - Active Intentions")
-        .sheet(isPresented: $viewModel.showRecalibrate){
-            RecalibrateV(viewModel: recalibrationVM) // FIXME: NEED recalibrationChoice: selectedChoice?
-        }
+                    .frame(height: 120)         // Fixed list height
+                    .background(palette.background.opacity(0.8))
+                    .cornerRadius(10)
+                    .shadow(radius: 5)
+                    .padding(.horizontal)
+                    
+                    Spacer()
+
+                }      //-main VStack end
+            
+            .background(palette.background.ignoresSafeArea())
+            .navigationTitle("")    // Hides default navigation title
+            .sheet(isPresented: $viewModel.showRecalibrate){
+                RecalibrateV(viewModel: recalibrationVM) // FIXME: NEED recalibrationChoice: selectedChoice?
+            }
+        }   //-NavigationView end
     }
 }
 
