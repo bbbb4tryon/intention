@@ -32,6 +32,7 @@ final class FocusSessionVM: ObservableObject {
     @Published var countdownRemaining: Int = 1200   // 20 minutes for individual tile task
     @Published var phase: Phase = .notStarted       // State of the *current* 20-min countdown
     @Published var currentSessionChunk: Int = 0     // Tracks which 20-min chunk of the session is active
+    @Published var sessionHistory: [[TileM]] = []   // history model of sessions
     
     private let tileAppendTrigger = FocusTimerActor()
     private var chunkCountdown: Task<Void, Never>? = nil
@@ -130,6 +131,7 @@ final class FocusSessionVM: ObservableObject {
     // MARK: - Chunks session completion logic
     private func checkSessionCompletion() {
         if currentSessionChunk >= 2 {   // both chunks done
+            sessionHistory.append(tiles)    // store completed sessiojn
             sessionActive = false       // 40-min overall session done
             showRecalibrate = true      // modal
             debugPrint("Recalibration choice modal should display")

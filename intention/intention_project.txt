@@ -177,7 +177,7 @@ import SwiftUI
 │   │   └── ShareService.swift                // sharing logic (US/China)
 │   │
 │   ├── Profile/
-│   │   └── ProfileView.swift                 // view history of completed todos
+│   │   └── HistoryView.swift                 // view HistoryV of completed todos
 │   │
 │   └── Archive/
 │       └── ArchiveActor.swift                // manages sliding archive list
@@ -312,9 +312,9 @@ struct RecalibrateV: View {
 
 
 
-==================== ./Features/P/ProfileV.swift ====================
+==================== ./Features/P/HistoryV.swift ====================
 //
-//  ProfileV.swift
+//  HistoryV.swift
 //  intention
 //
 //  Created by Benjamin Tryon on 6/11/25.
@@ -322,7 +322,7 @@ struct RecalibrateV: View {
 
 import SwiftUI
 
-struct ProfileV: View {
+struct HistoryV: View {
     var body: some View {
         Text("Profile")
             .font(.largeTitle)
@@ -330,7 +330,7 @@ struct ProfileV: View {
 }
 
 #Preview {
-    ProfileV()
+    HistoryV()
 }
 
 

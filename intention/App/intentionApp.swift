@@ -7,11 +7,33 @@
 
 import SwiftUI
 
+//@main
+//struct intentionApp: App {
+//    var body: some Scene {
+//        WindowGroup {
+//            FocusSessionActiveV()
+//        }
+//    }
+//}
+
 @main
 struct intentionApp: App {
     var body: some Scene {
         WindowGroup {
-            FocusSessionActiveV()
+            TabView {
+                FocusSessionActiveV()
+                .tabItem {
+                    Label("", systemImage: "home.fill")
+                }
+                SettingsV()
+                    .tabItem {
+                        Label("", systemImage: "gear.fill")
+                    }
+                HistoryV()
+                    .tabItem {
+                        Label("", systemImage: "script.fill")
+                    }
+            }
         }
     }
 }

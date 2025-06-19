@@ -1,5 +1,5 @@
 //
-//  ProfileV.swift
+//  HistoryV.swift
 //  intention
 //
 //  Created by Benjamin Tryon on 6/11/25.
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-//  User identity, history
-struct ProfileV: View {
+//  User identity, HistoryV
+struct HistoryV: View {
     @AppStorage("colorTheme") private var colorTheme: AppColorTheme = .default
     @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
     
@@ -29,7 +29,7 @@ struct ProfileV: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     } header: {
-                        Text("History")
+                        Text("HistoryV")
                     }
                     footer: {
                         Text("Pull to refresh, scroll to review")
@@ -46,7 +46,7 @@ struct ProfileV: View {
 }
 
 #Preview {
-    ProfileV()
+    HistoryV()
 }
 /*
  Background: .intMint (or intTan)

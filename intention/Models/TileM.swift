@@ -9,7 +9,7 @@
 import Foundation
 
 // Representative of a single user-created "intention" tile
-struct TileM: Identifiable, Codable, Sendable {
+struct TileM: Identifiable, Sendable {
     // FIXME: LET instead of VAR?
     let id: UUID = UUID()
     var text: String
