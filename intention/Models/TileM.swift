@@ -9,9 +9,15 @@
 import Foundation
 
 // Representative of a single user-created "intention" tile
-struct TileM: Identifiable, Sendable {
-    // FIXME: LET instead of VAR?
-    let id: UUID = UUID()
+//  supports JSON encoding
+struct TileM: Identifiable, Sendable, Codable {
+    let id: UUID
     var text: String
-    var timeStamp: Date = Date()
+    var timeStamp: Date
+    
+    init(text: String) {
+        self.id = UUID()
+        self.text = text
+        self.timeStamp = Date()
+    }
 }

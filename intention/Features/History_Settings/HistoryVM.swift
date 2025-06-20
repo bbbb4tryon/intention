@@ -14,6 +14,8 @@ final class HistoryVM: ObservableObject {
     @Published var sessions: [[TileM]] = []
 
     // AppStorage wrapper (private, not accessed directly from the view)
+    // since `historyVM` is injected into `FocusSessionVM` at startup via `RootView`
+    //  the `FocusSessionVM` `func checkSessionCompletion()`'s `addSession(tiles)` method successfully archives each 2-tile session in:
     @AppStorage("tileHistoryData") private var tileHistoryData: Data = Data()
 
     init() {

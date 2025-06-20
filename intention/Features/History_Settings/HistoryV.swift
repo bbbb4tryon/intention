@@ -7,29 +7,33 @@
 
 import SwiftUI
 
-//  User identity, HistoryV
 struct HistoryV: View {
     @AppStorage("colorTheme") private var colorTheme: AppColorTheme = .default
     @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
     
+    @ObservedObject var viewModel: HistoryVM
+    
     var body: some View {
         
-        let palette = colorTheme.colors(for: .profile)
+        let palette = colorTheme.colors(for: .history)
         
         NavigationView {
 //        FixedHeaderLayoutV {
 //            Text.pageTitle("Profile")
 //        } content: {
-            VStack(spacing:20){
+            NavigationView {
                 List {
-                    
                     Section {
-                        ForEach(0..<12) { i in
-                            Text("\(i)")
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                        ForEach(Array(viewModel.sessions.enumerated()), id: \.offset) { index, session in
+                            Section("Session: \(index + 1)"){
+                                ForEach(session) { tile in
+                                    Text(tile.text)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
                         }
                     } header: {
-                        Text("HistoryV")
+                        Text("History")
                     }
                     footer: {
                         Text("Pull to refresh, scroll to review")
@@ -37,7 +41,7 @@ struct HistoryV: View {
                 }
             }
         }
-        .navigationTitle("Profile")
+        .navigationTitle("History")
         .padding()
         .font(fontTheme.toFont(.title3))    // default body styling
         .foregroundStyle(palette.text)
@@ -45,8 +49,11 @@ struct HistoryV: View {
     }
 }
 
+// Mock/ test data prepopulated
 #Preview {
-    HistoryV()
+    let vm = HistoryVM()
+    vm.addSession([TileM(text: "Mock 1"), TileM(text: "Mock 2")])
+    return HistoryV(viewModel: vm)
 }
 /*
  Background: .intMint (or intTan)

@@ -34,7 +34,7 @@ extension Text {
 
     private static func fontStyle(for role: TextRole) -> Font.TextStyle {
         switch role {
-        case .header: return .title
+        case .header: return .largeTitle
         case .section: return .title2
         case .label, .tile: return .body
         case .body: return .body

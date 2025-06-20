@@ -37,5 +37,7 @@ extension View {
 }
 
 #Preview {
-    FocusSessionActiveV()
+    let focus = FocusSessionVM()
+    let recal = RecalibrationVM()
+    FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
 }

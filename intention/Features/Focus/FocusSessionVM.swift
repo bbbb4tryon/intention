@@ -37,6 +37,10 @@ final class FocusSessionVM: ObservableObject {
     private let tileAppendTrigger = FocusTimerActor()
     private var chunkCountdown: Task<Void, Never>? = nil
     private var sessionCompletionTask: Task<Void, Never>? = nil // background timer for the entire session (2x 20-min chunks)
+    
+    weak var historyVM: HistoryVM?      // hold a weak link injecting historyVM, see checkSessionCompletion()
+
+    
     //
     //    func startSession() async {
     //        await tileAppendTrigger.startSessionTracking()
@@ -131,10 +135,11 @@ final class FocusSessionVM: ObservableObject {
     // MARK: - Chunks session completion logic
     private func checkSessionCompletion() {
         if currentSessionChunk >= 2 {   // both chunks done
-            sessionHistory.append(tiles)    // store completed sessiojn
             sessionActive = false       // 40-min overall session done
             showRecalibrate = true      // modal
             debugPrint("Recalibration choice modal should display")
+            historyVM?.addSession(tiles)    // save session to history - addSession(_:) in `HistoryVM` appends and persists to `AppStorage`
+            debugPrint("New session is present in HistoryV?")
             // NOTE: - Don't reset actor for new session here - user will on modal
         } else {
             print("""

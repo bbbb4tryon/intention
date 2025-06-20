@@ -128,11 +128,12 @@ struct FocusSessionActiveV: View {
     @AppStorage("colorTheme") private var colorTheme: AppColorTheme = .default
     @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
     @Environment(\.dismiss) var dismiss
-    
-    @StateObject var viewModel = FocusSessionVM()   // ViewModel is the source of truth
-    @StateObject private var recalibrationVM = RecalibrationVM()
+
+    @ObservedObject var viewModel: FocusSessionVM
+    @ObservedObject var recalibrationVM: RecalibrationVM
     
     var body: some View {
+
         let palette = colorTheme.colors(for: .homeActiveIntentions)
 
         NavigationLink(destination: RecalibrateV(viewModel: recalibrationVM), isActive: $viewModel.showRecalibrate) { EmptyView()
@@ -255,8 +256,11 @@ struct FocusSessionActiveV: View {
     }
 }
 
+
 #Preview("Initial State") {
-    FocusSessionActiveV()
+    let focus = FocusSessionVM()
+    let recal = RecalibrationVM()
+    FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
 }
 //#Preview("After 1st Tile Added") {
 //    // State: First tile added, ready for second
