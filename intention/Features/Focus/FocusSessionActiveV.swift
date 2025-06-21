@@ -164,7 +164,7 @@ struct FocusSessionActiveV: View {
                         Task {
                             do {
                                 if viewModel.tiles.count < 2 {      // Logic adding tiles
-                                    try await viewModel.addTileAndPrepareForSession()
+                                        try await viewModel.addTileAndPrepareForSession()
                                 } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { // Logic starting session
                                     try await viewModel.beginOverallSession()
                                 }
@@ -213,27 +213,11 @@ struct FocusSessionActiveV: View {
                 Spacer()    // Pushes content away from bottom
                 
                 // MARK: - Fixed-size List: Tile container
-                VStack(spacing: 8) {            // tile spacing
-                    ForEach(viewModel.tiles) { tile in  // ForEach allows tile display & animation
-                        Text(tile.text)
-                            .font(.body)
-                            .padding(10)        // Padding inside each tile
-                            .frame(maxWidth: .infinity, alignment: .leading)    // Align text to left
-                            .background(palette.primary.opacity(0.1))           // For tile
-                            .cornerRadius(8)                                    // For tile
-                            .transition(.opacity.animation(.easeIn(duration: 0.3))) // Fade in animation
-                    }
-                    
-//                     Creates blank slots and fixed presence for list, and are then populated when user presses(?) "Begin"
-                    ForEach(0..<(2 - viewModel.tiles.count), id: \.self) { _ in
-                        Text("").hidden()                               // Hidden text, creates space
-                            .frame(maxWidth: .infinity, alignment: .leading)    // Align to left
-                            .padding(10)
-                            .background(palette.background.opacity(0.05))
-                            .cornerRadius(8)
-                            .overlay(                   // Empty slot dashed border
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(palette.secondary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
+                VStack(spacing: 8) {        // tile spacing
+                    ForEach(0..<2, id: \.self) { index in
+                        TileSlotView(
+                            tileText: index < viewModel.tiles.count ? viewModel.tiles[index].text : .nil,
+                            palette: palette
                             )
                     }
                 }   // -VStack, tile container end
