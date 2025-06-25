@@ -35,7 +35,7 @@ struct RecalibrateV: View {
             }
             .pickerStyle(SegmentedPickerStyle())
             
-            // Begin Button
+            // Begin/Start Button
             Button(action: {
                 viewModel.start(mode: recalibrationChoice)
             }) {
