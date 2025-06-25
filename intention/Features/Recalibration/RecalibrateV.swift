@@ -39,33 +39,36 @@ struct RecalibrateV: View {
             Button(action: {
                 viewModel.start(mode: recalibrationChoice)
             }) {
-                Text.styled("Begin", as: .action, using: fontTheme, in: palette)
+                Label("Begin", systemImage: "play.circle.fill")
+                    .font(.title)
             }
             .mainActionStyle()
             
-            // Current Choice Label
-            Text.styled(recalibrationChoice.rawValue.capitalized, as: .secondary, using: fontTheme, in: palette)
+            // Coundown Displayed
+            Text("⏱ \(viewModel.formattedTime)")
+                .font(.title2)
+                .bold()
+                .foregroundStyle(palette.text)
             
             // Instruction List
             ForEach(recalibrationChoice.instruction, id: \.self) { line in
                 Text.styled("• \(line)", as: .label, using: fontTheme, in: palette)
             }
             
-            // Coundown Displayed
-            Text.styled("Time Remaining: \(viewModel.timeRemaining.formatted()) sec", as: .label, using: fontTheme, in: palette)
-                .multilineTextAlignment(.center)
 
             // Conditional UI when finished
             if viewModel.phase == .finished {
-                Text.styled("Tap Back home", as: .secondary, using: fontTheme, in: palette)
-                Text.styled("Tap to post to social", as: .secondary, using: fontTheme, in: palette)
+                Text("✅ Done! Tap to go back")
+                    .foregroundColor(palette.text)
+                    .padding(.top, 8)
+                Text("Tap to post to social")
+                    .foregroundStyle(palette.text)
+                    .padding(.top, 8)
             }
             
             // Exit Button
-            Button(action: {
+            Button("Exit")  {
                 viewModel.stop()
-            }) {
-                Text("Exit")
             }
             .notMainActionStyle()
         }
@@ -73,9 +76,11 @@ struct RecalibrateV: View {
         .onAppear {
             viewModel.start(mode: recalibrationChoice)
         }
-        .background(palette.background)
-        .background(.ultraThinMaterial)
-        .cornerRadius(20)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(palette.background)
+                .shadow(color: palette.primary.opacity(0.2), radius: 10, x: 0, y: 4)
+        )
         .padding()
     }
 }

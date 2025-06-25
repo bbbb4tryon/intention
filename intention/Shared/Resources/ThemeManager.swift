@@ -7,12 +7,12 @@
 
 import SwiftUI
 
-final class AppThemeManager {
+final class ThemeManager: ObservableObject {
     @AppStorage("selectedColorTheme") private var colorRaw: String = AppColorTheme.default.rawValue
     @AppStorage("selectedFontTheme") private var fontRaw: String = AppFontTheme.serif.rawValue
     
     
-    static let shared = AppThemeManager()
+    static let shared = ThemeManager()
     
     var color: AppColorTheme {
         AppColorTheme(rawValue: colorRaw) ?? .default
