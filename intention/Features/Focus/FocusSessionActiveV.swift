@@ -128,14 +128,14 @@ struct FocusSessionActiveV: View {
     @AppStorage("colorTheme") private var colorTheme: AppColorTheme = .default
     @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
     @Environment(\.dismiss) var dismiss
-
+    
     @ObservedObject var viewModel: FocusSessionVM
     @ObservedObject var recalibrationVM: RecalibrationVM
     
     var body: some View {
-
+        
         let palette = colorTheme.colors(for: .homeActiveIntentions)
-
+        
         NavigationLink(destination: RecalibrateV(viewModel: recalibrationVM), isActive: $viewModel.showRecalibrate) { EmptyView()
         }.hidden()
         
@@ -164,7 +164,7 @@ struct FocusSessionActiveV: View {
                         Task {
                             do {
                                 if viewModel.tiles.count < 2 {      // Logic adding tiles
-                                        try await viewModel.addTileAndPrepareForSession()
+                                    try await viewModel.addTileAndPrepareForSession()
                                 } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { // Logic starting session
                                     try await viewModel.beginOverallSession()
                                 }
@@ -191,6 +191,8 @@ struct FocusSessionActiveV: View {
                     .buttonStyle(.borderedProminent)
                     .padding(.horizontal)
                 }
+                
+                
                 // MARK: Countdown Display (user-facing)
                 if viewModel.phase == .running || viewModel.phase == .finished {
                     Text.styled("\(viewModel.formattedTime)", as: .largeTitle, using: fontTheme, in: palette)
@@ -200,29 +202,30 @@ struct FocusSessionActiveV: View {
                     //FIXME: ModifiersFont+Style see the countdown style?
                 }
                 
-
+                
                 // MARK: - Dynamic Message and Action Area
                 DynamicMessageAndActionArea(
                     viewModel: viewModel,
                     fontTheme: fontTheme,
                     palette: palette,
                     onRecalibrateNow: {
-                    viewModel.showRecalibrate = true
-                })
-                  
+                        viewModel.showRecalibrate = true
+                    })
+                
                 Spacer()    // Pushes content away from bottom
+                
                 
                 // MARK: - Fixed-size List: Tile container
                 VStack(spacing: 8) {        // tile spacing
-                    ForEach(0..<2, id: \.self) { index in
+                    ForEach(slotData.indices, id: \.self) { index in
                         TileSlotView(
-                            tileText: index < viewModel.tiles.count ? viewModel.tiles[index].text : .nil,
+                            tileText: slotData[index],
                             palette: palette
-                            )
+                        )
                     }
+                    .padding(.horizontal)    // Padding for the ForEach content
                 }   // -VStack, tile container end
-                .padding(.horizontal)    // Padding for the ForEach content
-                .frame(height: 120)         // Fixed list height - (e.g., 2 tiles * ~50-60pt height each)
+                .frame(height: 140)         // Fixed list height - (e.g., 2 tiles * ~50-60pt height each)
                 .background(palette.background.opacity(0.8))
                 .cornerRadius(10)
                 .shadow(radius: 5)
@@ -237,6 +240,20 @@ struct FocusSessionActiveV: View {
                 RecalibrateV(viewModel: recalibrationVM) // FIXME: NEED recalibrationChoice: selectedChoice?
             }
         }   // -NavigationView end
+        
+    }
+    // MARK: - [String?, String?] ->
+    //  Extracted computed property, easier for compliler to parse
+    private var slotData: [String?] {
+        var data = [String?]()
+        for t in 0..<2 {
+            if t < viewModel.tiles.count {
+                data.append(viewModel.tiles[t].text)
+            } else {
+                data.append(nil)
+            }
+        }
+        return data
     }
 }
 

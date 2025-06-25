@@ -11,22 +11,22 @@ struct TileSlotView: View {
     let tileText: String?
     let palette: ScreenStylePalette
     
+    // Shows a container, so a Session has 2 slots pre-outlined
+    //  “empty” slot look (plus icon or nothing), and once filled, it gets populated.
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 8)
-                .stroke(palette.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
+                .strokeBorder(palette.accent, lineWidth: 2)
                 .frame(height: 50)
-                .background(palette.background.opacity(0.05))
+                .background(palette.background.opacity(0.2))
         }
             if let text = tileText {
                 Text(text)
                     .font(.body)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(palette.primary.opacity(0.1))
-                    .cornerRadius(8)
+                    .foregroundStyle(palette.accent.opacity(0.5))
             } else {
-            
+            Image(systemName: "plus.fill")
+                    .foregroundStyle(palette.accent.opacity(0.5))
         }
             
     }
