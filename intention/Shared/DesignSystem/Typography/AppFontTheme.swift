@@ -44,17 +44,6 @@ enum AppFontTheme: String, CaseIterable {
     }
 }
 
-
-//extension AppFontTheme {
-//    var font: Font {
-//        switch self {
-//        case .serif: return .system(.body, design: .serif)
-//        case .rounded: return .system(.body, design: .rounded)
-//        case .mono: return .system(.body, design: .monospaced)
-//        }
-//    }
-//}
-
 extension AppFontTheme {
     func toFont(_ style: Font.TextStyle) -> Font {
         switch self {

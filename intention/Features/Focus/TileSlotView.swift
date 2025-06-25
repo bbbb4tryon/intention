@@ -18,16 +18,15 @@ struct TileSlotView: View {
             RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(palette.accent, lineWidth: 2)
                 .frame(height: 50)
-                .background(palette.background.opacity(0.2))
-        }
+                .background(palette.background.opacity(0.2).clipShape(RoundedRectangle(cornerRadius: 8)))
             if let text = tileText {
                 Text(text)
                     .font(.body)
-                    .foregroundStyle(palette.accent.opacity(0.5))
+                    .foregroundStyle(palette.accent.opacity(0.8))
             } else {
-            Image(systemName: "plus.fill")
-                    .foregroundStyle(palette.accent.opacity(0.5))
-        }
-            
+            Image(systemName: "plus")
+                    .foregroundStyle(palette.accent.opacity(0.3))
+            }
+        }            
     }
 }

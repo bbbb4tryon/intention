@@ -11,44 +11,49 @@ import SwiftUI
 
 @MainActor
 final class HistoryVM: ObservableObject {
-    @Published var sessions: [[TileM]] = []
+    @Published var tileHistory: [String] = []
+    let maxCount = 24
 
     // AppStorage wrapper (private, not accessed directly from the view)
     // since `historyVM` is injected into `FocusSessionVM` at startup via `RootView`
-    //  the `FocusSessionVM` `func checkSessionCompletion()`'s `addSession(tiles)` method successfully archives each 2-tile session in:
+    //  the `FocusSessionVM` `func checkSessionCompletion()`'s `addSession(tiles)`
+    //  method successfully archives each 2-tile session in and survives app restarts:
     @AppStorage("tileHistoryData") private var tileHistoryData: Data = Data()
-
+    {   didSet  {   loadHistory()    }  }
+    
     init() {
         loadHistory()
     }
 
-    func addSession(_ tiles: [TileM]) {
-        guard !tiles.isEmpty else { return }
-        sessions.append(tiles)
-        saveHistory()
-    }
-
-    func clearHistory() {
-        sessions = []
-        tileHistoryData = Data() // clear storage
-    }
-
     private func saveHistory() {
         do {
-            let encoded = try JSONEncoder().encode(sessions)
+            let encoded = try JSONEncoder().encode(tileHistory)
             tileHistoryData = encoded
         } catch {
-            print("Failed to encode session history: \(error)")
+            debugPrint("HistoryVM: Failed to encode history")
         }
     }
-
-    private func loadHistory() {
+    
+    private func loadHistory()  {
         guard !tileHistoryData.isEmpty else { return }
         do {
-            let decoded = try JSONDecoder().decode([[TileM]].self, from: tileHistoryData)
-            sessions = decoded
+            tileHistory = try JSONDecoder().decode([String].self, from: tileHistoryData)
         } catch {
-            print("Failed to decode session history: \(error)")
+            debugPrint("HistoryVM: Failed to decode history")
         }
+    }
+    
+    func addToHistory(_ newTile: String){
+        tileHistory.insert(newTile, at: 0)  // "capped FIFO" add to top (ascending)
+        if tileHistory.count > maxCount {
+            tileHistory.removeLast()        // drop oldest if over 24
+        }
+        saveHistory()                       // saveHistory() is inside addToHistory() to persist automatically
+    }
+
+
+    func clearHistory() {
+        tileHistory = []
+        tileHistoryData = Data() // clear storage
     }
 }

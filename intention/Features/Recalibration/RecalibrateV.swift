@@ -21,7 +21,10 @@ struct RecalibrateV: View {
         
         VStack(spacing: 24) {
             // Header
-            Text.styled("Recalibrate", as: .header, using: fontTheme, in: palette)
+//            Text.styled("Recalibrate", as: .header, using: fontTheme, in: palette)
+            Label("Recalibrate", systemImage: recalibrationChoice.imageName) // image and text
+                .font(fontTheme.largeTitle)
+                .foregroundStyle(palette.primary)
             
             // Picker
             Picker("Method", selection: $recalibrationChoice) {

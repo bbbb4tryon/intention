@@ -124,7 +124,6 @@ final class FocusSessionVM: ObservableObject {
     func beginOverallSession() async throws {
         guard tiles.count == 2 && phase == .notStarted else {
             throw FocusSessionError.badTrigger_Overall
-            return
         }
         debugPrint("User pressed Begin, overall session and 1st chuck started.")
         await tileAppendTrigger.startSessionTracking()
@@ -138,8 +137,12 @@ final class FocusSessionVM: ObservableObject {
             sessionActive = false       // 40-min overall session done
             showRecalibrate = true      // modal
             debugPrint("Recalibration choice modal should display")
-            historyVM?.addSession(tiles)    // save session to history - addSession(_:) in `HistoryVM` appends and persists to `AppStorage`
-            debugPrint("New session is present in HistoryV?")
+            // MARK: - bounded tile history call
+            //  saves each tile to the flat 24-tile history list
+            //  NOTE: is not `historyVM?.addToHistory(tiles[0].text)` to avoid out-of-range crashes
+            for tile in tiles.prefix(2){
+                historyVM?.addToHistory(tile.text)
+            }
             // NOTE: - Don't reset actor for new session here - user will on modal
         } else {
             print("""
@@ -193,6 +196,8 @@ final class FocusSessionVM: ObservableObject {
         await tileAppendTrigger.resetSessionTracking() // Reset the actor's state too
         debugPrint("ViewModel state reset for a new session.")
     }
+    
+    
 }
 
 
