@@ -8,8 +8,7 @@
 import SwiftUI
 
 struct RecalibrateV: View {
-    @AppStorage("colorTheme") private var colorTheme: AppColorTheme = .default
-    @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
+    @EnvironmentObject var theme: ThemeManager
     @ObservedObject var viewModel: RecalibrationVM
     @State private var recalibrationChoice: RecalibrationTheme = .breathing
         
@@ -17,20 +16,22 @@ struct RecalibrateV: View {
         
     var body: some View {
         
-        let palette = colorTheme.colors(for: .recalibrate)
+        let palette = theme.palette(for: .recalibrate)
+        theme.styledText("Recalibrate", as: .header, in: .recalibrate)
         
         VStack(spacing: 24) {
             // Header
 //            Text.styled("Recalibrate", as: .header, using: fontTheme, in: palette)
             Label("Recalibrate", systemImage: recalibrationChoice.imageName) // image and text
-                .font(fontTheme.largeTitle)
+                .font(.largeTitle)
                 .foregroundStyle(palette.primary)
             
             // Picker
             Picker("Method", selection: $recalibrationChoice) {
                 ForEach(RecalibrationTheme.allCases, id: \.self) { theme in
-                    Text.styled("\(theme.displayName)", as: .label, using: fontTheme, in: palette)
-                            .tag(theme)
+                    Text("\(theme.displayName)")
+                        .font(.caption)
+                        .tag(theme)
                 }
             }
             .pickerStyle(SegmentedPickerStyle())
@@ -52,7 +53,7 @@ struct RecalibrateV: View {
             
             // Instruction List
             ForEach(recalibrationChoice.instruction, id: \.self) { line in
-                Text.styled("• \(line)", as: .label, using: fontTheme, in: palette)
+                Text("• \(line)")
             }
             
 
@@ -86,5 +87,6 @@ struct RecalibrateV: View {
 }
 #Preview {
     RecalibrateV(viewModel: RecalibrationVM())
+        .previewTheme()
 }
 

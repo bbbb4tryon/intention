@@ -125,16 +125,16 @@ enum ActiveSessionError: Error, Equatable {
 }
 
 struct FocusSessionActiveV: View {
-    @AppStorage("colorTheme") private var colorTheme: AppColorTheme = .default
-    @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
+    @EnvironmentObject var theme: ThemeManager
     @Environment(\.dismiss) var dismiss
     
     @ObservedObject var viewModel: FocusSessionVM
     @ObservedObject var recalibrationVM: RecalibrationVM
     
     var body: some View {
-        
-        let palette = colorTheme.colors(for: .homeActiveIntentions)
+
+        let palette = theme.palette(for: .homeActiveIntentions)
+        theme.styledText("Home - Active Intentions", as: .header, in: .homeActiveIntentions)
         
         NavigationLink(destination: RecalibrateV(viewModel: recalibrationVM), isActive: $viewModel.showRecalibrate) { EmptyView()
         }.hidden()
@@ -144,8 +144,9 @@ struct FocusSessionActiveV: View {
                 //                    Helper_AppIconV()
                 //                        .clipShape(Circle())
                 //                        .glow(color: .intTan, radius: 12)
-                Text.styled("Intention, Tracked", as: .header, using: fontTheme, in: palette)
-                    .font(.largeTitle).bold()
+                Text("Intention, Tracked")
+                    .font(.largeTitle)
+                    .bold()
                     .padding(.bottom, 10)
                 
                 Spacer()    // pushes content towards center-top
@@ -195,10 +196,13 @@ struct FocusSessionActiveV: View {
                 
                 // MARK: Countdown Display (user-facing)
                 if viewModel.phase == .running || viewModel.phase == .finished {
-                    Text.styled("\(viewModel.formattedTime)", as: .largeTitle, using: fontTheme, in: palette)
+                    Text("\(viewModel.formattedTime)")
                         .font(.system(size: 80, weight: .bold, design: .monospaced)) // Explicit: fixed-width font
                         .id("countdownTimer") // Use an ID to ensure smooth updates
                         .transition(.opacity) // Smooth transition if it appears/disappears
+                        .font(.title2)
+                        .bold()
+                        .foregroundStyle(palette.text)
                     //FIXME: ModifiersFont+Style see the countdown style?
                 }
                 
@@ -206,8 +210,8 @@ struct FocusSessionActiveV: View {
                 // MARK: - Dynamic Message and Action Area
                 DynamicMessageAndActionArea(
                     viewModel: viewModel,
-                    fontTheme: fontTheme,
-                    palette: palette,
+                    fontTheme: theme.fontTheme, // passing in fontTheme property
+                    palette: theme.palette(for: .homeActiveIntentions),
                     onRecalibrateNow: {
                         viewModel.showRecalibrate = true
                     })
@@ -264,6 +268,7 @@ struct FocusSessionActiveV: View {
     let focus = FocusSessionVM()
     let recal = RecalibrationVM()
     FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+        .previewTheme()
 }
 //#Preview("After 1st Tile Added") {
 //    // State: First tile added, ready for second
@@ -280,6 +285,7 @@ struct FocusSessionActiveV: View {
 //    viewModel.canAdd = false // Cannot add more
 //    viewModel.phase = .notStarted // No countdown running yet
 //    return FocusSessionActiveV(viewModel: viewModel)
+//      .previewTheme()
 //}
 //
 //#Preview("1st Chunk Running") {
@@ -291,6 +297,7 @@ struct FocusSessionActiveV: View {
 //    viewModel.countdownRemaining = 600 // 10 minutes left
 //    viewModel.currentSessionChunk = 0 // Still on the first chunk
 //    return FocusSessionActiveV(viewModel: viewModel)
+//              .previewTheme()
 //}
 //
 //#Preview("1st Chunk Completed - Prompt for 2nd") {
@@ -302,6 +309,7 @@ struct FocusSessionActiveV: View {
 //    viewModel.countdownRemaining = 0 // Timer hit zero
 //    viewModel.currentSessionChunk = 1 // Moved to next chunk
 //    return FocusSessionActiveV(viewModel: viewModel)
+//              .previewTheme()
 //}
 //
 //#Preview("2nd Chunk Running"){
@@ -313,6 +321,7 @@ struct FocusSessionActiveV: View {
 //    viewModel.countdownRemaining = 300 // 5 minutes left
 //    viewModel.currentSessionChunk = 1 // Second chunk in progress
 //    return FocusSessionActiveV(viewModel: viewModel)
+//              .previewTheme()
 //}
 //
 //#Preview("Session Complete - Recalibrate Prompt"){
@@ -325,4 +334,5 @@ struct FocusSessionActiveV: View {
 //    viewModel.currentSessionChunk = 2 // Both chunks completed
 //    viewModel.showRecalibrate = true // Trigger recalibration modal
 //    return FocusSessionActiveV(viewModel: viewModel)
+//              .previewTheme()
 //}

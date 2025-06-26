@@ -10,16 +10,15 @@ import SwiftUI
 // configuration, toggles, preferences
 
 struct SettingsV: View {
-    @AppStorage("colorTheme") private var colorTheme: AppColorTheme = .default
-    @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
+    @EnvironmentObject var theme: ThemeManager
     
     var body: some View {
         //        FixedHeaderLayoutV {
         //            Text.pageTitle("Settings")
         //        } content: {
+        let palette = theme.palette(for: .settings)
+        theme.styledText("Settings", as: .header, in: .settings)
         
-        
-        let palette = colorTheme.colors(for: .settings)
         NavigationView {
             Form {
                 Section(header: Text("Preferences")) {
@@ -33,7 +32,7 @@ struct SettingsV: View {
                 .tint(.intMint)     // toggle color
                 
                 Section(header: Text("App Color Theme")) {
-                    Picker("Color Theme", selection: $colorTheme) {
+                    Picker("Color Theme", selection: $theme.colorTheme) {
                         ForEach(AppColorTheme.allCases, id: \.self) { theme in
                             Text(theme.displayName).tag(theme)
                         }
@@ -41,7 +40,7 @@ struct SettingsV: View {
                     .pickerStyle(SegmentedPickerStyle())
                 }
                 Section(header: Text("Font Style")) {
-                    Picker("Font Choice", selection: $fontTheme) {
+                    Picker("Font Choice", selection: $theme.fontTheme) {
                         ForEach(AppFontTheme.allCases, id: \.self) { theme in
                             Text(theme.displayName).tag(theme)
                         }
@@ -57,6 +56,7 @@ struct SettingsV: View {
 struct SettingsV_Previews: PreviewProvider  {
     static var previews: some View {
         SettingsV()
+            .previewTheme()
     }
 }
 

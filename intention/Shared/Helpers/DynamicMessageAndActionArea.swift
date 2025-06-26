@@ -18,7 +18,7 @@ struct DynamicMessageAndActionArea: View {
     
     var body: some View {
         
-        VStack(spacing: 15){
+        VStack(spacing: 24){
             if viewModel.showRecalibrate {
                 recalibrationPromptView
             } else if viewModel.tiles.count == 2 && viewModel.currentSessionChunk == 1 && viewModel.phase == .finished {
@@ -31,24 +31,25 @@ struct DynamicMessageAndActionArea: View {
                 addIntentionPromptView
                 
             } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted {
-                
                 beginSessionPromptView
+                
             }
         }   // End of Message and Action Area
-        .padding(.horizontal)   // Padding for entire section
-        .animation(.default, value: viewModel.phase) // Animate phase changes
-        .animation(.default, value: viewModel.tiles.count) // Animate tile count changes
+        .padding()   // Padding for entire section
+        .animation(.easeInOut, value: viewModel.phase) // Animate phase changes
+        .animation(.easeInOut, value: viewModel.tiles.count) // Animate tile count changes
         
     }
     
     private var recalibrationPromptView: some View {
-        VStack {
-            Text.styled("Session complete! Ready for recalibration?", as: .header, using: fontTheme, in: palette)
+        VStack(spacing: 12){
+            Text("Session complete! Ready for recalibration?")
+                .font(fontTheme.toFont(.largeTitle))
+                .foregroundStyle(palette.primary)
                 .multilineTextAlignment(.center)
-                .padding(.bottom, 10)
-            // if yes, send to recalibration; if no, send back to text input screen
             
-            HStack {
+            HStack(spacing: 20) {
+                // if yes, send to recalibration; if no, send back to text input screen
                 Button("Recalibrate Now"){  // <- button acknowledges prompt; sheet presented logic at bottom of FocusSessionActiveV
                     onRecalibrateNow()
                     debugPrint("Recalibrate model presented?")
@@ -67,18 +68,17 @@ struct DynamicMessageAndActionArea: View {
     private var firstChunkCompletedView: some View {
         VStack {
             // State: First 20-min chunk completed, Overall Session paused
-            Text.styled("Completed the first intended item!", as: .header, using: fontTheme, in: palette)
+            Text("Completed the first intended item!")
+                .font(fontTheme.toFont(.title2))
+                .foregroundStyle(palette.primary)
                 .multilineTextAlignment(.center)
-                .padding(.bottom, 5)
             
             Text("Ready to focus on your next intention for 20 minutes?")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(fontTheme.toFont(.subheadline))
+                .foregroundStyle(palette.accent)
                 .multilineTextAlignment(.center)
-                .padding(.bottom, 10)
             
-            Button("Start Next Intention")
-            {
+            Button("Start Next Intention")  {
                 viewModel.showRecalibrate = false   // Dismisses the sheet
                 Task {
                     guard ((try? await viewModel.startCurrent20MinCountdown()) != nil) else {
@@ -87,7 +87,8 @@ struct DynamicMessageAndActionArea: View {
                 }
                 debugPrint("NextIntention button pressed.")
                 print("`Start Next Intention` button pressed")
-            }.mainActionStyle()
+            }
+            .mainActionStyle()
             
             
             Button("End Session Early") {
@@ -107,21 +108,23 @@ struct DynamicMessageAndActionArea: View {
     
     private var sessionInProgressView: some View {
         Text("Session in progress...")
-            .foregroundStyle(.gray)
+            .font(fontTheme.toFont(.subheadline))
+            .foregroundStyle(palette.accent)
+            .multilineTextAlignment(.center)
             .animation(.easeInOut.delay(0.1))
     }
     private var addIntentionPromptView: some View {
         // Initial state:   0 or 1 tile added only
         Text("Add your first (or second) intention above")
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            .font(fontTheme.toFont(.caption))
+            .foregroundStyle(palette.accent)
             .multilineTextAlignment(.center)
         
     }
     private var beginSessionPromptView: some View {
         Text("Enter Your Intention and Press `\(viewModel.tiles.count < 2 ? "Add" : "Begin")`")
-            .font(.caption)
-            .foregroundStyle(.gray)
+            .font(fontTheme.toFont(.caption))
+            .foregroundStyle(palette.accent)
             .multilineTextAlignment(.center)
     }
 }

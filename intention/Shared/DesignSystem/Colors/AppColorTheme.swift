@@ -4,21 +4,21 @@
 //
 //  Created by Benjamin Tryon on 6/12/25.
 //
-
-import SwiftUI
-
-// Global palette
-enum AppColorTheme: String, CaseIterable {
-    case `default`, sea, fire
-    
-    var displayName: String {
-        switch self {
-        case .default: return "Default"
-        case .sea: return "Sea"
-        case .fire: return "Fire"
-        }
-    }
-}
+//
+//import SwiftUI
+//
+//// Global palette
+//enum AppColorTheme: String, CaseIterable {
+//    case `default`, sea, fire
+//    
+//    var displayName: String {
+//        switch self {
+//        case .default: return "Default"
+//        case .sea: return "Sea"
+//        case .fire: return "Fire"
+//        }
+//    }
+//}
 
 /* NOTE: default color:
  int_brown    #A29877    Serious, grounded — titles, text, nav

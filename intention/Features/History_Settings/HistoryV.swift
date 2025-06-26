@@ -8,15 +8,14 @@
 import SwiftUI
 
 struct HistoryV: View {
-    @AppStorage("colorTheme") private var colorTheme: AppColorTheme = .default
-    @AppStorage("fontTheme") private var fontTheme: AppFontTheme = .serif
+    @EnvironmentObject var theme: ThemeManager
     
     @ObservedObject var viewModel: HistoryVM
     
     var body: some View {
         
-        let palette = colorTheme.colors(for: .history)
-        
+        let palette = theme.palette(for:.history)
+        theme.styledText("History", as: .header, in: .history)
         NavigationView {
             //        FixedHeaderLayoutV {
             //            Text.pageTitle("History")
@@ -39,7 +38,7 @@ struct HistoryV: View {
             }
             .navigationTitle("History")
             .padding()
-            .font(fontTheme.toFont(.title3))    // default body styling
+            .font(theme.fontTheme.toFont(.title3))    // default body styling
             .foregroundStyle(palette.text)
             .background(palette.background.ignoresSafeArea())
         }
@@ -62,6 +61,7 @@ struct HistoryV: View {
     vm.addToHistory("Mock 1")
     vm.addToHistory("Mock 2")
     return HistoryV(viewModel: vm)
+        .previewTheme()
 }
 /*
  Background: .intMint (or intTan)

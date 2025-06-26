@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct RootView: View {
+//    @EnvironmentObject var theme: ThemeManager
     // ViewModel is the source of truth
     @StateObject private var historyVM = HistoryVM()
     @StateObject private var focusVM = FocusSessionVM()
@@ -38,4 +39,5 @@ struct RootView: View {
 
 #Preview {
     RootView()
+//        .previewTheme()
 }

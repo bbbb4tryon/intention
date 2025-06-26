@@ -4,54 +4,54 @@
 
 // Centralized semantic text styling
 
-import SwiftUI
-
-// MARK: - Semantic Roles for Text Styling
-enum TextRole {
-    case header
-    case section
-    case label
-    case tile
-    case body
-    case caption
-    case secondary
-    case action
-    case largeTitle
-}
-
-// MARK: - Text Extension for Semantic Styling
-extension Text {
-    static func styled(
-        _ content: String,
-        as role: TextRole,
-        using font: AppFontTheme,
-        in palette: ScreenStylePalette
-    ) -> some View {
-        Text(content)
-            .font(font.toFont(Self.fontStyle(for: role)))
-            .foregroundStyle(Self.color(for: role, palette: palette))
-    }
-
-    private static func fontStyle(for role: TextRole) -> Font.TextStyle {
-        switch role {
-        case .header: return .largeTitle
-        case .section: return .title2
-        case .label, .tile: return .body
-        case .body: return .body
-        case .caption: return .caption
-        case .secondary: return .subheadline
-        case .action: return .headline
-        case .largeTitle: return .largeTitle
-        }
-    }
-
-    private static func color(for role: TextRole, palette: ScreenStylePalette) -> Color {
-        switch role {
-        case .header, .section, .body, .tile: return palette.text
-        case .secondary, .caption: return palette.accent
-        case .label: return palette.primary
-        case .action: return palette.accent
-        case .largeTitle: return palette.text
-        }
-    }
-}
+//import SwiftUI
+//
+//// MARK: - Semantic Roles for Text Styling
+//enum TextRole {
+//    case header
+//    case section
+//    case label
+//    case tile
+//    case body
+//    case caption
+//    case secondary
+//    case action
+//    case largeTitle
+//}
+//
+//// MARK: - Text Extension for Semantic Styling
+//extension Text {
+//    static func styled(
+//        _ content: String,
+//        as role: TextRole,
+//        using font: AppFontTheme,
+//        in palette: ScreenStylePalette
+//    ) -> some View {
+//        Text(content)
+//            .font(font.toFont(Self.fontStyle(for: role)))
+//            .foregroundStyle(Self.color(for: role, palette: palette))
+//    }
+//
+//    private static func fontStyle(for role: TextRole) -> Font.TextStyle {
+//        switch role {
+//        case .header: return .largeTitle
+//        case .section: return .title2
+//        case .label, .tile: return .body
+//        case .body: return .body
+//        case .caption: return .caption
+//        case .secondary: return .subheadline
+//        case .action: return .headline
+//        case .largeTitle: return .largeTitle
+//        }
+//    }
+//
+//    private static func color(for role: TextRole, palette: ScreenStylePalette) -> Color {
+//        switch role {
+//        case .header, .section, .body, .tile: return palette.text
+//        case .secondary, .caption: return palette.accent
+//        case .label: return palette.primary
+//        case .action: return palette.accent
+//        case .largeTitle: return palette.text
+//        }
+//    }
+//}

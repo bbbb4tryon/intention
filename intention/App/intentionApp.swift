@@ -9,9 +9,13 @@ import SwiftUI
 
 @main
 struct intentionApp: App {
+    // Theme is the source of truth - and remains here, not in RootView itself
+    @StateObject var theme = ThemeManager()
+    
     var body: some Scene {
         WindowGroup {
             RootView()
+                .environmentObject(theme)
         }
     }
 }
