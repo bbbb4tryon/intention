@@ -133,7 +133,7 @@ final class FocusSessionVM: ObservableObject {
         debugPrint("User pressed Begin, overall session and 1st chuck started.")
         await tileAppendTrigger.startSessionTracking()
         sessionActive = true        // Overall session activated
-        startCurrent20MinCountdown()    // First Chunk started
+        try! startCurrent20MinCountdown()    // First Chunk started, try! disables error propagation
     }
     
     // MARK: - Chunks session completion logic

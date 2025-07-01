@@ -65,9 +65,9 @@ struct DynamicMessageAndActionArea: View {
                 }.mainActionStyle(screen: .homeActiveIntentions)
                 
                 Button("Start a new session"){
-//                    viewModel.showRecalibrate = false   // Dismiss the sheet
-//                    // Reset VM and clear tiles
-//                    Task {  await viewModel.resetSessionStateForNewStart()  }
+                    //                    viewModel.showRecalibrate = false   // Dismiss the sheet
+                    //                    // Reset VM and clear tiles
+                    //                    Task {  await viewModel.resetSessionStateForNewStart()  }
                     viewModel.performAsyncAction {
                         viewModel.showRecalibrate = false
                         try viewModel.startCurrent20MinCountdown()
@@ -105,39 +105,35 @@ struct DynamicMessageAndActionArea: View {
             
             
             Button("End Session Early") {
-                Task {
-                    guard ((try? await viewModel.resetSessionStateForNewStart()) != nil) else {
-                        throw ActiveSessionError.submitFailed
-                    }
+                viewModel.performAsyncAction {
+                    try await viewModel.resetSessionStateForNewStart()
                 }
-                debugPrint("EndSession button pressed, User ended session early.")
-                print("Session ended early.")
             }
             .buttonStyle(.bordered)
             .foregroundStyle(.red)
             .tint(.red)
         }
     }
-    
-    private var sessionInProgressView: some View {
-        Text("Session in progress...")
-            .font(fontTheme.toFont(.subheadline))
-            .foregroundStyle(palette.accent)
-            .multilineTextAlignment(.center)
-            .animation(.easeInOut.delay(0.1))
-    }
-    private var addIntentionPromptView: some View {
-        // Initial state:   0 or 1 tile added only
-        Text("Add your first (or second) intention above")
-            .font(fontTheme.toFont(.caption))
-            .foregroundStyle(palette.accent)
-            .multilineTextAlignment(.center)
         
-    }
-    private var beginSessionPromptView: some View {
-        Text("Enter Your Intention and Press `\(viewModel.tiles.count < 2 ? "Add" : "Begin")`")
-            .font(fontTheme.toFont(.caption))
-            .foregroundStyle(palette.accent)
-            .multilineTextAlignment(.center)
-    }
+        private var sessionInProgressView: some View {
+            Text("Session in progress...")
+                .font(fontTheme.toFont(.subheadline))
+                .foregroundStyle(palette.accent)
+                .multilineTextAlignment(.center)
+                .animation(.easeInOut.delay(0.1))
+        }
+        private var addIntentionPromptView: some View {
+            // Initial state:   0 or 1 tile added only
+            Text("Add your first (or second) intention above")
+                .font(fontTheme.toFont(.caption))
+                .foregroundStyle(palette.accent)
+                .multilineTextAlignment(.center)
+            
+        }
+        private var beginSessionPromptView: some View {
+            Text("Enter Your Intention and Press `\(viewModel.tiles.count < 2 ? "Add" : "Begin")`")
+                .font(fontTheme.toFont(.caption))
+                .foregroundStyle(palette.accent)
+                .multilineTextAlignment(.center)
+        }
 }

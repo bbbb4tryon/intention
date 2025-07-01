@@ -14,7 +14,7 @@ struct ErrorOverlay: View {
     var body: some View {
         VStack(spacing: 12) {
             
-            Text("Something went wrong ⚠")
+            Text("⚠️ Something went wrong")
                 .font(.title2)
                 .bold()
             Text(error.localizedDescription)
