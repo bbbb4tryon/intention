@@ -208,7 +208,19 @@ final class FocusSessionVM: ObservableObject {
     }
     
     
+    // MARK: performAsyncAction()
+    func performAsyncAction(_ action: @escaping () async throws -> Void) {
+        Task {
+            do {
+                try await action()
+            } catch {
+                debugPrint("FocusSessionVM error: \(error)")
+                self.lastError = error  // Save for UI overlay
+            }
+        }
+    }
 }
+
 
 
 

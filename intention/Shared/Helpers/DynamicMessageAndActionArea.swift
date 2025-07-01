@@ -65,10 +65,14 @@ struct DynamicMessageAndActionArea: View {
                 }.mainActionStyle(screen: .homeActiveIntentions)
                 
                 Button("Start a new session"){
-                    viewModel.showRecalibrate = false   // Dismiss the sheet
-                    // Reset VM and clear tiles
-                    Task {  await viewModel.resetSessionStateForNewStart()  }
-                }.notMainActionStyle(screen: .homeActiveIntentions)
+//                    viewModel.showRecalibrate = false   // Dismiss the sheet
+//                    // Reset VM and clear tiles
+//                    Task {  await viewModel.resetSessionStateForNewStart()  }
+                    viewModel.performAsyncAction {
+                        viewModel.showRecalibrate = false
+                        try viewModel.startCurrent20MinCountdown()
+                    }
+                }.mainActionStyle(screen: .homeActiveIntentions)
             }
         }
         .padding()
