@@ -8,8 +8,13 @@
 import SwiftUI
 
 // All components are colocated HERE
+/* NOTE: adjusting colors:
+    lighten: example of background property was deep blue
+ - adjust `background` property within `ScreenStylePalette` for each `ScreenName` in the `.sea` case
+ */
 // MARK: - ThemeManager (Environmental Object)
 final class ThemeManager: ObservableObject {
+    //  Keep @AppStorage for write-backs
     @AppStorage("selectedColorTheme") private var colorRaw: String = AppColorTheme.default.rawValue
     @AppStorage("selectedFontTheme") private var fontRaw: String = AppFontTheme.serif.rawValue
     
@@ -21,6 +26,7 @@ final class ThemeManager: ObservableObject {
         didSet {    fontRaw = fontTheme.rawValue    }
     }
     
+    // Use a static helper, gets the AppStorage values without touching `self` in `init`
     init()  {
         // Reading from UserDefaults directly - it is what @AppStorage abstracts under the hood
         let storedColor = UserDefaults.standard.string(forKey: "selectedColorTheme") ?? AppColorTheme.default.rawValue
@@ -91,18 +97,18 @@ enum AppColorTheme: String, CaseIterable {
             }
         case .sea:
             switch screen {
-            case .homeActiveIntentions: return .init(primary: .teal, background: .mint.opacity(0.15), accent: .cyan, text: .blue)
-            case .history: return .init(primary: .mint, background: .mint.opacity(0.15), accent: .cyan.opacity(0.4), text: .teal)
-            case .settings: return .init(primary: .teal, background: .mint.opacity(0.2), accent: .cyan.opacity(0.5), text: .teal)
-            case .recalibrate: return .init(primary: .indigo, background: .teal.opacity(0.2), accent: .mint.opacity(0.6), text: .cyan)
-            }
+                       case .homeActiveIntentions: return .init(primary: Color(red: 0.0, green: 0.2, blue: 0.8), background: Color(red: 0.0, green: 0.1, blue: 0.3), accent: Color(red: 0.2, green: 0.6, blue: 0.9), text: Color(red: 0.8, green: 0.9, blue: 1.0))
+                       case .history: return .init(primary: Color(red: 0.1, green: 0.4, blue: 0.7), background: Color(red: 0.0, green: 0.15, blue: 0.35), accent: Color(red: 0.4, green: 0.8, blue: 1.0), text: Color(red: 0.7, green: 0.8, blue: 0.9))
+                       case .settings: return .init(primary: Color(red: 0.0, green: 0.3, blue: 0.6), background: Color(red: 0.0, green: 0.1, blue: 0.4), accent: Color(red: 0.3, green: 0.7, blue: 1.0), text: Color(red: 0.8, green: 0.9, blue: 1.0))
+                       case .recalibrate: return .init(primary: Color(red: 0.0, green: 0.1, blue: 0.2), background: Color(red: 0.0, green: 0.3, blue: 0.6).opacity(0.8), accent: Color(red: 0.6, green: 0.9, blue: 1.0), text: .white)
+                       }
         case .fire:
             switch screen {
-            case .homeActiveIntentions: return .init(primary: .orange, background: .pink.opacity(0.1), accent: .red.opacity(0.6), text: .brown)
-            case .history: return .init(primary: .orange, background: .pink.opacity(0.15), accent: .red.opacity(0.5), text: .brown)
-            case .settings: return .init(primary: .orange, background: .pink.opacity(0.05), accent: .red.opacity(0.4), text: .brown)
-            case .recalibrate: return .init(primary: .black.opacity(0.85), background: .red, accent: .orange.opacity(0.3), text: .white)
-            }
+                       case .homeActiveIntentions: return .init(primary: Color(red: 0.8, green: 0.2, blue: 0.0), background: Color(red: 0.2, green: 0.0, blue: 0.0), accent: Color(red: 1.0, green: 0.5, blue: 0.0), text: Color(red: 1.0, green: 0.8, blue: 0.6))
+                       case .history: return .init(primary: Color(red: 0.7, green: 0.3, blue: 0.0), background: Color(red: 0.3, green: 0.0, blue: 0.0), accent: Color(red: 1.0, green: 0.6, blue: 0.0), text: Color(red: 1.0, green: 0.9, blue: 0.7))
+                       case .settings: return .init(primary: Color(red: 0.9, green: 0.1, blue: 0.0), background: Color(red: 0.1, green: 0.0, blue: 0.0), accent: Color(red: 1.0, green: 0.4, blue: 0.0), text: Color(red: 1.0, green: 0.7, blue: 0.5))
+                       case .recalibrate: return .init(primary: .black, background: Color(red: 0.6, green: 0.0, blue: 0.0), accent: Color(red: 1.0, green: 0.7, blue: 0.0), text: .white)
+                       }
         }
     }
 }

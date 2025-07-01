@@ -17,7 +17,6 @@ struct RecalibrateV: View {
     var body: some View {
         
         let palette = theme.palette(for: .recalibrate)
-        theme.styledText("Recalibrate", as: .header, in: .recalibrate)
         
         VStack(spacing: 24) {
             // Header
@@ -43,7 +42,8 @@ struct RecalibrateV: View {
                 Label("Begin", systemImage: "play.circle.fill")
                     .font(.title)
             }
-            .mainActionStyle()
+            .mainActionStyle(screen: .recalibrate)
+            .environmentObject(theme)
             
             // Coundown Displayed
             Text("⏱ \(viewModel.formattedTime)")
@@ -71,7 +71,8 @@ struct RecalibrateV: View {
             Button("Exit")  {
                 viewModel.stop()
             }
-            .notMainActionStyle()
+            .notMainActionStyle(screen: .recalibrate)
+            .environmentObject(theme)
         }
         .padding()
         .onAppear {

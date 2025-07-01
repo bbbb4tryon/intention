@@ -15,8 +15,8 @@ struct HistoryV: View {
     var body: some View {
         
         let palette = theme.palette(for:.history)
-        theme.styledText("History", as: .header, in: .history)
-        NavigationView {
+
+        VStack {
             //        FixedHeaderLayoutV {
             //            Text.pageTitle("History")
             
@@ -24,19 +24,17 @@ struct HistoryV: View {
                 ScrollView {
                     VStack(spacing: 8) {
                         ForEach(paddedHistorySlots.indices, id: \.self) { index in
-                            TileSlotView(tileText: paddedHistorySlots[index], palette: palette)
+                            TileSlotView(tileText: paddedHistorySlots[index])
+                                .environmentObject(theme)
                                 .frame(maxWidth: .infinity)     // stretch tiles evenly
                         }
                     }
                 }
                 .padding()
-            } header: {
-                Text("History")
             }
             footer: {
                 Text("Pull to refresh, scroll to review")
             }
-            .navigationTitle("History")
             .padding()
             .font(theme.fontTheme.toFont(.title3))    // default body styling
             .foregroundStyle(palette.text)

@@ -11,11 +11,16 @@ import SwiftUI
 //    var foregroundColor: Color { }
 //}
 struct ButtonConfig_Style: ButtonStyle {
-    var color: Color = .intGreen
+    @EnvironmentObject var theme: ThemeManager
+    var screen: ScreenName
+    var isMain: Bool
     
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.headline)
+        let palette = theme.palette(for: screen)
+        let color = isMain ? palette.accent : palette.primary
+        
+        return configuration.label
+            .font(theme.fontTheme.toFont(.headline))
             .padding()
             .background(color)
             .foregroundStyle(.white)
@@ -26,11 +31,11 @@ struct ButtonConfig_Style: ButtonStyle {
 }
 
 extension Button {
-    func mainActionStyle() -> some View {
-        self.buttonStyle(ButtonConfig_Style(color: .intGreen))
+    func mainActionStyle(screen: ScreenName) -> some View {
+        self.buttonStyle(ButtonConfig_Style(screen: screen, isMain: true))
     }
     
-    func notMainActionStyle() -> some View {
-        self.buttonStyle(ButtonConfig_Style(color: .intMoss))
+    func notMainActionStyle(screen: ScreenName) -> some View {
+        self.buttonStyle(ButtonConfig_Style(screen: screen, isMain: false))
     }
 }

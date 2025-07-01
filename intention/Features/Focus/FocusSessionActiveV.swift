@@ -132,14 +132,13 @@ struct FocusSessionActiveV: View {
     @ObservedObject var recalibrationVM: RecalibrationVM
     
     var body: some View {
-
+        // Get current palette for the appropriate sceen
         let palette = theme.palette(for: .homeActiveIntentions)
-        theme.styledText("Home - Active Intentions", as: .header, in: .homeActiveIntentions)
         
         NavigationLink(destination: RecalibrateV(viewModel: recalibrationVM), isActive: $viewModel.showRecalibrate) { EmptyView()
         }.hidden()
         
-        NavigationView {
+//        NavigationView {
             VStack(spacing: 20){
                 //                    Helper_AppIconV()
                 //                        .clipShape(Circle())
@@ -186,7 +185,8 @@ struct FocusSessionActiveV: View {
                             .padding(.vertical,8)
                             .frame(maxWidth: .infinity)
                     }
-                    .mainActionStyle()
+                    .mainActionStyle(screen: .homeActiveIntentions)
+                    .environmentObject(theme)
                     // Disable if empty, or 2 tiles already aadded
                     .disabled(viewModel.tiles.count < 2 && viewModel.tileText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .buttonStyle(.borderedProminent)
@@ -224,7 +224,6 @@ struct FocusSessionActiveV: View {
                     ForEach(slotData.indices, id: \.self) { index in
                         TileSlotView(
                             tileText: slotData[index],
-                            palette: palette
                         )
                     }
                     .padding(.horizontal)    // Padding for the ForEach content
@@ -239,11 +238,11 @@ struct FocusSessionActiveV: View {
             }      // -VStack, primary end
             
             .background(palette.background.ignoresSafeArea())
-            .navigationTitle("")    // Hides default navigation title
+//            .navigationTitle("")    // Hides default navigation title
             .sheet(isPresented: $viewModel.showRecalibrate){
                 RecalibrateV(viewModel: recalibrationVM) // FIXME: NEED recalibrationChoice: selectedChoice?
             }
-        }   // -NavigationView end
+//        }   // -NavigationView end
         
     }
     // MARK: - [String?, String?] ->

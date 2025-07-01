@@ -8,11 +8,11 @@
 import SwiftUI
 
 struct RootView: View {
-//    @EnvironmentObject var theme: ThemeManager
     // ViewModel is the source of truth
     @StateObject private var historyVM = HistoryVM()
     @StateObject private var focusVM = FocusSessionVM()
     @StateObject private var recalibrationVM = RecalibrationVM()
+    @StateObject private var statsVM = StatsVM()
     
     init(){
         // Inject dependency so HistoryV can access tiles from the focusVM
@@ -21,23 +21,33 @@ struct RootView: View {
     
     var body: some View {
         TabView {
-            FocusSessionActiveV(viewModel: focusVM, recalibrationVM: recalibrationVM)
-            .tabItem {
-                Label("", systemImage: "home.fill")
+            // Lets `RootView` supply navigation via `NavigationStack`
+            NavigationStack {
+                FocusSessionActiveV(viewModel: focusVM, recalibrationVM: recalibrationVM)
+                    .navigationTitle("Focus")
             }
-            HistoryV(viewModel: historyVM)
-                .tabItem {
-                    Label("", systemImage: "script.fill")
-                }
-            SettingsV()
-                .tabItem {
-                    Label("", systemImage: "gear.fill")
-                }
+            .tabItem {
+                Image(systemName: "house.fill")
+            }
+            NavigationStack {
+                HistoryV(viewModel: historyVM)
+                    .navigationTitle("History")
+            }
+            .tabItem {
+                Image(systemName: "book.fill")
+            }
+            NavigationStack {
+                SettingsV(viewModel: statsVM)
+                    .navigationTitle("Settings")
+            }
+            .tabItem {
+                Image(systemName: "gearshape.fill")
+            }
         }
     }
 }
 
 #Preview {
     RootView()
-//        .previewTheme()
+        .previewTheme()
 }

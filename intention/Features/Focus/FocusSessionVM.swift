@@ -33,6 +33,7 @@ final class FocusSessionVM: ObservableObject {
     @Published var phase: Phase = .notStarted       // State of the *current* 20-min countdown
     @Published var currentSessionChunk: Int = 0     // Tracks which 20-min chunk of the session is active
     @Published var sessionHistory: [[TileM]] = []   // history model of sessions
+    @Published var lastError: Error?                // UI overlay from performAsyncAction()
     
     private let tileAppendTrigger = FocusTimerActor()
     private var chunkCountdown: Task<Void, Never>? = nil
@@ -47,7 +48,11 @@ final class FocusSessionVM: ObservableObject {
     //        sessionActive = true
     //    }
     // MARK: - 20-min chunk management - Swift Concurrency timer (Task + AsyncSequence)
-    func startCurrent20MinCountdown() {
+    func startCurrent20MinCountdown() throws {
+        guard tiles.count <= 2 else {
+            throw FocusSessionError.tooManyTiles
+        }
+        
         stopCurrent20MinCountdown()  // cancels any existing timers
         phase = .running
         countdownRemaining = 1200   // resets to 20 minutes
@@ -185,7 +190,7 @@ final class FocusSessionVM: ObservableObject {
     }
     
     // MARK: - Call this when the user decides to start a completely new session cycle
-    func resetSessionStateForNewStart() async {
+    func resetSessionStateForNewStart() async throws {
         stopCurrent20MinCountdown() // Ensures any running countdown is stopped
         tiles = []
         tileText = ""
@@ -193,6 +198,11 @@ final class FocusSessionVM: ObservableObject {
         sessionActive = false
         showRecalibrate = false
         currentSessionChunk = 0
+        
+        let resetSucceeded = true
+        guard resetSucceeded else {
+            throw FocusSessionError.unexpected
+        }
         await tileAppendTrigger.resetSessionTracking() // Reset the actor's state too
         debugPrint("ViewModel state reset for a new session.")
     }

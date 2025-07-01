@@ -39,6 +39,15 @@ struct DynamicMessageAndActionArea: View {
         .animation(.easeInOut, value: viewModel.phase) // Animate phase changes
         .animation(.easeInOut, value: viewModel.tiles.count) // Animate tile count changes
         
+        .overlay(
+            Group {
+                if let error = viewModel.lastError {
+                    ErrorOverlay(error: error) {
+                        viewModel.lastError = nil
+                    }
+                }
+            }
+        )
     }
     
     private var recalibrationPromptView: some View {
@@ -53,13 +62,13 @@ struct DynamicMessageAndActionArea: View {
                 Button("Recalibrate Now"){  // <- button acknowledges prompt; sheet presented logic at bottom of FocusSessionActiveV
                     onRecalibrateNow()
                     debugPrint("Recalibrate model presented?")
-                }.mainActionStyle()
+                }.mainActionStyle(screen: .homeActiveIntentions)
                 
                 Button("Start a new session"){
                     viewModel.showRecalibrate = false   // Dismiss the sheet
                     // Reset VM and clear tiles
                     Task {  await viewModel.resetSessionStateForNewStart()  }
-                }.notMainActionStyle()
+                }.notMainActionStyle(screen: .homeActiveIntentions)
             }
         }
         .padding()
@@ -88,7 +97,7 @@ struct DynamicMessageAndActionArea: View {
                 debugPrint("NextIntention button pressed.")
                 print("`Start Next Intention` button pressed")
             }
-            .mainActionStyle()
+            .mainActionStyle(screen: .homeActiveIntentions)
             
             
             Button("End Session Early") {
