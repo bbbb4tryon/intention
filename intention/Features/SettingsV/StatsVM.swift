@@ -13,27 +13,35 @@ final class StatsVM: ObservableObject {
     @Published private(set) var totalCompletedIntentions: Int = 0
     @Published private(set) var recalibrationCounts: [RecalibrationType: Int] = [:] // what?
     @Published private(set) var runStreakDays: Int = 0
+    @Published var shouldPromptForMembership: Bool = false  // is good flag
+    private let membershipThreshold = 2
     
     private var completedSessions: [CompletedSession] = []
     
     func logSession(_ session: CompletedSession) {
         completedSessions.append(session)
         
-        // Update intention count
+        /// Update intention count
         totalCompletedIntentions += session.tileTexts.count
         
-        // Update recalibration count
+        /// if user did recalibrate (picked breathe or balance), type will be non-nil, and count incremented
         if let type = session.recalibration {   // what?
             recalibrationCounts[type, default: 0] += 1
         }
         
-        // Update average completion rate
+        /// Update average completion rate
         let totalTiles = completedSessions.flatMap(\.tileTexts).count
         let intendedTiles = completedSessions.count * 2 // two tiles expected
         averageCompletionRate = Double(totalTiles) / Double(intendedTiles)
         
-        // Update run streak
+        /// Update run streak
         updateRunStreak()
+        
+        /// Updates to trigger memberhship prompt ($0.99 then $5.99 for 3 months?)
+        /// Keeps onboarding friction at zero: the user never types anything.
+        if completedSessions.count == membershipThreshold {
+            shouldPromptForMembership = true    // Observe in the RootView and present as alert/sheet
+        }
     }
     
     private func updateRunStreak() {
@@ -47,7 +55,7 @@ final class StatsVM: ObservableObject {
         for day in sortedDays {
             if day == currentDay {
                 streak += 1
-                currentDay = calendar.date(byAdding: .day, value: -1, to: currentDay )!  //came prefilled? what?
+                currentDay = calendar.date(byAdding: .day, value: -1, to: currentDay )!  // Safe unwrap: ! is safe here bc byAdding .day will not return nil, will never fail
             } else {
                 break
             }

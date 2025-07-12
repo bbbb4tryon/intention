@@ -13,6 +13,7 @@ struct RootView: View {
     @StateObject private var focusVM = FocusSessionVM()
     @StateObject private var recalibrationVM = RecalibrationVM()
     @StateObject private var statsVM = StatsVM()
+    @StateObject private var userService = UserService()
     
     init(){
         // Inject dependency so HistoryV can access tiles from the focusVM
@@ -21,14 +22,17 @@ struct RootView: View {
     
     var body: some View {
         TabView {
-            // Lets `RootView` supply navigation via `NavigationStack`
             NavigationStack {
+            // Lets `RootView` supply navigation via `NavigationStack`,
+            //  passing needed viewModels
+            // viewModels need to be (and are) injected inside FocusSessionActiveV
                 FocusSessionActiveV(viewModel: focusVM, recalibrationVM: recalibrationVM)
                     .navigationTitle("Focus")
             }
             .tabItem {
                 Image(systemName: "house.fill")
             }
+            
             NavigationStack {
                 HistoryV(viewModel: historyVM)
                     .navigationTitle("History")
@@ -44,6 +48,8 @@ struct RootView: View {
                 Image(systemName: "gearshape.fill")
             }
         }
+        .environmentObject(statsVM)
+        .environmentObject(userService)
     }
 }
 

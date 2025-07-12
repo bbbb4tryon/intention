@@ -126,10 +126,14 @@ enum ActiveSessionError: Error, Equatable {
 
 struct FocusSessionActiveV: View {
     @EnvironmentObject var theme: ThemeManager
+    @EnvironmentObject var userService: UserService
+    @EnvironmentObject var statsVM: StatsVM
     @Environment(\.dismiss) var dismiss
     
     @ObservedObject var viewModel: FocusSessionVM
     @ObservedObject var recalibrationVM: RecalibrationVM
+    
+    @State private var showMembershipSheet = false
     
     var body: some View {
         // Get current palette for the appropriate sceen
@@ -203,7 +207,11 @@ struct FocusSessionActiveV: View {
                         .font(.title2)
                         .bold()
                         .foregroundStyle(palette.text)
-                    //FIXME: ModifiersFont+Style see the countdown style?
+                    
+                    CountdownProgress(
+                        progressFraction: progressFraction,
+                        palette: palette,
+                    )
                 }
                 
                 
@@ -239,6 +247,20 @@ struct FocusSessionActiveV: View {
             
             .background(palette.background.ignoresSafeArea())
 //            .navigationTitle("")    // Hides default navigation title
+        
+            .sheet(isPresented: $statsVM.shouldPromptForMembership) {
+                VStack(spacing: 20) {
+                    Text("After two completed sessions, consider a membership for extra features.")
+                        .multilineTextAlignment(.center)
+                    
+                    Button("Visit Website") {
+                        if let url = URL(string: "https://www.argonnesoftware.com/about/") {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                    .mainActionStyle(screen: .homeActiveIntentions)
+                }
+            }
             .sheet(isPresented: $viewModel.showRecalibrate){
                 RecalibrateV(viewModel: recalibrationVM) // FIXME: NEED recalibrationChoice: selectedChoice?
             }
@@ -259,6 +281,11 @@ struct FocusSessionActiveV: View {
         return data
     }
     
+    // MARK: progress of countdown
+    private var progressFraction: CGFloat {
+        guard viewModel.phase == .running || viewModel.phase == .finished else { return 0 }
+        return 1 - CGFloat(viewModel.countdownRemaining) / CGFloat(viewModel.chunkDuration)
+    }
     
 }
 
@@ -266,72 +293,130 @@ struct FocusSessionActiveV: View {
 #Preview("Initial State") {
     let focus = FocusSessionVM()
     let recal = RecalibrationVM()
-    FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+    let stats = StatsVM()
+    let userService = UserService()
+    let theme = ThemeManager()
+    
+    return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+        .environmentObject(stats)
+        .environmentObject(userService)
+        .environmentObject(theme)
         .previewTheme()
 }
-//#Preview("After 1st Tile Added") {
-//    // State: First tile added, ready for second
-//       let viewModel = FocusSessionVM()
-//       viewModel.tiles = [TileM(text: "My First Intention")]
-//       viewModel.tileText = "Second Intention" // Simulate text already typed
-//       viewModel.canAdd = true // Still can add
-//       return FocusSessionActiveV(viewModel: viewModel)
-//}
-//#Preview("2 Tiles Added - Ready to Begin") {
-//    // State: Two tiles added, ready to "Begin"
-//    let viewModel = FocusSessionVM()
-//    viewModel.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
-//    viewModel.canAdd = false // Cannot add more
-//    viewModel.phase = .notStarted // No countdown running yet
-//    return FocusSessionActiveV(viewModel: viewModel)
-//      .previewTheme()
-//}
-//
-//#Preview("1st Chunk Running") {
-//    // State: Countdown for first chunk is running
-//    let viewModel = FocusSessionVM()
-//    viewModel.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
-//    viewModel.canAdd = false
-//    viewModel.phase = .running
-//    viewModel.countdownRemaining = 600 // 10 minutes left
-//    viewModel.currentSessionChunk = 0 // Still on the first chunk
-//    return FocusSessionActiveV(viewModel: viewModel)
-//              .previewTheme()
-//}
-//
-//#Preview("1st Chunk Completed - Prompt for 2nd") {
-//    // State: First chunk finished, ready for second
-//    let viewModel = FocusSessionVM()
-//    viewModel.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
-//    viewModel.canAdd = false
-//    viewModel.phase = .finished // First chunk completed
-//    viewModel.countdownRemaining = 0 // Timer hit zero
-//    viewModel.currentSessionChunk = 1 // Moved to next chunk
-//    return FocusSessionActiveV(viewModel: viewModel)
-//              .previewTheme()
-//}
-//
-//#Preview("2nd Chunk Running"){
-//    // State: Countdown for second chunk is running
-//    let viewModel = FocusSessionVM()
-//    viewModel.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
-//    viewModel.canAdd = false
-//    viewModel.phase = .running
-//    viewModel.countdownRemaining = 300 // 5 minutes left
-//    viewModel.currentSessionChunk = 1 // Second chunk in progress
-//    return FocusSessionActiveV(viewModel: viewModel)
-//              .previewTheme()
-//}
-//
-//#Preview("Session Complete - Recalibrate Prompt"){
-//    // State: Session complete, show recalibration modal prompt
-//    let viewModel = FocusSessionVM()
-//    viewModel.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
-//    viewModel.canAdd = false
-//    viewModel.phase = .finished // Second chunk completed
-//    viewModel.countdownRemaining = 0
-//    viewModel.currentSessionChunk = 2 // Both chunks completed
-//    viewModel.showRecalibrate = true // Trigger recalibration modal
-//    return FocusSessionActiveV(viewModel: viewModel)
-//              .previewTheme()
-//}
+#Preview("After 1st Tile Added") {
+    // State: First tile added, ready for second
+    let focus = FocusSessionVM()
+        focus.tiles = [TileM(text: "My First Intention")]
+        focus.tileText = "Second Intention"
+        focus.canAdd = true
+    
+    let recal = RecalibrationVM()
+    let stats = StatsVM()
+    let userService = UserService()
+    let theme = ThemeManager()
+    
+    return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+            .environmentObject(stats)
+            .environmentObject(userService)
+            .environmentObject(theme)
+            .previewTheme()
+}
+#Preview("2 Tiles Added - Ready to Begin") {
+    let focus = FocusSessionVM()
+       focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+       focus.canAdd = false
+       focus.phase = .notStarted
+    
+    let recal = RecalibrationVM()
+    let stats = StatsVM()
+    let userService = UserService()
+    let theme = ThemeManager()
+   
+    return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+            .environmentObject(stats)
+            .environmentObject(userService)
+            .environmentObject(theme)
+            .previewTheme()
+}
+
+#Preview("1st Chunk Running") {
+    // State: Countdown for first chunk is running
+    let focus = FocusSessionVM()
+       focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+       focus.canAdd = false
+       focus.phase = .running
+       focus.countdownRemaining = 600
+       focus.currentSessionChunk = 0
+
+       let recal = RecalibrationVM()
+       let stats = StatsVM()
+       let userService = UserService()
+       let theme = ThemeManager()
+
+       return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+           .environmentObject(stats)
+           .environmentObject(userService)
+           .environmentObject(theme)
+           .previewTheme()
+}
+
+#Preview("1st Chunk Completed - Prompt for 2nd") {
+    let focus = FocusSessionVM()
+       focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+       focus.canAdd = false
+       focus.phase = .finished
+       focus.countdownRemaining = 0
+       focus.currentSessionChunk = 1
+
+       let recal = RecalibrationVM()
+       let stats = StatsVM()
+       let userService = UserService()
+       let theme = ThemeManager()
+
+       return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+           .environmentObject(stats)
+           .environmentObject(userService)
+           .environmentObject(theme)
+           .previewTheme()
+}
+
+#Preview("2nd Chunk Running"){
+    let focus = FocusSessionVM()
+        focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+        focus.canAdd = false
+        focus.phase = .running
+        focus.countdownRemaining = 300
+        focus.currentSessionChunk = 1
+
+        let recal = RecalibrationVM()
+        let stats = StatsVM()
+        let userService = UserService()
+        let theme = ThemeManager()
+
+        return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+            .environmentObject(stats)
+            .environmentObject(userService)
+            .environmentObject(theme)
+            .previewTheme()
+}
+
+#Preview("Session Complete - Recalibrate Prompt"){
+    let focus = FocusSessionVM()
+        focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+        focus.canAdd = false
+        focus.phase = .finished
+        focus.countdownRemaining = 0
+        focus.currentSessionChunk = 2
+        focus.showRecalibrate = true
+
+        let recal = RecalibrationVM()
+        let stats = StatsVM()
+        let userService = UserService()
+        let theme = ThemeManager()
+
+        return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+            .environmentObject(stats)
+            .environmentObject(userService)
+            .environmentObject(theme)
+            .previewTheme()
+}

@@ -25,4 +25,12 @@ enum Haptic {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         }
     }
+    
+    static func notifySuccessfullyAdded() {
+        // short
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        DispatchQueue.main.asyncAfter(deadline: .now()) {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
+    }
 }

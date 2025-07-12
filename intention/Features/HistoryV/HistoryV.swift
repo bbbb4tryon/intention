@@ -56,10 +56,16 @@ struct HistoryV: View {
 // Mock/ test data prepopulated
 #Preview {
     let vm = HistoryVM()
-    vm.addToHistory("Mock 1")
-    vm.addToHistory("Mock 2")
-    return HistoryV(viewModel: vm)
-        .previewTheme()
+        vm.addToHistory("Tile A")
+        vm.addToHistory("Tile B")
+        vm.addToHistory("Tile C")
+        vm.addToHistory("Tile D")
+
+        let theme = ThemeManager()
+
+        return HistoryV(viewModel: vm)
+            .environmentObject(theme)
+            .previewTheme()
 }
 /*
  Background: .intMint (or intTan)

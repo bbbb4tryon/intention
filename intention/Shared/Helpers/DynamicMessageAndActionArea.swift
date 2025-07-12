@@ -92,14 +92,10 @@ struct DynamicMessageAndActionArea: View {
                 .multilineTextAlignment(.center)
             
             Button("Start Next Intention")  {
-                viewModel.showRecalibrate = false   // Dismisses the sheet
-                Task {
-                    guard ((try? await viewModel.startCurrent20MinCountdown()) != nil) else {
-                        throw ActiveSessionError.submitFailed
-                    }    // Start the countdown for the second chunk
+                viewModel.performAsyncAction {
+                    viewModel.showRecalibrate = false   // Dismisses the sheet
+                    try viewModel.startCurrent20MinCountdown()
                 }
-                debugPrint("NextIntention button pressed.")
-                print("`Start Next Intention` button pressed")
             }
             .mainActionStyle(screen: .homeActiveIntentions)
             

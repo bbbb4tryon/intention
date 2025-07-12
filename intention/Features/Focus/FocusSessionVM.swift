@@ -36,8 +36,10 @@ final class FocusSessionVM: ObservableObject {
     @Published var lastError: Error?                // UI overlay from performAsyncAction()
     
     private let tileAppendTrigger = FocusTimerActor()
-    private var chunkCountdown: Task<Void, Never>? = nil
+    private var chunkCountdown: Task<Void, Never>? = nil        // background live time keeper/ticker
     private var sessionCompletionTask: Task<Void, Never>? = nil // background timer for the entire session (2x 20-min chunks)
+    
+    let chunkDuration: Int = 1200   // Default 20 min
     
     weak var historyVM: HistoryVM?      // hold a weak link injecting historyVM, see checkSessionCompletion()
 
@@ -55,7 +57,7 @@ final class FocusSessionVM: ObservableObject {
         
         stopCurrent20MinCountdown()  // cancels any existing timers
         phase = .running
-        countdownRemaining = 1200   // resets to 20 minutes
+        countdownRemaining = chunkDuration   // resets to 20 minutes
         
         chunkCountdown = Task {
             for await _ in Timer.publish(every: 1, on: .main, in: .common).autoconnect().values {
@@ -75,12 +77,12 @@ final class FocusSessionVM: ObservableObject {
             // Block executes when countdownRemaining reaches 0 or is cancelled
             if self.countdownRemaining <= 0 && self.phase == .running {
                 self.phase = .finished
-                // Haptic.notifyDone()      //FIXME: - uncomment when needed
+                 Haptic.notifyDone()
                 debugPrint("`Haptic.notifyDone()` triggered? Current 20-min chunk completed")
                 self.chunkCountdown?.cancel()
                 self.chunkCountdown = nil
                 
-                // Advance session chunk if finished naturally(?)
+                // Advance session chunk if finished naturally
                 naturallyAdvanceSessionChunk()
             }
         }
@@ -95,7 +97,7 @@ final class FocusSessionVM: ObservableObject {
         chunkCountdown?.cancel()
         chunkCountdown = nil
         phase = .notStarted
-        countdownRemaining = 1200   //FIXME: - needed? resets time to 20 for next
+        countdownRemaining = chunkDuration
         debugPrint("Current 20-min countdown stoppped and reset")
     }
     
@@ -117,6 +119,8 @@ final class FocusSessionVM: ObservableObject {
             tiles.append(tile)
             tileText = ""
             canAdd = tiles.count < 2    // true if tiles.count is 0 or 1, false if 2
+            
+            Haptic.notifySuccessfullyAdded()    // subtle success feedback
             
             // This is fine; overall session (FocusTimerActor) only truly starts when the "Begin" button is pressed
             
@@ -209,6 +213,7 @@ final class FocusSessionVM: ObservableObject {
     
     
     // MARK: performAsyncAction()
+    //  not as a global function if it needs to modify `lastError`
     func performAsyncAction(_ action: @escaping () async throws -> Void) {
         Task {
             do {

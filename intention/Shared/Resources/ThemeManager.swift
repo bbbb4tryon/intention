@@ -65,7 +65,7 @@ final class ThemeManager: ObservableObject {
         private static func color(for role: TextRole, palette: ScreenStylePalette) -> Color {
             switch role {
             case .header, .section, .body, .tile, .title3: return palette.text
-            case .secondary, .caption: return palette.accent
+            case .secondary, .caption: return palette.text.opacity(0.7)
             case .label: return palette.primary
             case .action: return palette.accent
             case .largeTitle: return palette.text
