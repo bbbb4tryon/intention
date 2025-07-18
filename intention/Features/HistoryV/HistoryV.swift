@@ -9,70 +9,88 @@ import SwiftUI
 
 struct HistoryV: View {
     @EnvironmentObject var theme: ThemeManager
+    @EnvironmentObject var userService: UserService
     
     @ObservedObject var viewModel: HistoryVM
+    @State var newTextTiles: [UUID: String] = [:]   // Store new tile text per category using its `id` as key
     
     var body: some View {
         
         let palette = theme.palette(for:.history)
-
-        VStack {
-            //        FixedHeaderLayoutV {
-            //            Text.pageTitle("History")
-            
-            Section {
-                ScrollView {
-                    VStack(spacing: 8) {
-                        ForEach(paddedHistorySlots.indices, id: \.self) { index in
-                            TileSlotView(tileText: paddedHistorySlots[index])
-                                .environmentObject(theme)
-                                .frame(maxWidth: .infinity)     // stretch tiles evenly
-                        }
+        
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 16) {
+                Text("Group by category. Tap a category title to edit.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                
+                ForEach($viewModel.categories, id: \.id) { $categoryItem in   // mutate individual category fields
+                    VStack(alignment: .leading, spacing: 8) {
+                        // Editable category name
+                        CategoryHeaderRow(
+                            categoryItem: $categoryItem,
+                            palette: palette,
+                            fontTheme: theme.fontTheme,
+                            newTextTiles: $newTextTiles
+                        )
+                        
+                        CategoryTileList(
+                            categoryItem: $categoryItem,
+                            palette: palette,
+                            fontTheme: theme.fontTheme,
+                            saveHistory: { viewModel.saveHistory()  }
+                        )
                     }
+
+                        //                        Spacer()
+                        
+                     
+                    .padding(.bottom, 12)
                 }
-                .padding()
+                .padding(.vertical)
             }
-            footer: {
-                Text("Pull to refresh, scroll to review")
-            }
-            .padding()
-            .font(theme.fontTheme.toFont(.title3))    // default body styling
-            .foregroundStyle(palette.text)
-            .background(palette.background.ignoresSafeArea())
+            .padding(.top)
         }
-    }
-    
-    // MARK: - [String?, String?] ->
-    //  Extracted computed property, easier for compliler to parse
-    private var paddedHistorySlots: [String?] {
-        var padded = viewModel.tileHistory.map { Optional($0)}
-        while padded.count < viewModel.maxCount {
-            padded.append(nil)
-        }
-        return padded
+        .background(palette.background.ignoresSafeArea())
+        .foregroundStyle(palette.text)
     }
 }
+
+
+//                                }
+//                                .frame(height: CGFloat(categoryItem.tiles.count) * 60) // Adjust height if needed
+//                                .listStyle(PlainListStyle())
+//                                .scrollDisabled(true)               // Disables inner scrolling - avoids nested scrolling
+//                            }
+//                        }
+//                            .padding(.bottom, 12)
+//                    }
+//                }
+//                .padding(.vertical)
+//                //            .font(theme.fontTheme.toFont(.title3))    // default body styling
+//            }
+//            .background(palette.background.ignoresSafeArea())
+//            .foregroundStyle(palette.text)
+//    }
+//}
 
 // Mock/ test data prepopulated
 #Preview {
     let vm = HistoryVM()
-        vm.addToHistory("Tile A")
-        vm.addToHistory("Tile B")
-        vm.addToHistory("Tile C")
-        vm.addToHistory("Tile D")
-
-        let theme = ThemeManager()
-
-        return HistoryV(viewModel: vm)
-            .environmentObject(theme)
-            .previewTheme()
+    let theme = ThemeManager()
+    let userService = UserService()
+    UserDefaults.standard.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)
+    
+    // Ensure default category exists
+    vm.ensureDefaultCategory(userService: userService)
+    // Now, safe to unwrap, prepopulate
+    if let defaultCategoryID = vm.categories.first?.id {
+        vm.addToHistory(TileM(text: "Write report"), to: defaultCategoryID)
+        vm.addToHistory(TileM(text: "Prepare slides"), to: defaultCategoryID)
+    }
+    
+    return HistoryV(viewModel: vm)
+        .environmentObject(theme)
+        .environmentObject(userService)
 }
-/*
- Background: .intMint (or intTan)
-
- Title text: .intBrown
-
- Buttons: .intMoss
-
- Highlight badges: .intSeaGreen
- */

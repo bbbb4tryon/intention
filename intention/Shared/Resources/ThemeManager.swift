@@ -90,10 +90,10 @@ enum AppColorTheme: String, CaseIterable {
         switch self {
         case .default:
             switch screen {
-            case .homeActiveIntentions: return .init(primary: .intGreen, background: .intTan, accent: .intSeaGreen, text: .intBrown)
-            case .history: return .init(primary: .intMint, background: .intTan, accent: .intSeaGreen, text: .intBrown)
-            case .settings: return .init(primary: .intMint, background: .intTan, accent: .intSeaGreen, text: .intBrown)
-            case .recalibrate: return .init(primary: .intSeaGreen, background: .intBrown.opacity(0.3), accent: .intGreen, text: .yellow.opacity(0.4))
+            case .homeActiveIntentions: return .init(primary: .intGreen, background: .intTan, accent: .intSeaGreen, text: .intCharcoal)
+            case .history: return .init(primary: .intMint, background: .intTan, accent: .intSeaGreen, text: .intCharcoal)
+            case .settings: return .init(primary: .intMint, background: .intTan, accent: .intSeaGreen, text: .intCharcoal)
+            case .recalibrate: return .init(primary: .intSeaGreen, background: .blue.opacity(0.3), accent: .intGreen, text: .black.opacity(0.4))
             }
         case .sea:
             switch screen {

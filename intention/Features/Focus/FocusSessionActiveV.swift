@@ -138,6 +138,7 @@ struct FocusSessionActiveV: View {
     var body: some View {
         // Get current palette for the appropriate sceen
         let palette = theme.palette(for: .homeActiveIntentions)
+        let progress = Double(viewModel.countdownRemaining) / 1200.0
         
         NavigationLink(destination: RecalibrateV(viewModel: recalibrationVM), isActive: $viewModel.showRecalibrate) { EmptyView()
         }.hidden()
@@ -200,18 +201,22 @@ struct FocusSessionActiveV: View {
                 
                 // MARK: Countdown Display (user-facing)
                 if viewModel.phase == .running || viewModel.phase == .finished {
+                    ZStack {
+                        Circle()
+                            .fill(palette.background.opacity(0.2))
+                            .frame(width: 200, height: 200)
+                        
+                        UnwindingPieShape(progress: progress)
+                            .fill(palette.primary)
+                            .frame(width: 200, height: 200)
+                        
                     Text("\(viewModel.formattedTime)")
-                        .font(.system(size: 80, weight: .bold, design: .monospaced)) // Explicit: fixed-width font
+                        .font(.system(size: 48, weight: .bold, design: .monospaced)) // Explicit: fixed-width font
                         .id("countdownTimer") // Use an ID to ensure smooth updates
                         .transition(.opacity) // Smooth transition if it appears/disappears
-                        .font(.title2)
-                        .bold()
                         .foregroundStyle(palette.text)
-                    
-                    CountdownProgress(
-                        progressFraction: progressFraction,
-                        palette: palette,
-                    )
+                    }
+                    .animation(.easeInOut(duration: 0.2), value: progress)
                 }
                 
                 
@@ -281,11 +286,11 @@ struct FocusSessionActiveV: View {
         return data
     }
     
-    // MARK: progress of countdown
-    private var progressFraction: CGFloat {
-        guard viewModel.phase == .running || viewModel.phase == .finished else { return 0 }
-        return 1 - CGFloat(viewModel.countdownRemaining) / CGFloat(viewModel.chunkDuration)
-    }
+//    // MARK: progress of countdown
+//    private var progressFraction: CGFloat {
+//        guard viewModel.phase == .running || viewModel.phase == .finished else { return 0 }
+//        return 1 - CGFloat(viewModel.countdownRemaining) / CGFloat(viewModel.chunkDuration)
+//    }
     
 }
 

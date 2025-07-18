@@ -10,7 +10,7 @@ import Foundation
 
 // Representative of a single user-created "intention" tile
 //  supports JSON encoding
-struct TileM: Identifiable, Sendable, Codable {
+struct TileM: Identifiable, Sendable, Codable, Hashable {
     let id: UUID
     var text: String
     var timeStamp: Date

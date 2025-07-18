@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct RootView: View {
+    // creates and defines default Category exactly once ever, even across relaunches
+    @AppStorage("hasInitializedDefaultCategory") private var hasInitializedDefaultCategory = false
+
     // ViewModel is the source of truth
     @StateObject private var historyVM = HistoryVM()
     @StateObject private var focusVM = FocusSessionVM()
@@ -29,23 +32,25 @@ struct RootView: View {
                 FocusSessionActiveV(viewModel: focusVM, recalibrationVM: recalibrationVM)
                     .navigationTitle("Focus")
             }
-            .tabItem {
-                Image(systemName: "house.fill")
-            }
+            .tabItem { Image(systemName: "house.fill") }
             
             NavigationStack {
                 HistoryV(viewModel: historyVM)
                     .navigationTitle("History")
             }
-            .tabItem {
-                Image(systemName: "book.fill")
-            }
+            .tabItem {  Image(systemName: "book.fill")  }
+            
             NavigationStack {
                 SettingsV(viewModel: statsVM)
                     .navigationTitle("Settings")
             }
-            .tabItem {
-                Image(systemName: "gearshape.fill")
+            .tabItem {  Image(systemName: "gearshape.fill") }
+        }
+        .onAppear {
+            if !hasInitializedDefaultCategory {
+                historyVM.ensureDefaultCategory(userService: userService)
+                hasInitializedDefaultCategory = true
+                debugPrint("Default category initialized from RootView")
             }
         }
         .environmentObject(statsVM)

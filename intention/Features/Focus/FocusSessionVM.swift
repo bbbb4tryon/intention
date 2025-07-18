@@ -24,6 +24,8 @@ final class FocusSessionVM: ObservableObject {
         case notStarted, running, finished
     }
     
+    @EnvironmentObject var userService: UserService
+    
     @Published var tileText: String = ""
     @Published var tiles: [TileM] = []
     @Published var canAdd: Bool = true
@@ -146,11 +148,14 @@ final class FocusSessionVM: ObservableObject {
             sessionActive = false       // 40-min overall session done
             showRecalibrate = true      // modal
             debugPrint("Recalibration choice modal should display")
-            // MARK: - bounded tile history call
-            //  saves each tile to the flat 24-tile history list
-            //  NOTE: is not `historyVM?.addToHistory(tiles[0].text)` to avoid out-of-range crashes
+            // MARK: - bounded tile history call, add tiles to category
+            // NOTE: - is not `historyVM?.addToHistory(tiles[0].text)` to avoid out-of-range crashes
+            
+            // Method signature in `HistoryVM` is `func addToHistory(_ newTile: TileM, to categoryID: UUID)`
+            //  to match the signature: call must be tile, to: userService.defaultCategoryID
+            let targetCategoryID = userService.defaultCategoryID
             for tile in tiles.prefix(2){
-                historyVM?.addToHistory(tile.text)
+                historyVM?.addToHistory(tile, to: targetCategoryID)
             }
             // NOTE: - Don't reset actor for new session here - user will on modal
         } else {
