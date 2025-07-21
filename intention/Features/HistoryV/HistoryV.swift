@@ -13,6 +13,8 @@ struct HistoryV: View {
     
     @ObservedObject var viewModel: HistoryVM
     @State var newTextTiles: [UUID: String] = [:]   // Store new tile text per category using its `id` as key
+    @State private var tileDropHandler = TileDropHandler()
+    @State private var dropTargets: [UUID: Bool] = [:]  // Drop highlight state per category
     
     var body: some View {
         
@@ -26,64 +28,63 @@ struct HistoryV: View {
                     .padding(.horizontal)
                 
                 ForEach($viewModel.categories, id: \.id) { $categoryItem in   // mutate individual category fields
-                    VStack(alignment: .leading, spacing: 8) {
-                        // Editable category name
-                        CategoryHeaderRow(
-                            categoryItem: $categoryItem,
-                            palette: palette,
-                            fontTheme: theme.fontTheme,
-                            newTextTiles: $newTextTiles
-                        )
-                        
-                        CategoryTileList(
-                            categoryItem: $categoryItem,
-                            palette: palette,
-                            fontTheme: theme.fontTheme,
-                            saveHistory: { viewModel.saveHistory()  }
-                        )
-                    }
-
-                        //                        Spacer()
-                        
-                     
-                    .padding(.bottom, 12)
+                    
+                    CategorySection(
+                        categoryItem: $categoryItem,
+                        palette: palette,
+                        fontTheme: theme.fontTheme,
+                        newTextTiles: $newTextTiles,
+                        dropTarget: Binding(
+                            get: { dropTargets[categoryItem.id] ?? false },
+                            set: {  dropTargets[categoryItem.id] = $0 }
+                        ),
+                        saveHistory: { viewModel.saveHistory()  },
+                        tileDropHandler: tileDropHandler,
+                        moveTile: { tile, fromID, toID in
+                            await viewModel.moveTile(tile, from: fromID, to: toID)
+                        }
+                    )
                 }
-                .padding(.vertical)
+                Spacer()
+                if let move = viewModel.lastUndoableMove {
+                    VStack {
+                            Spacer()
+                            HStack {
+                                Text("Moved \"\(move.tile.text)\"")
+                                    .font(.footnote)
+                                    .foregroundStyle(.white)
+                                Spacer()
+                                Button("Undo") {
+                                    viewModel.undoLastMove()
+                                }
+                                .foregroundStyle(.blue)
+                            }
+                            .padding()
+                            .background(Color.black.opacity(0.85))
+                            .cornerRadius(10)
+                            .padding()
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                        .animation(.easeInOut, value: viewModel.lastUndoableMove != nil)
+                }
             }
-            .padding(.top)
+            .padding(.vertical)
         }
+        .padding(.top)
         .background(palette.background.ignoresSafeArea())
-        .foregroundStyle(palette.text)
     }
+//        .foregroundStyle(palette.text)
 }
 
-
-//                                }
-//                                .frame(height: CGFloat(categoryItem.tiles.count) * 60) // Adjust height if needed
-//                                .listStyle(PlainListStyle())
-//                                .scrollDisabled(true)               // Disables inner scrolling - avoids nested scrolling
-//                            }
-//                        }
-//                            .padding(.bottom, 12)
-//                    }
-//                }
-//                .padding(.vertical)
-//                //            .font(theme.fontTheme.toFont(.title3))    // default body styling
-//            }
-//            .background(palette.background.ignoresSafeArea())
-//            .foregroundStyle(palette.text)
-//    }
-//}
 
 // Mock/ test data prepopulated
 #Preview {
     let vm = HistoryVM()
     let theme = ThemeManager()
     let userService = UserService()
-    UserDefaults.standard.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)
     
-    // Ensure default category exists
-    vm.ensureDefaultCategory(userService: userService)
+    UserDefaults.standard.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)
+    vm.ensureDefaultCategory(userService: userService) // Ensure default category exists
     // Now, safe to unwrap, prepopulate
     if let defaultCategoryID = vm.categories.first?.id {
         vm.addToHistory(TileM(text: "Write report"), to: defaultCategoryID)

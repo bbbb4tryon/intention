@@ -7,7 +7,8 @@
 
 import Foundation
 
-struct DraggedTile: Codable {
+struct DraggedTile: Codable, Identifiable {
+    var id: UUID { tile.id }
     let tile: TileM
     let fromCategoryID: UUID
 }

@@ -12,6 +12,9 @@ struct CategoryTileList: View {
     let palette: ScreenStylePalette
     let fontTheme: AppFontTheme
     let saveHistory: () -> Void
+    
+    let tileDropHandler: TileDropHandler
+    let moveTile: (TileM, UUID, UUID) async -> Void
 
     var body: some View {
         if categoryItem.tiles.isEmpty {
@@ -33,12 +36,24 @@ struct CategoryTileList: View {
                     }
                     .onDrag {
                         let dragItem = DraggedTile(tile: tile, fromCategoryID: categoryItem.id)
-                        return try! NSItemProvider(object: JSONEncoder().encode(dragItem) as NSData)
+                        // Avoids force-casting, registers a Data representation with a UTI (public.data), expected by `.onDrop`
+                        //FIXME: use the Task helper function?
+                        if let data = try? JSONEncoder().encode(dragItem) {
+                            let provider = NSItemProvider()
+                            provider.registerDataRepresentation(forTypeIdentifier: "puclic.data", visibility: .all) { completion in
+                                completion(data, nil)
+                                return nil
+                            }
+                            return provider
+                        }
+                        return NSItemProvider()
                     }
                     .swipeActions {
                         Button(role: .destructive) {
                             if let index = categoryItem.tiles.firstIndex(of: tile) {
-                                categoryItem.tiles.remove(at: index)
+                                withAnimation {
+                                    categoryItem.tiles.remove(at: index)
+                                }
                                 saveHistory()
                             }
                         } label: {
@@ -48,9 +63,6 @@ struct CategoryTileList: View {
                 }
             }
             .padding(.horizontal)
-            .onDrop(of: [.data], isTargeted: nil) { providers in
-                handleTileDrop(providers: providers, targetCategoryID: categoryItem.id)
-            }
         }
     }
 }

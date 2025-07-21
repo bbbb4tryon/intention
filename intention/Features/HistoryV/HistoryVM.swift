@@ -5,13 +5,13 @@
 //  Created by Benjamin Tryon on 6/18/25.
 //
 
-
-import Foundation
 import SwiftUI
 
 @MainActor
 final class HistoryVM: ObservableObject {
     @Published var categories: [CategoriesModel] = []
+    @Published var lastUndoableMove: (tile: TileM, from: UUID, to: UUID)? = nil
+
 
     // AppStorage wrapper (private, not accessed directly from the view)
     // since `historyVM` is injected into `FocusSessionVM` at startup via `RootView`
@@ -57,8 +57,7 @@ final class HistoryVM: ObservableObject {
 
         saveHistory()                       // saveHistory() is inside addToHistory() to persist automatically
     }
-    
-    // MARK: - Add a new category
+    //https://www.avanderlee.com/swiftui/viewbuilder/    // MARK: - Add a new category
     func addCategory(persistedInput: String){
         let newCategory = CategoriesModel(persistedInput: persistedInput)
         categories.append(newCategory)
@@ -81,6 +80,41 @@ final class HistoryVM: ObservableObject {
             let new = CategoriesModel(id: defaultID, persistedInput: name)
             categories.insert(new, at: 0)
             saveHistory()
+            
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+        }
+    }
+    
+    // MARK: valid target to call to move tiles within categories
+    func moveTile(_ tile: TileM, from fromID: UUID, to toID: UUID) async {
+        guard
+            let fromIndex = categories.firstIndex(where: { $0.id == fromID }),
+            let toIndex = categories.firstIndex(where: { $0.id == toID }),
+            let tileIndex = categories[fromIndex].tiles.firstIndex(of: tile)
+        else {
+            debugPrint("Move failed: could not locate source or destination HistoryVM.moveTile")
+            return
+        }
+        
+        let movingTile = categories[fromIndex].tiles.remove(at: tileIndex)
+        categories[toIndex].tiles.insert(movingTile, at: 0)
+        saveHistory()
+        
+        lastUndoableMove = (movedTile, fromID, toID)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            Task { @MainActor in
+                self.lastUndoableMove = nil         // clear undo after 3s if not acted upon (via toast)
+            }
+        }
+    }
+    
+    func undoLastMove() {
+        guard let move = lastUndoableMove else { return }
+        Task {
+            await moveTile(move.tile, from: move.to, to: move.from)
+            lastUndoableMove = nil
         }
     }
 }
