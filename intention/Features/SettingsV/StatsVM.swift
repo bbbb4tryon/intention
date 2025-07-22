@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import Algorithms
 
 final class StatsVM: ObservableObject {
     @Published private(set) var averageCompletionRate: Double = 1.0
