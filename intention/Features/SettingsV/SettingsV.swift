@@ -85,6 +85,7 @@ struct SettingsV: View {
                     
                     HStack(spacing: 24){
                         StatBlock(icon: "flame.fill", value: "\(viewModel.runStreakDays) Days", caption: "Run Streak", palette: palette)
+                        StatBlock(icon: "rosette", value: "\(viewModel.maxRunStreakDays) Days", caption: "Longest Streak", palette: palette)
                     }
                 }
                 .padding(.top, 8)

@@ -14,6 +14,7 @@ final class StatsVM: ObservableObject {
     @Published private(set) var totalCompletedIntentions: Int = 0
     @Published private(set) var recalibrationCounts: [RecalibrationType: Int] = [:] // what?
     @Published private(set) var runStreakDays: Int = 0
+    @Published private(set) var maxRunStreakDays: Int = 0
     @Published var shouldPromptForMembership: Bool = false  // is good flag
     private let membershipThreshold = 2
     
@@ -47,21 +48,44 @@ final class StatsVM: ObservableObject {
     
     private func updateRunStreak() {
         let calendar = Calendar.current
-        let daysWithSessions = Set(completedSessions.map { calendar.startOfDay(for: $0.date)    })
-        let sortedDays = daysWithSessions.sorted(by: >)
+        let daysWithSessions = Set(completedSessions.map {
+            calendar.startOfDay(for: $0.date)
+        })
+        let sortedDays = daysWithSessions.sorted(by: >) // descending: [today, yesterday, ...]
         
-        var streak = 0
-        var currentDay = calendar.startOfDay(for: Date())
-        
-        for day in sortedDays {
-            if day == currentDay {
-                streak += 1
-                currentDay = calendar.date(byAdding: .day, value: -1, to: currentDay )!  // Safe unwrap: ! is safe here bc byAdding .day will not return nil, will never fail
-            } else {
-                break
+        // If empty, no streak, otherwise start/continue Current Streak
+        guard let today = sortedDays.first else {
+            runStreakDays = 0
+            maxRunStreakDays = 0
+            return
             }
-        }
-        runStreakDays = streak
+        
+        // adjacentPairs walks day-by-day backwards
+        /*
+         if `sortedDays` contains [Jan 22, Jan 21, Jan 20, Jan 17] -- days used, gap days not included (19th and 18th)
+         `.adjacentPairs()` gives [(22,21),(21,20),(20,17)]
+         `.prefix { daysDiff == 1 }` keeps (22,21),(21,20)
+         that is the current day and 2 consecutive days (3 links of (consecutivePairs.count + 1),(22,21),(21,20))
+         */
+        let currentStreakPairs = sortedDays
+            .adjacentPairs()
+            .prefix { lhs, rhs in
+                calendar.dateComponents([.day], from: rhs, to: lhs).day == 1
+            }
+        // Add 1 to include the first day
+        runStreakDays = currentStreakPairs.count + 1
+        
+        // Maximum Streak - scan entired sorted list for all consecutive segments
+        //  each element in `allStreaks` is a chain of consecutive days [22,21,20]
+        //  .split(where:) segments the array at any gaps
+        let allStreaks = sortedDays
+            .adjacentPairs()
+            .split { lhs, rhs in
+                calendar.dateComponents([.day], from: rhs, to: lhs).day != 1
+            }
+        maxRunStreakDays = allStreaks
+            .map { $0.count + 1 }   // .count + 1 because .adjacentPairs() drops 1 value
+            .max() ?? 1             // finds longest segment
     }
 }
 
