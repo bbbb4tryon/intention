@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-// configuration, toggles, preferences
+// configuration, toggles, preferences aka StatsSummaryView
 
 struct SettingsV: View {
     @EnvironmentObject var theme: ThemeManager
@@ -74,18 +74,13 @@ struct SettingsV: View {
                     theme.styledText("Your Progress", as: .section, in: .settings)
                     
                     HStack(spacing: 24) {
-                        StatBlock(icon: "checkmark.circle.fill", value: String(format: "%.0f%%", viewModel.averageCompletionRate * 100), caption: "Avg. Completion Rate", palette: palette)
                         StatBlock(icon: "list.bullet", value: "\(viewModel.totalCompletedIntentions)", caption: "Total Intentions", palette: palette)
+                        StatBlock(icon: "rosette", value: "Max Run of  \(viewModel.maxRunStreakDays) Days", caption: "Brag Stat: Longest Streak", palette: palette)
                     }
                     
                     HStack(spacing: 24){
-                        StatBlock(icon: "leaf.fill", value: "\(viewModel.recalibrationCounts[.breathe, default: 0])", caption: "Breathe Sessions", palette: palette)
-                        StatBlock(icon: "figure.walk", value: "\(viewModel.recalibrationCounts[.balance, default: 0])", caption: "Balance Sessions", palette: palette)
-                    }
-                    
-                    HStack(spacing: 24){
-                        StatBlock(icon: "flame.fill", value: "\(viewModel.runStreakDays) Days", caption: "Run Streak", palette: palette)
-                        StatBlock(icon: "rosette", value: "\(viewModel.maxRunStreakDays) Days", caption: "Longest Streak", palette: palette)
+                        StatBlock(icon: "leaf.fill", value: "\(viewModel.recalibrationCounts[.breathing, default: 0])", caption: "Breathing Sessions Completed", palette: palette)
+                        StatBlock(icon: "figure.walk", value: "\(viewModel.recalibrationCounts[.balancing, default: 0])", caption: "balancing Sessions Completed", palette: palette)
                     }
                 }
                 .padding(.top, 8)
@@ -124,10 +119,10 @@ private struct StatBlock: View {
 
 #Preview {
     let stats = StatsVM()
-       let sampleSession = CompletedSession(date: Date(), tileTexts: ["Write Chapter", "Edit Draft"], recalibration: .breathe)
+       let sampleSession = CompletedSession(date: Date(), tileTexts: ["Write Chapter", "Edit Draft"], recalibration: .breathing)
        stats.logSession(sampleSession)
        stats.logSession(sampleSession)
-       stats.logSession(CompletedSession(date: Date().addingTimeInterval(-86400), tileTexts: ["Read Notes", "Outline Next Part"], recalibration: .balance))
+       stats.logSession(CompletedSession(date: Date().addingTimeInterval(-86400), tileTexts: ["Read Notes", "Outline Next Part"], recalibration: .balancing))
 
        let userService = UserService()
        let theme = ThemeManager()
@@ -137,14 +132,3 @@ private struct StatBlock: View {
            .environmentObject(theme)
            .previewTheme()
 }
-/*
- Background: .intTan
-
- Title text: .intBrown
-
- Toggle labels: .intGreen or .intMoss
-
- Destructive toggle: maybe .intBrown.opacity(0.7) if needed
-
-
- */

@@ -13,6 +13,7 @@ final class StatsVM: ObservableObject {
     @Published private(set) var averageCompletionRate: Double = 1.0
     @Published private(set) var totalCompletedIntentions: Int = 0
     @Published private(set) var recalibrationCounts: [RecalibrationType: Int] = [:] // what?
+    @Published private(set) var lastRecalibrationChoice: RecalibrationType? = nil
     @Published private(set) var runStreakDays: Int = 0
     @Published private(set) var maxRunStreakDays: Int = 0
     @Published var shouldPromptForMembership: Bool = false  // is good flag
@@ -26,9 +27,10 @@ final class StatsVM: ObservableObject {
         /// Update intention count
         totalCompletedIntentions += session.tileTexts.count
         
-        /// if user did recalibrate (picked breathe or balance), type will be non-nil, and count incremented
+        /// if user did recalibrate (picked breathing or balancing), type will be non-nil, and count incremented
         if let type = session.recalibration {   // what?
             recalibrationCounts[type, default: 0] += 1
+            lastRecalibrationChoice = type
         }
         
         /// Update average completion rate
@@ -57,6 +59,7 @@ final class StatsVM: ObservableObject {
         guard let today = sortedDays.first else {
             runStreakDays = 0
             maxRunStreakDays = 0
+            tilesCompletedThisWeek = 0
             return
             }
         
@@ -98,5 +101,5 @@ struct CompletedSession {
 
 // FIXME: is this already created?
 enum RecalibrationType: String, CaseIterable, Hashable {
-    case breathe, balance
+    case breathing, balancing
 }

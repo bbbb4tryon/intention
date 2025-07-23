@@ -143,133 +143,128 @@ struct FocusSessionActiveV: View {
         NavigationLink(destination: RecalibrateV(viewModel: recalibrationVM), isActive: $viewModel.showRecalibrate) { EmptyView()
         }.hidden()
         
-//        NavigationView {
-            VStack(spacing: 20){
-                //                    Helper_AppIconV()
-                //                        .clipShape(Circle())
-                //                        .glow(color: .intTan, radius: 12)
-                Text("Intention, Tracked")
-                    .font(.largeTitle)
-                    .bold()
-                    .padding(.bottom, 10)
-                
-                Spacer()    // pushes content towards center-top
-                
-                // MARK: - Textfield for intention tile text input
-                TextField("Enter intention", text: $viewModel.tileText)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .disabled(viewModel.tiles.count == 2 && viewModel.phase == .running)
-                    .padding(.horizontal)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.sentences)
-                
-                // MARK: Main Action Button (Add or Begin)
-                if !viewModel.showRecalibrate && viewModel.phase != .running {
-                    Button(action: {
-                        Task {
-                            do {
-                                if viewModel.tiles.count < 2 {      // Logic adding tiles
-                                    try await viewModel.addTileAndPrepareForSession()
-                                } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { // Logic starting session
-                                    try await viewModel.beginOverallSession()
-                                }
-                            } catch FocusSessionError.emptyInput {
-                                debugPrint("Error: empty input for tile.")
-                                print("Must have input")
-                            } catch FocusSessionError.tooManyTiles {
-                                debugPrint("Error: too many tiles")
-                                print("Two list item limit")
-                            } catch FocusSessionError.unexpected {
-                                debugPrint("Error: FocusSessionError.unexpected: \(FocusSessionError.unexpected)")
-                                print("An unexpected error occured: contact the developer")
+        //        NavigationView {
+        VStack(spacing: 20){
+            
+            StatsSummaryBar
+            
+            Spacer()    // pushes content towards center-top
+            
+            // MARK: - Textfield for intention tile text input
+            TextField("Enter intention", text: $viewModel.tileText)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .disabled(viewModel.tiles.count == 2 && viewModel.phase == .running)
+                .padding(.horizontal)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.sentences)
+            
+            // MARK: Main Action Button (Add or Begin)
+            if !viewModel.showRecalibrate && viewModel.phase != .running {
+                Button(action: {
+                    Task {
+                        do {
+                            if viewModel.tiles.count < 2 {      // Logic adding tiles
+                                try await viewModel.addTileAndPrepareForSession()
+                            } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { // Logic starting session
+                                try await viewModel.beginOverallSession()
                             }
+                        } catch FocusSessionError.emptyInput {
+                            debugPrint("Error: empty input for tile.")
+                            print("Must have input")
+                        } catch FocusSessionError.tooManyTiles {
+                            debugPrint("Error: too many tiles")
+                            print("Two list item limit")
+                        } catch FocusSessionError.unexpected {
+                            debugPrint("Error: FocusSessionError.unexpected: \(FocusSessionError.unexpected)")
+                            print("An unexpected error occured: contact the developer")
                         }
-                    }) {
-                        Text(viewModel.tiles.count < 2 ? "Add" : "Begin")
-                            .font(.headline)
-                            .padding(.vertical,8)
-                            .frame(maxWidth: .infinity)
                     }
-                    .mainActionStyle(screen: .homeActiveIntentions)
-                    .environmentObject(theme)
-                    // Disable if empty, or 2 tiles already aadded
-                    .disabled(viewModel.tiles.count < 2 && viewModel.tileText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .buttonStyle(.borderedProminent)
-                    .padding(.horizontal)
+                }) {
+                    Text(viewModel.tiles.count < 2 ? "Add" : "Begin")
+                        .font(.headline)
+                        .padding(.vertical,8)
+                        .frame(maxWidth: .infinity)
                 }
-                
-                
-                // MARK: Countdown Display (user-facing)
-                if viewModel.phase == .running || viewModel.phase == .finished {
-                    ZStack {
-                        Circle()
-                            .fill(palette.background.opacity(0.2))
-                            .frame(width: 200, height: 200)
-                        
-                        UnwindingPieShape(progress: progress)
-                            .fill(palette.primary)
-                            .frame(width: 200, height: 200)
-                        
+                .mainActionStyle(screen: .homeActiveIntentions)
+                .environmentObject(theme)
+                // Disable if empty, or 2 tiles already aadded
+                .disabled(viewModel.tiles.count < 2 && viewModel.tileText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .buttonStyle(.borderedProminent)
+                .padding(.horizontal)
+            }
+            
+            
+            // MARK: Countdown Display (user-facing)
+            if viewModel.phase == .running || viewModel.phase == .finished {
+                ZStack {
+                    Circle()
+                        .fill(palette.background.opacity(0.2))
+                        .frame(width: 200, height: 200)
+                    
+                    UnwindingPieShape(progress: progress)
+                        .fill(palette.primary)
+                        .frame(width: 200, height: 200)
+                    
                     Text("\(viewModel.formattedTime)")
                         .font(.system(size: 48, weight: .bold, design: .monospaced)) // Explicit: fixed-width font
                         .id("countdownTimer") // Use an ID to ensure smooth updates
                         .transition(.opacity) // Smooth transition if it appears/disappears
                         .foregroundStyle(palette.text)
-                    }
-                    .animation(.easeInOut(duration: 0.2), value: progress)
                 }
-                
-                
-                // MARK: - Dynamic Message and Action Area
-                DynamicMessageAndActionArea(
-                    viewModel: viewModel,
-                    fontTheme: theme.fontTheme, // passing in fontTheme property
-                    palette: theme.palette(for: .homeActiveIntentions),
-                    onRecalibrateNow: {
-                        viewModel.showRecalibrate = true
-                    })
-                
-                Spacer()    // Pushes content away from bottom
-                
-                
-                // MARK: - Fixed-size List: Tile container
-                VStack(spacing: 8) {        // tile spacing
-                    ForEach(slotData.indices, id: \.self) { index in
-                        TileSlotView(
-                            tileText: slotData[index],
-                        )
-                    }
-                    .padding(.horizontal)    // Padding for the ForEach content
-                }   // -VStack, tile container end
-                .frame(height: 140)         // Fixed list height - (e.g., 2 tiles * ~50-60pt height each)
-                .background(palette.background.opacity(0.8))
-                .cornerRadius(10)
-                .shadow(radius: 5)
-                .padding(.horizontal)       // Horizonal padding for whole list
-                
-                Spacer()
-            }      // -VStack, primary end
+                .animation(.easeInOut(duration: 0.2), value: progress)
+            }
             
-            .background(palette.background.ignoresSafeArea())
-//            .navigationTitle("")    // Hides default navigation title
-        
-            .sheet(isPresented: $statsVM.shouldPromptForMembership) {
-                VStack(spacing: 20) {
-                    Text("After two completed sessions, consider a membership for extra features.")
-                        .multilineTextAlignment(.center)
-                    
-                    Button("Visit Website") {
-                        if let url = URL(string: "https://www.argonnesoftware.com/about/") {
-                            UIApplication.shared.open(url)
-                        }
-                    }
-                    .mainActionStyle(screen: .homeActiveIntentions)
+            
+            // MARK: - Dynamic Message and Action Area
+            DynamicMessageAndActionArea(
+                viewModel: viewModel,
+                fontTheme: theme.fontTheme, // passing in fontTheme property
+                palette: theme.palette(for: .homeActiveIntentions),
+                onRecalibrateNow: {
+                    viewModel.showRecalibrate = true
+                })
+            
+            Spacer()    // Pushes content away from bottom
+            
+            
+            // MARK: - Fixed-size List: Tile container
+            VStack(spacing: 8) {        // tile spacing
+                ForEach(slotData.indices, id: \.self) { index in
+                    TileSlotView(
+                        tileText: slotData[index],
+                    )
                 }
+                .padding(.horizontal)    // Padding for the ForEach content
+            }   // -VStack, tile container end
+            .frame(height: 140)         // Fixed list height - (e.g., 2 tiles * ~50-60pt height each)
+            .background(palette.background.opacity(0.8))
+            .cornerRadius(10)
+            .shadow(radius: 5)
+            .padding(.horizontal)       // Horizonal padding for whole list
+            
+            Spacer()
+        }      // -VStack, primary end
+        
+        .background(palette.background.ignoresSafeArea())
+        //            .navigationTitle("")    // Hides default navigation title
+        
+        .sheet(isPresented: $statsVM.shouldPromptForMembership) {
+            VStack(spacing: 20) {
+                Text("After two completed sessions, consider a membership for extra features.")
+                    .multilineTextAlignment(.center)
+                
+                Button("Visit Website") {
+                    if let url = URL(string: "https://www.argonnesoftware.com/about/") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .mainActionStyle(screen: .homeActiveIntentions)
             }
-            .sheet(isPresented: $viewModel.showRecalibrate){
-                RecalibrateV(viewModel: recalibrationVM) // FIXME: NEED recalibrationChoice: selectedChoice?
-            }
-//        }   // -NavigationView end
+        }
+        .sheet(isPresented: $viewModel.showRecalibrate){
+            RecalibrateV(viewModel: recalibrationVM) // FIXME: NEED recalibrationChoice: selectedChoice?
+        }
+        //        }   // -NavigationView end
         
     }
     // MARK: - [String?, String?] ->
@@ -285,143 +280,133 @@ struct FocusSessionActiveV: View {
         }
         return data
     }
-    
-//    // MARK: progress of countdown
-//    private var progressFraction: CGFloat {
-//        guard viewModel.phase == .running || viewModel.phase == .finished else { return 0 }
-//        return 1 - CGFloat(viewModel.countdownRemaining) / CGFloat(viewModel.chunkDuration)
-//    }
-    
 }
 
 
 #Preview("Initial State") {
-    let focus = FocusSessionVM()
-    let recal = RecalibrationVM()
-    let stats = StatsVM()
-    let userService = UserService()
-    let theme = ThemeManager()
-    
-    return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+    FocusSessionActiveV(
+        viewModel: FocusSessionVM(previewMode: true),
+        recalibrationVM: RecalibrationVM()
+    )
         .environmentObject(stats)
         .environmentObject(userService)
         .environmentObject(theme)
         .previewTheme()
 }
-#Preview("After 1st Tile Added") {
-    // State: First tile added, ready for second
-    let focus = FocusSessionVM()
-        focus.tiles = [TileM(text: "My First Intention")]
-        focus.tileText = "Second Intention"
-        focus.canAdd = true
-    
-    let recal = RecalibrationVM()
-    let stats = StatsVM()
-    let userService = UserService()
-    let theme = ThemeManager()
-    
-    return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
-            .environmentObject(stats)
-            .environmentObject(userService)
-            .environmentObject(theme)
-            .previewTheme()
-}
-#Preview("2 Tiles Added - Ready to Begin") {
-    let focus = FocusSessionVM()
-       focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
-       focus.canAdd = false
-       focus.phase = .notStarted
-    
-    let recal = RecalibrationVM()
-    let stats = StatsVM()
-    let userService = UserService()
-    let theme = ThemeManager()
-   
-    return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
-            .environmentObject(stats)
-            .environmentObject(userService)
-            .environmentObject(theme)
-            .previewTheme()
-}
-
-#Preview("1st Chunk Running") {
-    // State: Countdown for first chunk is running
-    let focus = FocusSessionVM()
-       focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
-       focus.canAdd = false
-       focus.phase = .running
-       focus.countdownRemaining = 600
-       focus.currentSessionChunk = 0
-
-       let recal = RecalibrationVM()
-       let stats = StatsVM()
-       let userService = UserService()
-       let theme = ThemeManager()
-
-       return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
-           .environmentObject(stats)
-           .environmentObject(userService)
-           .environmentObject(theme)
-           .previewTheme()
-}
-
-#Preview("1st Chunk Completed - Prompt for 2nd") {
-    let focus = FocusSessionVM()
-       focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
-       focus.canAdd = false
-       focus.phase = .finished
-       focus.countdownRemaining = 0
-       focus.currentSessionChunk = 1
-
-       let recal = RecalibrationVM()
-       let stats = StatsVM()
-       let userService = UserService()
-       let theme = ThemeManager()
-
-       return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
-           .environmentObject(stats)
-           .environmentObject(userService)
-           .environmentObject(theme)
-           .previewTheme()
-}
-
-#Preview("2nd Chunk Running"){
-    let focus = FocusSessionVM()
-        focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
-        focus.canAdd = false
-        focus.phase = .running
-        focus.countdownRemaining = 300
-        focus.currentSessionChunk = 1
-
-        let recal = RecalibrationVM()
-        let stats = StatsVM()
-        let userService = UserService()
-        let theme = ThemeManager()
-
-        return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
-            .environmentObject(stats)
-            .environmentObject(userService)
-            .environmentObject(theme)
-            .previewTheme()
-}
-
-#Preview("Session Complete - Recalibrate Prompt"){
-    let focus = FocusSessionVM()
-        focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
-        focus.canAdd = false
-        focus.phase = .finished
-        focus.countdownRemaining = 0
-        focus.currentSessionChunk = 2
-        focus.showRecalibrate = true
-
-        let recal = RecalibrationVM()
-        let stats = StatsVM()
-        let userService = UserService()
-        let theme = ThemeManager()
-
-        return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
-            .environmentObject(stats)
-            .environmentObject(userService)
-            .environmentObject(theme)
-            .previewTheme()
-}
+//#Preview("After 1st Tile Added") {
+//    // State: First tile added, ready for second
+//    let focus = FocusSessionVM()
+//        focus.tiles = [TileM(text: "My First Intention")]
+//        focus.tileText = "Second Intention"
+//        focus.canAdd = true
+//    
+//    let recal = RecalibrationVM()
+//    let stats = StatsVM()
+//    let userService = UserService()
+//    let theme = ThemeManager()
+//    
+//    return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+//            .environmentObject(stats)
+//            .environmentObject(userService)
+//            .environmentObject(theme)
+//            .previewTheme()
+//}
+//#Preview("2 Tiles Added - Ready to Begin") {
+//    let focus = FocusSessionVM()
+//       focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+//       focus.canAdd = false
+//       focus.phase = .notStarted
+//    
+//    let recal = RecalibrationVM()
+//    let stats = StatsVM()
+//    let userService = UserService()
+//    let theme = ThemeManager()
+//   
+//    return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+//            .environmentObject(stats)
+//            .environmentObject(userService)
+//            .environmentObject(theme)
+//            .previewTheme()
+//}
+//
+//#Preview("1st Chunk Running") {
+//    // State: Countdown for first chunk is running
+//    let focus = FocusSessionVM()
+//       focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+//       focus.canAdd = false
+//       focus.phase = .running
+//       focus.countdownRemaining = 600
+//       focus.currentSessionChunk = 0
+//
+//       let recal = RecalibrationVM()
+//       let stats = StatsVM()
+//       let userService = UserService()
+//       let theme = ThemeManager()
+//
+//       return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+//           .environmentObject(stats)
+//           .environmentObject(userService)
+//           .environmentObject(theme)
+//           .previewTheme()
+//}
+//
+//#Preview("1st Chunk Completed - Prompt for 2nd") {
+//    let focus = FocusSessionVM()
+//       focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+//       focus.canAdd = false
+//       focus.phase = .finished
+//       focus.countdownRemaining = 0
+//       focus.currentSessionChunk = 1
+//
+//       let recal = RecalibrationVM()
+//       let stats = StatsVM()
+//       let userService = UserService()
+//       let theme = ThemeManager()
+//
+//       return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+//           .environmentObject(stats)
+//           .environmentObject(userService)
+//           .environmentObject(theme)
+//           .previewTheme()
+//}
+//
+//#Preview("2nd Chunk Running"){
+//    let focus = FocusSessionVM()
+//        focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+//        focus.canAdd = false
+//        focus.phase = .running
+//        focus.countdownRemaining = 300
+//        focus.currentSessionChunk = 1
+//
+//        let recal = RecalibrationVM()
+//        let stats = StatsVM()
+//        let userService = UserService()
+//        let theme = ThemeManager()
+//
+//        return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+//            .environmentObject(stats)
+//            .environmentObject(userService)
+//            .environmentObject(theme)
+//            .previewTheme()
+//}
+//
+//#Preview("Session Complete - Recalibrate Prompt"){
+//    let focus = FocusSessionVM()
+//        focus.tiles = [TileM(text: "Intention 1"), TileM(text: "Intention 2")]
+//        focus.canAdd = false
+//        focus.phase = .finished
+//        focus.countdownRemaining = 0
+//        focus.currentSessionChunk = 2
+//        focus.showRecalibrate = true
+//
+//        let recal = RecalibrationVM()
+//        let stats = StatsVM()
+//        let userService = UserService()
+//        let theme = ThemeManager()
+//
+//        return FocusSessionActiveV(viewModel: focus, recalibrationVM: recal)
+//            .environmentObject(stats)
+//            .environmentObject(userService)
+//            .environmentObject(theme)
+//            .previewTheme()
+//}

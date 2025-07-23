@@ -1,23 +1,25 @@
 //
-//  RecalibrationTheme.swift
+//  RecalibrationType.swift
 //  intention
 //
-//  Created by Benjamin Tryon on 6/14/25.
+//  Created by Benjamin Tryon on 7/22/25.
 //
 
 import SwiftUI
 
-enum RecalibrationTheme: String, CaseIterable {
-    case balancing, breathing
-    
-    var displayName: String {
+// File: RecalibrationType+Display.swift
+
+import SwiftUI
+
+extension RecalibrationType {
+    var label: String {
         switch self {
         case .balancing: return "Balancing Reset"
         case .breathing: return "Breathing Reset"
         }
     }
     
-    var instruction: [String] {
+    var instructions: [String] {
         switch self {
         case .balancing:
             return [
@@ -36,7 +38,7 @@ enum RecalibrationTheme: String, CaseIterable {
         }
     }
     
-    var imageName: String {
+    var iconName: String {
         switch self {
         case .balancing: return "figure.stand"
         case .breathing: return "lungs.fill"

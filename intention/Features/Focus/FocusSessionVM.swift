@@ -45,12 +45,19 @@ final class FocusSessionVM: ObservableObject {
     
     weak var historyVM: HistoryVM?      // hold a weak link injecting historyVM, see checkSessionCompletion()
 
-    
-    //
-    //    func startSession() async {
-    //        await tileAppendTrigger.startSessionTracking()
-    //        sessionActive = true
-    //    }
+    // Preview-friendly Initializer instead of #Preview { let focus =...}
+    init(previewMode: Bool = false) {
+            if previewMode {
+                tiles = [TileM(text: "Tile 1"), TileM(text: "Tile 2")]
+                tileText = "Start another..."
+                canAdd = false
+                sessionActive = true
+                currentSessionChunk = 1
+                phase = .running
+                countdownRemaining = 600
+            }
+        }
+    }
     // MARK: - 20-min chunk management - Swift Concurrency timer (Task + AsyncSequence)
     func startCurrent20MinCountdown() throws {
         guard tiles.count <= 2 else {

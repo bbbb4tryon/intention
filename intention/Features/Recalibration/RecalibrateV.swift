@@ -10,7 +10,7 @@ import SwiftUI
 struct RecalibrateV: View {
     @EnvironmentObject var theme: ThemeManager
     @ObservedObject var viewModel: RecalibrationVM
-    @State private var recalibrationChoice: RecalibrationTheme = .breathing
+    @State private var recalibrationChoice: RecalibrationMode = .breathing
         
     @StateObject private var recalibrationVM = RecalibrationVM()
         
@@ -27,7 +27,7 @@ struct RecalibrateV: View {
             
             // Picker
             Picker("Method", selection: $recalibrationChoice) {
-                ForEach(RecalibrationTheme.allCases, id: \.self) { theme in
+                ForEach(RecalibrationMode.allCases, id: \.self) { theme in
                     Text("\(theme.displayName)")
                         .font(.caption)
                         .tag(theme)
