@@ -146,7 +146,7 @@ struct FocusSessionActiveV: View {
         //        NavigationView {
         VStack(spacing: 20){
             
-            StatsSummaryBar
+            StatsSummaryBar(palette: palette)
             
             Spacer()    // pushes content towards center-top
             
@@ -288,9 +288,9 @@ struct FocusSessionActiveV: View {
         viewModel: FocusSessionVM(previewMode: true),
         recalibrationVM: RecalibrationVM()
     )
-        .environmentObject(stats)
-        .environmentObject(userService)
-        .environmentObject(theme)
+//        .environmentObject(stats)
+//        .environmentObject(userService)
+//        .environmentObject(theme)
         .previewTheme()
 }
 //#Preview("After 1st Tile Added") {

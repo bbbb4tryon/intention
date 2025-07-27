@@ -21,7 +21,7 @@ final class RecalibrationVM: ObservableObject {
     
     //  starts a true Swift Concurrency timer - Task + AsyncSequence
     //      clean, cancelable and lives in the actor context
-    func start(mode: RecalibrationMode) {
+    func start(mode: RecalibrationType) {
         stop()      // cancels any existing timer
         phase = .running
         timeRemaining = 240
@@ -35,7 +35,7 @@ final class RecalibrationVM: ObservableObject {
         }
     }
     
-    func tick(mode: RecalibrationMode) async {
+    func tick(mode: RecalibrationType) async {
         timeRemaining -= 1
         
         if timeRemaining <= 0 {

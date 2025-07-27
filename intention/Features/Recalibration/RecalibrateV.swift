@@ -10,7 +10,7 @@ import SwiftUI
 struct RecalibrateV: View {
     @EnvironmentObject var theme: ThemeManager
     @ObservedObject var viewModel: RecalibrationVM
-    @State private var recalibrationChoice: RecalibrationMode = .breathing
+    @State private var recalibrationChoice: RecalibrationType = .breathing
         
     @StateObject private var recalibrationVM = RecalibrationVM()
         
@@ -21,16 +21,16 @@ struct RecalibrateV: View {
         VStack(spacing: 24) {
             // Header
 //            Text.styled("Recalibrate", as: .header, using: fontTheme, in: palette)
-            Label("Recalibrate", systemImage: recalibrationChoice.imageName) // image and text
+            Label("Recalibrate", systemImage: recalibrationChoice.iconName) // image and text
                 .font(.largeTitle)
                 .foregroundStyle(palette.primary)
             
             // Picker
             Picker("Method", selection: $recalibrationChoice) {
-                ForEach(RecalibrationMode.allCases, id: \.self) { theme in
-                    Text("\(theme.displayName)")
+                ForEach(RecalibrationType.allCases, id: \.self) { type in
+                    Text("\(type.label)")
                         .font(.caption)
-                        .tag(theme)
+                        .tag(type)
                 }
             }
             .pickerStyle(SegmentedPickerStyle())
@@ -52,7 +52,7 @@ struct RecalibrateV: View {
                 .foregroundStyle(palette.text)
             
             // Instruction List
-            ForEach(recalibrationChoice.instruction, id: \.self) { line in
+            ForEach(recalibrationChoice.instructions, id: \.self) { line in
                 Text("• \(line)")
             }
             

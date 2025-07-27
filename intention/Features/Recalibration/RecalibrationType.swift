@@ -7,18 +7,18 @@
 
 import SwiftUI
 
-// File: RecalibrationType+Display.swift
+// Authoritiative model
+enum RecalibrationType: String, CaseIterable, Hashable, Codable {
+    case breathing
+    case balancing
 
-import SwiftUI
-
-extension RecalibrationType {
     var label: String {
         switch self {
         case .balancing: return "Balancing Reset"
         case .breathing: return "Breathing Reset"
         }
     }
-    
+
     var instructions: [String] {
         switch self {
         case .balancing:
@@ -37,7 +37,7 @@ extension RecalibrationType {
             ]
         }
     }
-    
+
     var iconName: String {
         switch self {
         case .balancing: return "figure.stand"

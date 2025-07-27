@@ -72,6 +72,12 @@ struct HistoryV: View {
         }
         .padding(.top)
         .background(palette.background.ignoresSafeArea())
+        if let error = viewModel.lastError {
+            ErrorOverlay(error: error) {
+                viewModel.lastError = nil
+            }
+            .zIndex(1)  // Keeps the above the context of it's error
+        }
     }
 //        .foregroundStyle(palette.text)
 }

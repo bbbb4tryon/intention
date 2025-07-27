@@ -7,70 +7,120 @@
 
 import SwiftUI
 
+enum HistoryError: Error, Equatable {
+    case categoryNotFound
+    case historyNotLoaded
+    case saveHistoryFailed
+}
+
 @MainActor
 final class HistoryVM: ObservableObject {
     @Published var categories: [CategoriesModel] = []
+    @Published var tileLimitWarning: Bool = false
     @Published var lastUndoableMove: (tile: TileM, from: UUID, to: UUID)? = nil
+    @Published var lastError: Error? = nil
 
+    private let persistence: PersistenceActor
+    private let archiveActor = ArchiveActor()
+    private let storageKey = "categories data"
+    private let tileSoftCap = 200
 
     // AppStorage wrapper (private, not accessed directly from the view)
     // since `historyVM` is injected into `FocusSessionVM` at startup via `RootView`
     //  the `FocusSessionVM` `func checkSessionCompletion()`'s `addSession(tiles)`
     //  method successfully archives each 2-tile session in and survives app restarts:
     @AppStorage("categoriesData") private var categoryData: Data = Data()
-    {   didSet  {   loadHistory()    }  }
     
-    init() {
-        loadHistory()
+    /// `saveHistory` calls keep storage synced, the program will rehydrate using `loadHistory()` on launch only, don't watch `categoryData`
+    // Don't use any `onChange`
+    init(persistence: PersistenceActor = PersistenceActor()) {
+        self.persistence = persistence
+        Task {
+            await loadHistory()
+        }
+    }
+    
+    private func loadHistory() async {
+        do {
+            if let loaded: [CategoriesModel] = try await persistence.loadHistory([CategoriesModel].self, from: storageKey) {
+                self.categories = loaded
+            }
+        } catch {
+            debugPrint(("[History.loadHistory persistence.loadHistory]", error ))
+            await MainActor.run { self.lastError = error }
+        }
+    }
+    
+    func limitCheck() {
+        let total = categories.reduce(0) { $0 + $1.tiles.count }
+        if total > tileSoftCap {
+            tileLimitWarning = true
+            Task {
+                try await archiveActor.offloadOldTiles(from: categories, maxTiles: tileSoftCap)
+            }
+        } else {
+            tileLimitWarning = false
+        }
     }
 
-    
-    private func loadHistory()  {
-        guard !categoryData.isEmpty else { return }
-        do {
-            categories = try JSONDecoder().decode([CategoriesModel].self, from: categoryData)
-        } catch {
-            debugPrint("HistoryVM: Failed to decode history")
-        }
-    }
-    // MARK: persistence helper
-    //FIXME: need a "background Task"?
+    // Save the current categories array -> wrapper of PersistenceActor.saveHistory
     func saveHistory() {
-        do {
-            let encoded = try JSONEncoder().encode(categories)
-            categoryData = encoded
-        } catch {
-            debugPrint("HistoryVM: Failed to encode history")
+        let current = categories
+        Task {
+            do {
+                try await persistence.saveHistory(current, to: storageKey)
+            } catch {
+                debugPrint("[HistoryVM.saveHistory] failed:", error)
+                await MainActor.run { self.lastError = HistoryError.saveHistoryFailed }
+            }
         }
     }
-    
+
     // MARK: - Add a tile to a specific category
     func addToHistory(_ newTile: TileM, to categoryID: UUID){
         guard let index = categories.firstIndex(where: {  categoryItem in
             categoryItem.id == categoryID
         }) else {
-            debugPrint("HistoryVM: Category ID not found. Tile not added.")
+            debugPrint("HistoryVM.addToHistory] Category ID not found. Tile not added.")
+            self.lastError = HistoryError.categoryNotFound
             return
         }
-        //FIXME: Just add to top of screen or Miscellaneous?
-        categories[index].tiles.insert(newTile, at: 0)  // "capped FIFO" newest-first for UI display
 
-        saveHistory()                       // saveHistory() is inside addToHistory() to persist automatically
+        // "capped FIFO" newest-first for UI display
+        categories[index].tiles.insert(newTile, at: 0)
+        
+        // Once all tiles equal 200, then offload oldest
+        let totalTileCount = categories.reduce(0) { $0 + $1.tiles.count }
+        
+        if totalTileCount > tileSoftCap {
+            Task {
+                do {
+                    try await archiveActor.offloadOldTiles(from: categories, maxTiles: tileSoftCap)
+                } catch {
+                    debugPrint("[HistoryVM.addToHistory tile cap] error:", error )
+                    await MainActor.run { self.lastError = HistoryError.saveHistoryFailed }
+                }
+            }
+        }
+        
+        // saveHistory() is inside addToHistory() to persist automatically
+        saveHistory()
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
     }
-    //https://www.avanderlee.com/swiftui/viewbuilder/    // MARK: - Add a new category
+    
+    //https://www.avanderlee.com/swiftui/viewbuilder/
+    // MARK: Add a new category
     func addCategory(persistedInput: String){
         let newCategory = CategoriesModel(persistedInput: persistedInput)
         categories.append(newCategory)
         saveHistory()
-    }
-
-    // MARK: reset all categories
-    func clearHistory() {
-        categories = []
-        categoryData = Data() // clear storage
+        
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
     }
     
-    // MARK: - sets default category
+    // MARK: sets default category
     func ensureDefaultCategory(named name: String = "Miscellaneous", userService: UserService) {
         let defaultID = userService.defaultCategoryID
         
@@ -79,10 +129,22 @@ final class HistoryVM: ObservableObject {
         }) {
             let new = CategoriesModel(id: defaultID, persistedInput: name)
             categories.insert(new, at: 0)
+            debugPrint("HistoryVM.ensureDefaultCategory error")
             saveHistory()
-            
-            let generator = UIImpactFeedbackGenerator(style: .medium)
-            generator.impactOccurred()
+        }
+    }
+    
+    // MARK: sets archive category
+    func ensureArchiveCategory(named name: String = "Archive", userService: UserService) {
+        let defaultID = userService.defaultCategoryID
+        
+        if !categories.contains(where: { defaultCategoryItem in
+            defaultCategoryItem.id == defaultID
+        }) {
+            let new = CategoriesModel(id: defaultID, persistedInput: name)
+            categories.insert(new, at: 0)
+            debugPrint("HistoryVM.ensureArchiveCategory error")
+            saveHistory()
         }
     }
     
@@ -99,9 +161,13 @@ final class HistoryVM: ObservableObject {
         
         let movingTile = categories[fromIndex].tiles.remove(at: tileIndex)
         categories[toIndex].tiles.insert(movingTile, at: 0)
+        
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
         saveHistory()
         
-        lastUndoableMove = (movedTile, fromID, toID)
+        lastUndoableMove = (movingTile, fromID, toID)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             Task { @MainActor in
@@ -117,4 +183,15 @@ final class HistoryVM: ObservableObject {
             lastUndoableMove = nil
         }
     }
+    
+    // MARK: reset all categories
+    func clearHistory() {
+        categories = []     // clears model first
+        saveHistory()       // persists a cleared list
+        
+        Task {
+            await persistence.clear(storageKey) // clear storage safely: see PersistenceActor
+        }
+    }
+    
 }

@@ -10,18 +10,25 @@ import SwiftUI
 struct RootView: View {
     // creates and defines default Category exactly once ever, even across relaunches
     @AppStorage("hasInitializedDefaultCategory") private var hasInitializedDefaultCategory = false
-
+    
+    // Shared, reusable instance injected once, then passed into each viewModel: categories, stats are part of a shared domain
+    let persistence = PersistenceActor()
+    
     // ViewModel is the source of truth
-    @StateObject private var historyVM = HistoryVM()
-    @StateObject private var focusVM = FocusSessionVM()
+    @StateObject private var historyVM: HistoryVM
+    @StateObject private var focusVM: FocusSessionVM
     @StateObject private var recalibrationVM = RecalibrationVM()
-    @StateObject private var statsVM = StatsVM()
+    @StateObject private var statsVM: StatsVM
     @StateObject private var userService = UserService()
     
-    init(){
-        // Inject dependency so HistoryV can access tiles from the focusVM
-        focusVM.historyVM = historyVM   // see HistoryV, below
-    }
+    init() {
+        // Inject dependency so HistoryV can access tiles from the focusVM, etc
+        let persistence = PersistenceActor()
+        _historyVM = StateObject(wrappedValue: HistoryVM(persistence: persistence))
+        _focusVM = StateObject(wrappedValue: FocusSessionVM())
+        _statsVM = StateObject(wrappedValue: StatsVM(persistence: persistence))
+        
+     }
     
     var body: some View {
         TabView {

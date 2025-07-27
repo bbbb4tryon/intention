@@ -35,7 +35,7 @@ final class FocusSessionVM: ObservableObject {
     @Published var phase: Phase = .notStarted       // State of the *current* 20-min countdown
     @Published var currentSessionChunk: Int = 0     // Tracks which 20-min chunk of the session is active
     @Published var sessionHistory: [[TileM]] = []   // history model of sessions
-    @Published var lastError: Error?                // UI overlay from performAsyncAction()
+    @Published var lastError: Error?                // UI visual error overlay
     
     private let tileAppendTrigger = FocusTimerActor()
     private var chunkCountdown: Task<Void, Never>? = nil        // background live time keeper/ticker
@@ -57,7 +57,6 @@ final class FocusSessionVM: ObservableObject {
                 countdownRemaining = 600
             }
         }
-    }
     // MARK: - 20-min chunk management - Swift Concurrency timer (Task + AsyncSequence)
     func startCurrent20MinCountdown() throws {
         guard tiles.count <= 2 else {
@@ -141,9 +140,9 @@ final class FocusSessionVM: ObservableObject {
     // MARK: - Combined Trigger of Chunks Session (via "Begin")
     func beginOverallSession() async throws {
         guard tiles.count == 2 && phase == .notStarted else {
+            debugPrint("User pressed Begin, overall session and 1st chuck started.")
             throw FocusSessionError.badTrigger_Overall
         }
-        debugPrint("User pressed Begin, overall session and 1st chuck started.")
         await tileAppendTrigger.startSessionTracking()
         sessionActive = true        // Overall session activated
         try! startCurrent20MinCountdown()    // First Chunk started, try! disables error propagation
@@ -231,8 +230,8 @@ final class FocusSessionVM: ObservableObject {
             do {
                 try await action()
             } catch {
-                debugPrint("FocusSessionVM error: \(error)")
-                self.lastError = error  // Save for UI overlay
+                debugPrint("[FocusSessionVM.performAsyncAction] error:", error)
+                self.lastError = error
             }
         }
     }

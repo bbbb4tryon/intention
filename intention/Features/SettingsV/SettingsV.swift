@@ -117,18 +117,18 @@ private struct StatBlock: View {
     }
 }
 
-#Preview {
-    let stats = StatsVM()
-       let sampleSession = CompletedSession(date: Date(), tileTexts: ["Write Chapter", "Edit Draft"], recalibration: .breathing)
-       stats.logSession(sampleSession)
-       stats.logSession(sampleSession)
-       stats.logSession(CompletedSession(date: Date().addingTimeInterval(-86400), tileTexts: ["Read Notes", "Outline Next Part"], recalibration: .balancing))
-
-       let userService = UserService()
-       let theme = ThemeManager()
-
-       return SettingsV(viewModel: stats)
-           .environmentObject(userService)
-           .environmentObject(theme)
-           .previewTheme()
-}
+//#Preview {
+//    let stats = StatsVM()
+//       let sampleSession = CompletedSession(date: Date(), tileTexts: ["Write Chapter", "Edit Draft"], recalibration: .breathing)
+//       stats.logSession(sampleSession)
+//       stats.logSession(sampleSession)
+//       stats.logSession(CompletedSession(date: Date().addingTimeInterval(-86400), tileTexts: ["Read Notes", "Outline Next Part"], recalibration: .balancing))
+//
+//       let userService = UserService()
+//       let theme = ThemeManager()
+//
+//       return SettingsV(viewModel: stats)
+//           .environmentObject(userService)
+//           .environmentObject(theme)
+//           .previewTheme()
+//}
