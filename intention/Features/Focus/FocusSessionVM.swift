@@ -123,18 +123,17 @@ final class FocusSessionVM: ObservableObject {
         
         let tile = TileM(text: trimmed)
         let success = await tileAppendTrigger.addTile(tile) //NOTE: - Initialization of immutable value 'success' was never used; consider replacing with assignment to '_' or removing it... is Dismissed by adding if conditions below
-        if success {
+        guard success else {
+            canAdd = false
+            throw FocusSessionError.unexpected
+        }
+        // Overall session (FocusTimerActor) only truly starts when the "Begin" button is pressed
+        // If code reaches here, tile was successfully added
             tiles.append(tile)
             tileText = ""
             canAdd = tiles.count < 2    // true if tiles.count is 0 or 1, false if 2
+                        Haptic.notifySuccessfullyAdded()    // subtle success feedback
             
-            Haptic.notifySuccessfullyAdded()    // subtle success feedback
-            
-            // This is fine; overall session (FocusTimerActor) only truly starts when the "Begin" button is pressed
-            
-        } else {
-            canAdd = false
-        }
     }
     
     // MARK: - Combined Trigger of Chunks Session (via "Begin")

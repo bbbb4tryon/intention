@@ -254,7 +254,7 @@ struct FocusSessionActiveV: View {
                     .multilineTextAlignment(.center)
                 
                 Button("Visit Website") {
-                    if let url = URL(string: "https://www.argonnesoftware.com/about/") {
+                    if let url = URL(string: "https://www.argonnesoftware.com/cart/") {
                         UIApplication.shared.open(url)
                     }
                 }
