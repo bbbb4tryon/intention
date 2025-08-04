@@ -20,6 +20,7 @@ struct RootView: View {
     @StateObject private var recalibrationVM = RecalibrationVM()
     @StateObject private var statsVM: StatsVM
     @StateObject private var userService = UserService()
+    @StateObject private var membershipVM = MembershipVM()
     
     init() {
         // Inject dependency so HistoryV can access tiles from the focusVM, etc
@@ -27,6 +28,8 @@ struct RootView: View {
         _historyVM = StateObject(wrappedValue: HistoryVM(persistence: persistence))
         _focusVM = StateObject(wrappedValue: FocusSessionVM())
         _statsVM = StateObject(wrappedValue: StatsVM(persistence: persistence))
+        _membershipVM = StateObject(wrappedValue: MembershipVM())
+        _statsVM.wrappedValue.membershipVM = _membershipVM.wrappedValue
         
      }
     
@@ -62,6 +65,7 @@ struct RootView: View {
         }
         .environmentObject(statsVM)
         .environmentObject(userService)
+        .environmentObject(membershipVM)
     }
 }
 

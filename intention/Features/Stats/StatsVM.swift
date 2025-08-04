@@ -12,6 +12,7 @@ enum StatsVMError: Error, Equatable {
     case didNotLoadFromPersistence
 }
 
+@MainActor
 final class StatsVM: ObservableObject {
     @Published private(set) var averageCompletionRate: Double = 1.0
     @Published private(set) var totalCompletedIntentions: Int = 0
@@ -27,6 +28,8 @@ final class StatsVM: ObservableObject {
     private let membershipThreshold = 2
     private var completedSessions: [CompletedSession] = []
     
+    weak var membershipVM: MembershipVM?
+    
     init(persistence: PersistenceActor){
         self.persistence = persistence
         Task {
@@ -36,6 +39,9 @@ final class StatsVM: ObservableObject {
     
     func logSession(_ session: CompletedSession) {
         completedSessions.append(session)
+        // Update intention count
+        totalCompletedIntentions = completedSessions.flatMap(\.tileTexts).count
+        membershipVM?.triggerPromptifNeeded(afterSessions: completedSessions.count)
         
         /// if user did recalibrate (picked breathing or balancing), type will be non-nil, and count incremented
         if let type = session.recalibration {

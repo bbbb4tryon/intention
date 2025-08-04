@@ -128,6 +128,7 @@ struct FocusSessionActiveV: View {
     @EnvironmentObject var theme: ThemeManager
     @EnvironmentObject var userService: UserService
     @EnvironmentObject var statsVM: StatsVM
+    @EnvironmentObject var membershipVM: MembershipVM
     @Environment(\.dismiss) var dismiss
     
     @ObservedObject var viewModel: FocusSessionVM
@@ -248,18 +249,41 @@ struct FocusSessionActiveV: View {
         .background(palette.background.ignoresSafeArea())
         //            .navigationTitle("")    // Hides default navigation title
         
-        .sheet(isPresented: $statsVM.shouldPromptForMembership) {
+        .sheet(isPresented: $membershipVM.shouldPrompt) {
             VStack(spacing: 20) {
-                Text("After two completed sessions, consider a membership for extra features.")
+                Text("After two completed sessions, consider a membership for unlimited sessions and extra features.")
                     .multilineTextAlignment(.center)
                 
-                Button("Visit Website") {
-                    if let url = URL(string: "https://www.argonnesoftware.com/cart/") {
-                        UIApplication.shared.open(url)
+                if statsVM.isMember {
+                    Text("You area member ✅")
+                } else {
+                    Button("Buy Membership"){
+                        Task { await statsVM.purchaseMembership }
+                    }
+                    
+                    Button("Restore Purchases") {
+                        Task { await statsVM.restoreMembership  }
+                    }
+                    
+                    Divider()
+                    
+                    // Token flow
+                    
+                    Button("Enter Membership Code"){
+                        //otp for entering the code
+                    }
+                    
+                    if !AppEnvironment.isAppStoreReviewing {
+                        Button("Visit Website") {
+                            if let url = URL(string: "https://www.argonnesoftware.com/cart/") {
+                                UIApplication.shared.open(url)
+                            }
+                        }
+                        .mainActionStyle(screen: .homeActiveIntentions)
                     }
                 }
-                .mainActionStyle(screen: .homeActiveIntentions)
             }
+            .padding()
         }
         .sheet(isPresented: $viewModel.showRecalibrate){
             RecalibrateV(viewModel: recalibrationVM) // FIXME: NEED recalibrationChoice: selectedChoice?
