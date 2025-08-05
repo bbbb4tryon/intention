@@ -8,12 +8,17 @@
 import SwiftUI
 import StoreKit
 
+enum MembershipError: Error, Equatable, LocalizedError {
+    case purchaseFailed, restoreFailed, invalidCode, networkError, appEnvironmentFail
+}
+
+
 @MainActor
 final class MembershipVM: ObservableObject {
     @Published var isMember: Bool = false
     @Published var shouldPrompt: Bool = false
     @Published var showCodeEntry: Bool = false
-    @Published var lastError: String?
+    @Published var lastError: Error?
     
     private let paymentService = PaymentService()
     private let codeService = MembershipCodeService()
@@ -30,30 +35,54 @@ final class MembershipVM: ObservableObject {
         }
     }
     
-    func purchaseMembershipOrPrompt() async {
+    func purchaseMembershipOrPrompt() async throws {
         await paymentService.purchaseMembership()
         isMember = paymentService.isMember
         shouldPrompt = !isMember
+        
+        if !isMember {
+            throw MembershipError.purchaseFailed
+        }
     }
     
-    func restoreMembershipOrPrompt() async {
+    func restoreMembershipOrPrompt() async throws {
         await paymentService.restorePurchases()
         isMember = paymentService.isMember
+        
+        if !isMember {
+            throw MembershipError.restoreFailed
+        }
     }
     
     func verifyCode(_ code: String) async {
-        let result = await codeService.verify(code: code, deviceID: UIDevice.current.identifierForVendor?.uuidString ?? "unknown")
-        switch result {
-        case .success:
-            await MainActor.run {
-                self.isMember = true
-                self.shouldPrompt = false
-                self.showCodeEntry = false
+        Task {
+            do {
+                let result = await codeService.verify(code: code, deviceID: UIDevice.current.identifierForVendor?.uuidString ?? "unknown")
+                
+                switch result {
+                case .success:
+                    self.isMember = true
+                    self.shouldPrompt = false
+                    self.showCodeEntry = false
+                    
+                case .invalid:
+                    throw MembershipError.invalidCode
+                    
+                case .networkError:
+                    throw MembershipError.networkError
+                }
+                
+            } catch {
+                debugPrint("[MembershipVM.verifyCode] error: ", error)
+                await MainActor.run { self.lastError = error }
             }
-        case .invalid:
-            await MainActor.run { self.lastError = "Invalid code. Please try again." }
-        case .networkError:
-            await MainActor.run { self.lastError = "Network error. Try later." }
         }
     }
 }
+extension MembershipVM {
+    var showSheetBinding: Binding<Bool> {
+        Binding(get: { self.shouldPrompt }, set: { newVal in self.shouldPrompt = newVal }
+        )
+    }
+}
+

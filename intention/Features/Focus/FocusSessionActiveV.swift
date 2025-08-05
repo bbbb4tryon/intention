@@ -124,6 +124,11 @@ enum ActiveSessionError: Error, Equatable {
     case submitFailed, sessionAlreadyRunning
 }
 
+// MembershipSheetV enum
+enum ActiveSheet: Equatable {
+    case none, membership
+}
+
 struct FocusSessionActiveV: View {
     @EnvironmentObject var theme: ThemeManager
     @EnvironmentObject var userService: UserService
@@ -134,7 +139,8 @@ struct FocusSessionActiveV: View {
     @ObservedObject var viewModel: FocusSessionVM
     @ObservedObject var recalibrationVM: RecalibrationVM
     
-    @State private var showMembershipSheet = false
+    // MembershipSheetV enum var
+    @State private var activeSheet: ActiveSheet = .none
     
     var body: some View {
         // Get current palette for the appropriate sceen
@@ -249,41 +255,10 @@ struct FocusSessionActiveV: View {
         .background(palette.background.ignoresSafeArea())
         //            .navigationTitle("")    // Hides default navigation title
         
-        .sheet(isPresented: $membershipVM.shouldPrompt) {
-            VStack(spacing: 20) {
-                Text("After two completed sessions, consider a membership for unlimited sessions and extra features.")
-                    .multilineTextAlignment(.center)
-                
-                if statsVM.isMember {
-                    Text("You area member ✅")
-                } else {
-                    Button("Buy Membership"){
-                        Task { await statsVM.purchaseMembership }
-                    }
-                    
-                    Button("Restore Purchases") {
-                        Task { await statsVM.restoreMembership  }
-                    }
-                    
-                    Divider()
-                    
-                    // Token flow
-                    
-                    Button("Enter Membership Code"){
-                        //otp for entering the code
-                    }
-                    
-                    if !AppEnvironment.isAppStoreReviewing {
-                        Button("Visit Website") {
-                            if let url = URL(string: "https://www.argonnesoftware.com/cart/") {
-                                UIApplication.shared.open(url)
-                            }
-                        }
-                        .mainActionStyle(screen: .homeActiveIntentions)
-                    }
-                }
+        .task {
+            if membershipVM.shouldPrompt {
+                activeSheet = .membership
             }
-            .padding()
         }
         .sheet(isPresented: $viewModel.showRecalibrate){
             RecalibrateV(viewModel: recalibrationVM) // FIXME: NEED recalibrationChoice: selectedChoice?
@@ -303,6 +278,11 @@ struct FocusSessionActiveV: View {
             }
         }
         return data
+    }
+    
+    // MARK: - MembershipSheet enum and state var
+    private var isSheetPresented: Bool {
+        activeSheet != .none
     }
 }
 
