@@ -8,7 +8,7 @@
 import Foundation
 import StoreKit
 
-// Handles Storekit 2 logic
+// Handles purchaseds via Storekit 2 logic
 final class PaymentService: ObservableObject {
     @Published private(set) var products: [Product] = []
     @Published private(set) var isMember: Bool = false

@@ -53,8 +53,8 @@ struct CategoryTileList: View {
                             if let index = categoryItem.tiles.firstIndex(of: tile) {
                                 withAnimation {
                                     categoryItem.tiles.remove(at: index)
+                                    saveHistory()
                                 }
-                                saveHistory()
                             }
                         } label: {
                             Label("Delete", systemImage: "trash")
