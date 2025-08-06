@@ -6,20 +6,31 @@
 //
 
 import UIKit
-import Foundation
-
-
-class TileOrganizerVC: UICollectionViewController, UICollectionViewDelegateFlowLayout {
-    private var categories: [CategoriesModel] = []
+// Authority on delegates and section headers
+final class TileOrganizerVC: UICollectionViewController {
     var onMoveTile: (TileM, UUID, UUID) -> Void = { _,_,_ in }
+    private var categories: [CategoriesModel] = []
+    private var dragSourceIndexPath: IndexPath?
+
+    init() {
+        let layout = UICollectionViewFlowLayout()
+        layout.sectionInset = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
+        layout.itemSize = CGSize(width: UIScreen.main.bounds.width - 48, height: 44)
+        layout.headerReferenceSize = CGSize(width: UIScreen.main.bounds.width, height: 30)
+        super.init(collectionViewLayout: layout)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) not implemented") }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
+        collectionView.register(HeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "Header")
         collectionView.dragDelegate = self
         collectionView.dropDelegate = self
-        collectionView.reorderingCadence = .immediate
         collectionView.dragInteractionEnabled = true
+        collectionView.reorderingCadence = .immediate
+        collectionView.backgroundColor = .clear
     }
 
     func update(categories: [CategoriesModel]) {
@@ -27,24 +38,87 @@ class TileOrganizerVC: UICollectionViewController, UICollectionViewDelegateFlowL
         collectionView.reloadData()
     }
 
-    // MARK: - UICollectionViewDataSource methods
-
     override func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return categories.count
+        categories.count
     }
 
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return categories[section].tiles.count
+        categories[section].tiles.count
     }
 
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let tile = categories[indexPath.section].tiles[indexPath.row]
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
-        var content = UIListContentConfiguration.cell()
-        content.text = tile.text
-        cell.contentConfiguration = content
+
+        var config = UIListContentConfiguration.cell()
+        config.text = tile.text
+        cell.contentConfiguration = config
+        cell.backgroundColor = UIColor.systemGray6
+        cell.layer.cornerRadius = 8
+        cell.clipsToBounds = true
+
         return cell
     }
 
-    // MARK: - UICollectionViewDragDelegate / DropDelegate to be added here
+    override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        guard kind == UICollectionView.elementKindSectionHeader else { return UICollectionReusableView() }
+        let header = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "Header", for: indexPath) as! HeaderView
+        header.label.text = categories[indexPath.section].persistedInput
+        return header
+    }
 }
+
+extension TileOrganizerVC: UICollectionViewDragDelegate, UICollectionViewDropDelegate {
+    func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
+        dragSourceIndexPath = indexPath
+        let tile = categories[indexPath.section].tiles[indexPath.row]
+        let itemProvider = NSItemProvider(object: tile.text as NSString)
+        let dragItem = UIDragItem(itemProvider: itemProvider)
+        dragItem.localObject = tile
+        return [dragItem]
+    }
+
+    func collectionView(_ collectionView: UICollectionView, canHandle session: UIDropSession) -> Bool {
+        session.localDragSession != nil
+    }
+
+    func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath indexPath: IndexPath?) -> UICollectionViewDropProposal {
+        UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
+        guard
+            let destinationIndexPath = coordinator.destinationIndexPath,
+            let sourceIndexPath = dragSourceIndexPath,
+            let item = coordinator.items.first,
+            let tile = item.dragItem.localObject as? TileM
+        else {
+            return
+        }
+
+        let fromCategoryID = categories[sourceIndexPath.section].id
+        let toCategoryID = categories[destinationIndexPath.section].id
+
+        onMoveTile(tile, fromCategoryID, toCategoryID)
+        dragSourceIndexPath = nil
+    }
+}
+
+final class HeaderView: UICollectionReusableView {
+    let label = UILabel()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        label.font = UIFont.preferredFont(forTextStyle: .subheadline)
+        label.textColor = .secondaryLabel
+        addSubview(label)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            label.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) not implemented") }
+}
+
