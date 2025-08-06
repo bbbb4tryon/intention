@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct CategorySection: View {
     @Binding var categoryItem: CategoriesModel
@@ -34,16 +35,17 @@ struct CategorySection: View {
                 tileDropHandler: tileDropHandler,
                 moveTile: moveTile
             )
-            .onDrop(of: [.data], isTargeted: $dropTarget) { providers in
-                //FIXME: use the extracted helper????
-                Task {
-                    if let dragged = await tileDropHandler.handleDrop(providers: providers),
-                       dragged.fromCategoryID != categoryItem.id {
-                        await moveTile(dragged.tile, dragged.fromCategoryID, categoryItem.id)
-                    }
-                }
-                return true
-            }
+            // CAN REMOVE IF UIKIT HANDLES MOVING TILES
+//            .onDrop(of: [UTType.draggableTile.identifier], isTargeted: $dropTarget) { providers in
+//                //FIXME: use the extracted helper????
+//                Task {
+//                    if let dragged = await tileDropHandler.handleDrop(providers: providers),
+//                       dragged.fromCategoryID != categoryItem.id {
+//                        await moveTile(dragged.tile, dragged.fromCategoryID, categoryItem.id)
+//                    }
+//                }
+//                return true
+//            }
             .background(dropTarget ? palette.accent.opacity(0.1) : Color.clear)
             .animation(.easeInOut, value: dropTarget)
         }

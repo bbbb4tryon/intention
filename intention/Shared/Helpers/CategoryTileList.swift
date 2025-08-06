@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct CategoryTileList: View {
     @Binding var categoryItem: CategoriesModel
@@ -13,9 +14,6 @@ struct CategoryTileList: View {
     let fontTheme: AppFontTheme
     let saveHistory: () -> Void
     
-    let tileDropHandler: TileDropHandler
-    let moveTile: (TileM, UUID, UUID) async -> Void
-
     var body: some View {
         if categoryItem.tiles.isEmpty {
             Text("Tasks you intended to complete would display here")
@@ -33,20 +31,6 @@ struct CategoryTileList: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(palette.primary.opacity(0.1))
                             .cornerRadius(8)
-                    }
-                    .onDrag {
-                        let dragItem = DraggedTile(tile: tile, fromCategoryID: categoryItem.id)
-                        // Avoids force-casting, registers a Data representation with a UTI (public.data), expected by `.onDrop`
-                        //FIXME: use the Task helper function?
-                        if let data = try? JSONEncoder().encode(dragItem) {
-                            let provider = NSItemProvider()
-                            provider.registerDataRepresentation(forTypeIdentifier: "puclic.data", visibility: .all) { completion in
-                                completion(data, nil)
-                                return nil
-                            }
-                            return provider
-                        }
-                        return NSItemProvider()
                     }
                     .swipeActions {
                         Button(role: .destructive) {

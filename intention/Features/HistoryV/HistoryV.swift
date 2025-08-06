@@ -15,6 +15,7 @@ struct HistoryV: View {
     @State var newTextTiles: [UUID: String] = [:]   // Store new tile text per category using its `id` as key
     @State private var tileDropHandler = TileDropHandler()
     @State private var dropTargets: [UUID: Bool] = [:]  // Drop highlight state per category
+    @State private var isOrganizing = false
     
     var body: some View {
         
@@ -67,6 +68,9 @@ struct HistoryV: View {
                         }
                         .animation(.easeInOut, value: viewModel.lastUndoableMove != nil)
                 }
+            }
+            Button(isOrganizing ? "Done" : "Organize") {
+                isOrganizing.toggle()
             }
             .padding(.vertical)
         }
