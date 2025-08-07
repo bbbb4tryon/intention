@@ -1,0 +1,31 @@
+#
+//  .swiftlint.yml
+//  intention
+//
+//  Created by Benjamin Tryon on 8/7/25.
+//
+
+disabled_rules:
+  - line_length
+  - trailing_whitespace
+
+opt_in_rules:
+  - missing_docs
+  - todo
+  - mark
+
+included:
+  - intention/
+
+# Warn if public types/functions are undocumented
+missing_docs:
+  severity: warning
+
+# Warn on TODO and FIXME
+todo:
+  severity: warning
+
+# Enforce structured MARKs for sections
+mark:
+  severity: warning
+
