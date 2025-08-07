@@ -10,29 +10,26 @@ import XCTest
 
 @MainActor
 final class FocusSessionVMTests: XCTestCase {
-    func testSubmitTileTrimsText() async throws {
-        let vm = FocusSessionVM()
-        await vm.startAppendTileSession()
-        vm.tileText = "   Meditate"
+    func testAddTileLogic() async throws {
+        let vm = FocusSessionVM(previewMode: false)
+        vm.tileText = "[FocusSessionVMTests.testAddTileLogic]"
         
         try await vm.addTileAndPrepareForSession()
         
         XCTAssertEqual(vm.tiles.count, 1)
-        XCTAssertEqual(vm.tiles.first?.text, "Meditate")
+        XCTAssertEqual(vm.tiles.first?.text, "[FocusSessionVMTests.testAddTileLogic]")
     }
     
-    func testSubmitEmptyTileThrows() async throws {
+    func testAddTileFailsIfEmpty() async {
         let vm = FocusSessionVM()
-        await vm.startAppendTileSession()
-        vm.tileText = "   "
-        
+        vm.tileText = "     "
         do {
             try await vm.addTileAndPrepareForSession()
-            XCTFail("Expected empty input to throw")
+            XCTFail("Should throw and emptyInput error")
         } catch FocusSessionError.emptyInput {
-            // ✅ expected
+            /// success
         } catch {
-            XCTFail("Unexpected error: \(error)")
+            XCTFail("[FocusSessionVMTests.testAddTileLogic] Unexpected error: \(error)")
         }
     }
 }

@@ -15,6 +15,12 @@ import SwiftUI
  - performance tests to provide regression coverage of performance-critical regions of code
  - create a test plan to run only the unit tests for a module while developing and debugging that module,
  - a second test plan to run all unit, integration, and UI tests before submitting your app to the App Store
+ git commit -m "feat: Add SwiftLint and improve documentation style" -m "This commit adds SwiftLint with a missing_docs rule to enforce documentation standards.
+ It also refactors existing comments and documentation to a new, standardized style:
+ - Use /// for one-liners.
+ - Only use @param and @throws where necessary.
+ - Preserve existing clean MARK structures.
+ "
 
 
  1. Where are resources for quickly getting up to speed EXCEPT apple documentation, which is not my favorite resource to start anything on?
