@@ -288,16 +288,16 @@ struct FocusSessionActiveV: View {
 
 
 #Preview("Initial State") {
-    StatsVM(),
-    FocusSessionActiveV(
-        viewModel: FocusSessionVM(previewMode: true),
-        recalibrationVM: RecalibrationVM()
-    )
-        .environmentObject(stats)
-//        .environmentObject(userService)
-//        .environmentObject(theme)
+    PreviewWrapper {
+        FocusSessionActiveV(
+            viewModel: FocusSessionVM(previewMode: true),
+            recalibrationVM: RecalibrationVM()
+        )
         .previewTheme()
+    }
 }
+
+
 //#Preview("After 1st Tile Added") {
 //    // State: First tile added, ready for second
 //    let focus = FocusSessionVM()

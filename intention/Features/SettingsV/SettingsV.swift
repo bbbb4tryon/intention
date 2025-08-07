@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 // configuration, toggles, preferences aka StatsSummaryView
 
@@ -92,6 +93,17 @@ struct SettingsV: View {
         .background(palette.background.ignoresSafeArea())
         .tint(palette.accent)
     }
+
+
+    func requestNotificationPermissions() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            if let error = error {
+                print("Notification permission error: \(error.localizedDescription)")
+            }
+            print("Permission granted: \(granted)")
+        }
+    }
+
 }
 
 private struct StatBlock: View {
@@ -116,19 +128,13 @@ private struct StatBlock: View {
         .frame(maxWidth: .infinity)
     }
 }
+#Preview("Stats & Settings") {
+    MainActor.assumeIsolated {
+        let stats = PreviewMocks.stats
+        stats.logSession(CompletedSession(date: .now, tileTexts: ["A", "B"], recalibration: .breathing))
 
-//#Preview {
-//    let stats = StatsVM()
-//       let sampleSession = CompletedSession(date: Date(), tileTexts: ["Write Chapter", "Edit Draft"], recalibration: .breathing)
-//       stats.logSession(sampleSession)
-//       stats.logSession(sampleSession)
-//       stats.logSession(CompletedSession(date: Date().addingTimeInterval(-86400), tileTexts: ["Read Notes", "Outline Next Part"], recalibration: .balancing))
-//
-//       let userService = UserService()
-//       let theme = ThemeManager()
-//
-//       return SettingsV(viewModel: stats)
-//           .environmentObject(userService)
-//           .environmentObject(theme)
-//           .previewTheme()
-//}
+        return PreviewWrapper {
+            SettingsV(viewModel: stats)
+        }
+    }
+}

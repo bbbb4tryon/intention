@@ -86,8 +86,10 @@ struct RecalibrateV: View {
         .padding()
     }
 }
-#Preview {
-    RecalibrateV(viewModel: RecalibrationVM())
-        .previewTheme()
+#Preview("Recalibrate") {
+    PreviewWrapper {
+        RecalibrateV(viewModel: RecalibrationVM())
+    }
 }
+
 

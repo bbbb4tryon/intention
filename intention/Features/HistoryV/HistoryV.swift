@@ -95,20 +95,17 @@ struct HistoryV: View {
 
 
 // Mock/ test data prepopulated
-#Preview {
-    let vm = HistoryVM()
-    let theme = ThemeManager()
-    let userService = UserService()
-    
-    UserDefaults.standard.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)
-    vm.ensureDefaultCategory(userService: userService) // Ensure default category exists
-    // Now, safe to unwrap, prepopulate
-    if let defaultCategoryID = vm.categories.first?.id {
-        vm.addToHistory(TileM(text: "Write report"), to: defaultCategoryID)
-        vm.addToHistory(TileM(text: "Prepare slides"), to: defaultCategoryID)
+#Preview("Populated History") {
+    MainActor.assumeIsolated {
+        let historyVM = HistoryVM()
+        historyVM.ensureDefaultCategory(userService: PreviewMocks.userService)
+        if let defaultID = historyVM.categories.first?.id {
+            historyVM.addToHistory(TileM(text: "Do taxes"), to: defaultID)
+            historyVM.addToHistory(TileM(text: "Buy groceries"), to: defaultID)
+        }
+
+        return PreviewWrapper {
+            HistoryV(viewModel: historyVM)
+        }
     }
-    
-    return HistoryV(viewModel: vm)
-        .environmentObject(theme)
-        .environmentObject(userService)
 }
