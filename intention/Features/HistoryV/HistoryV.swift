@@ -13,7 +13,6 @@ struct HistoryV: View {
     
     @ObservedObject var viewModel: HistoryVM
     @State var newTextTiles: [UUID: String] = [:]   // Store new tile text per category using its `id` as key
-    @State private var tileDropHandler = TileDropHandler()
     @State private var dropTargets: [UUID: Bool] = [:]  // Drop highlight state per category
     @State private var isOrganizing = false
     
@@ -35,16 +34,24 @@ struct HistoryV: View {
                         palette: palette,
                         fontTheme: theme.fontTheme,
                         newTextTiles: $newTextTiles,
-                        dropTarget: Binding(
-                            get: { dropTargets[categoryItem.id] ?? false },
-                            set: {  dropTargets[categoryItem.id] = $0 }
-                        ),
                         saveHistory: { viewModel.saveHistory()  },
-                        tileDropHandler: tileDropHandler,
-                        moveTile: { tile, fromID, toID in
-                            await viewModel.moveTile(tile, from: fromID, to: toID)
-                        }
                     )
+                    if isOrganizing {
+                        TileOrganizerWrapper(
+                            categories: $viewModel.categories,
+                            onMoveTile: { tile, fromID, toID in
+                                Task {
+                                    await viewModel.moveTile(tile, from: fromID, to: toID)
+                                }
+                            },
+                            onReorder: { newTiles, categoryID in
+                                viewModel.updateTiles(in: categoryID, to: newTiles)
+                                viewModel.saveHistory()
+                            }
+                        )
+                        .frame(height: UIScreen.main.bounds.height * 0.75) // whatever layout you prefer
+                    }
+
                 }
                 Spacer()
                 if let move = viewModel.lastUndoableMove {

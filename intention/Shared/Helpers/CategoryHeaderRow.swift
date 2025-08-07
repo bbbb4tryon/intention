@@ -12,10 +12,13 @@ struct CategoryHeaderRow: View {
     let palette: ScreenStylePalette
     let fontTheme: AppFontTheme
     @Binding var newTextTiles: [UUID: String]
+    let saveHistory: () -> Void         // so onCommit can Save
 
     var body: some View {
         HStack {
-            TextField("Category", text: $categoryItem.persistedInput)
+            TextField("Category", text: $categoryItem.persistedInput, onCommit: {
+                saveHistory()
+            })
                 .font(fontTheme.toFont(.title3))
                 .foregroundStyle(palette.text)
                 .textFieldStyle(RoundedBorderTextFieldStyle())

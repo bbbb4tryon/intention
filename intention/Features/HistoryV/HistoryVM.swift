@@ -184,6 +184,12 @@ final class HistoryVM: ObservableObject {
         }
     }
     
+    func updateTiles(in categoryID: UUID, to newTiles: [TileM]) {
+        if let index = categories.firstIndex(where: { $0.id == categoryID }) {
+            categories[index].tiles = newTiles
+        }
+    }
+    
     // MARK: reset all categories
     func clearHistory() {
         categories = []     // clears model first

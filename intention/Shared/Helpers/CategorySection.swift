@@ -20,7 +20,8 @@ struct CategorySection: View {
                 categoryItem: $categoryItem,
                 palette: palette,
                 fontTheme: fontTheme,
-                newTextTiles: $newTextTiles
+                newTextTiles: $newTextTiles,
+                saveHistory: saveHistory
             )
 
             CategoryTileList(

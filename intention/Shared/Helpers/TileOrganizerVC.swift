@@ -6,9 +6,12 @@
 //
 
 import UIKit
-// Authority on delegates and section headers
+// Authority on delegates and section headers - with reorder support and onReorder callback
+
 final class TileOrganizerVC: UICollectionViewController {
-    var onMoveTile: (TileM, UUID, UUID) -> Void = { _,_,_ in }
+    var onMoveTile: (TileM, UUID, UUID) -> Void = { _, _, _ in }
+    var onReorder: (([TileM], UUID) -> Void)? = nil
+
     private var categories: [CategoriesModel] = []
     private var dragSourceIndexPath: IndexPath?
 
@@ -59,12 +62,28 @@ final class TileOrganizerVC: UICollectionViewController {
 
         return cell
     }
-
+    // reordering within a single category, but prevents dragging into a different category via reorder
     override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         guard kind == UICollectionView.elementKindSectionHeader else { return UICollectionReusableView() }
         let header = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "Header", for: indexPath) as! HeaderView
         header.label.text = categories[indexPath.section].persistedInput
         return header
+    }
+    // reorders within a same section/ category persist with `moveItemAt()
+    override func collectionView(_ collectionView: UICollectionView, moveItemAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
+        guard sourceIndexPath.section == destinationIndexPath.section else {
+            collectionView.reloadData()
+            return
+        }
+
+        let categoryID = categories[sourceIndexPath.section].id
+        var tiles = categories[sourceIndexPath.section].tiles
+        let movedTile = tiles.remove(at: sourceIndexPath.row)
+        tiles.insert(movedTile, at: destinationIndexPath.row)
+        categories[sourceIndexPath.section].tiles = tiles
+
+        // Persist the reorder
+        onReorder?(tiles, categoryID)
     }
 }
 
@@ -83,7 +102,11 @@ extension TileOrganizerVC: UICollectionViewDragDelegate, UICollectionViewDropDel
     }
 
     func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath indexPath: IndexPath?) -> UICollectionViewDropProposal {
-        UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+        if let from = dragSourceIndexPath, let to = indexPath, from.section == to.section {
+            return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+        } else {
+            return UICollectionViewDropProposal(operation: .move, intent: .insertIntoDestinationIndexPath)
+        }
     }
 
     func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
@@ -95,7 +118,7 @@ extension TileOrganizerVC: UICollectionViewDragDelegate, UICollectionViewDropDel
         else {
             return
         }
-
+        // Reordering within section
         let fromCategoryID = categories[sourceIndexPath.section].id
         let toCategoryID = categories[destinationIndexPath.section].id
 
@@ -103,22 +126,3 @@ extension TileOrganizerVC: UICollectionViewDragDelegate, UICollectionViewDropDel
         dragSourceIndexPath = nil
     }
 }
-
-final class HeaderView: UICollectionReusableView {
-    let label = UILabel()
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        label.font = UIFont.preferredFont(forTextStyle: .subheadline)
-        label.textColor = .secondaryLabel
-        addSubview(label)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            label.centerYAnchor.constraint(equalTo: centerYAnchor)
-        ])
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) not implemented") }
-}
-

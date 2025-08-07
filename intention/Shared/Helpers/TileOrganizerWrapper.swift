@@ -11,10 +11,12 @@ import SwiftUI
 struct TileOrganizerWrapper: UIViewControllerRepresentable {
     @Binding var categories: [CategoriesModel]
     let onMoveTile: (TileM, UUID, UUID) -> Void
+    let onReorder: ([TileM], UUID) -> Void
     
     func makeUIViewController(context: Context) -> TileOrganizerVC {
-            let vc = TileOrganizerVC()
+        let vc = TileOrganizerVC()
         vc.onMoveTile = onMoveTile
+        vc.onReorder = onReorder    // Hookup for persistencem, called in/by HistoryVM
         return vc
     }
     
