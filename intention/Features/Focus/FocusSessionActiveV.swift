@@ -288,11 +288,12 @@ struct FocusSessionActiveV: View {
 
 
 #Preview("Initial State") {
+    StatsVM(),
     FocusSessionActiveV(
         viewModel: FocusSessionVM(previewMode: true),
         recalibrationVM: RecalibrationVM()
     )
-//        .environmentObject(stats)
+        .environmentObject(stats)
 //        .environmentObject(userService)
 //        .environmentObject(theme)
         .previewTheme()
