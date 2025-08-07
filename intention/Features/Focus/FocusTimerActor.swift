@@ -10,12 +10,16 @@ import Foundation
 // Concurrency-Safe focusCountdownTask
 // session's start time and the tiles that have been added within that session context
 actor FocusTimerActor {
+    /// Short debug/UI tests without touching production logic
+    private let config: TimerConfig
+    init(config: TimerConfig) { self.config = config    }
+    
     private(set) var sessionStartDate: Date?
     private(set) var currentTiles: [TileM] = [] // NOTE: adding = [] dismisses 'has no initializers'
     
     func startSessionTracking() {
         sessionStartDate = Date()
-        currentTiles = []       // Clear tiles for new session
+        currentTiles = []           /// Clear tiles for new session
     }
     
     func addTile(_ tile: TileM) -> Bool {
@@ -29,7 +33,7 @@ actor FocusTimerActor {
     
     func shouldCheckIn() -> Bool {
         guard let start = sessionStartDate else { return false }
-        return Date().timeIntervalSince(start) >= 1200      // 20 min
+        return Date().timeIntervalSince(start) >= Double(config.chunkDuration)      /// Should be 1200 - don't hardcode
     }
     
     func resetSessionTracking() {

@@ -41,6 +41,17 @@
                ReferencedContainer = "container:intention.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "77DA311E2E45494700C6DC9E"
+               BuildableName = "FocusSessionFlowUITests.xctest"
+               BlueprintName = "FocusSessionFlowUITests"
+               ReferencedContainer = "container:intention.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

@@ -13,8 +13,9 @@ struct RootView: View {
     
     // Shared, reusable instance injected once, then passed into each viewModel: categories, stats are part of a shared domain
     let persistence = PersistenceActor()
+    private let config = TimerConfig.current
     
-    // ViewModel is the source of truth
+    /// ViewModel is the source of truth
     @StateObject private var historyVM: HistoryVM
     @StateObject private var focusVM: FocusSessionVM
     @StateObject private var recalibrationVM = RecalibrationVM()
@@ -23,10 +24,12 @@ struct RootView: View {
     @StateObject private var membershipVM = MembershipVM()
     
     init() {
-        // Inject dependency so HistoryV can access tiles from the focusVM, etc
+        /// Inject dependency so HistoryV can access tiles from the focusVM, etc
         let persistence = PersistenceActor()
+        let config = TimerConfig.current
         _historyVM = StateObject(wrappedValue: HistoryVM(persistence: persistence))
-        _focusVM = StateObject(wrappedValue: FocusSessionVM())
+        _focusVM = StateObject(wrappedValue: FocusSessionVM(previewMode: false, config: config))
+        _recalibrationVM = StateObject(wrappedValue: RecalibrationVM(config: config))
         _statsVM = StateObject(wrappedValue: StatsVM(persistence: persistence))
         _membershipVM = StateObject(wrappedValue: MembershipVM())
         _statsVM.wrappedValue.membershipVM = _membershipVM.wrappedValue

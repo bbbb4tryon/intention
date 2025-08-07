@@ -20,6 +20,7 @@ enum FocusSessionError: Error, Equatable {
 @MainActor
 final class FocusSessionVM: ObservableObject {
     
+    
     /// UI state of the current 20-min chunk
     enum Phase {
         case notStarted, running, finished
@@ -34,14 +35,15 @@ final class FocusSessionVM: ObservableObject {
     @Published var canAdd: Bool = true              /// Flag if user can add more tiles at that point
     @Published var sessionActive: Bool = false      /// Overall session state (two 20-min chunks)
     @Published var showRecalibrate: Bool = false    /// Whether to show recalibration
-    @Published var countdownRemaining: Int = 1200   /// Secs remaining in 20 minutes for individual tile task
+    @Published var countdownRemaining: Int          /// Secs remaining in 20 minutes for individual tile task - set via config
     @Published var phase: Phase = .notStarted       /// State of the *current* 20-min countdown chunk
     @Published var currentSessionChunk: Int = 0     /// Index of current chunk (0 or 1): Tracks which 20-min chunk of the session is active
     @Published var sessionHistory: [[TileM]] = []   /// Array of tiles completed in this session of 2 chunks
     @Published var lastError: Error?                /// Used to trigger the UI visual error overlay
     
     // MARK: - Internal Properties
-    private let tileAppendTrigger = FocusTimerActor()
+    private let config: TimerConfig
+    private let tileAppendTrigger: FocusTimerActor
     private var chunkCountdown: Task<Void, Never>? = nil        /// background live time keeper/ticker
     private var sessionCompletionTask: Task<Void, Never>? = nil /// background timer for the entire session (2x 20-min chunks)
     
@@ -50,7 +52,11 @@ final class FocusSessionVM: ObservableObject {
     weak var historyVM: HistoryVM?                  /// Optional link to history view model for/to save completed sessions
 
     // Preview-friendly Initializer of session state
-    init(previewMode: Bool = false) {
+    init(previewMode: Bool = false, config: TimerConfig = .current) {
+        self.config = config
+        self.countdownRemaining = config.chunkDuration
+        self.tileAppendTrigger = FocusTimerActor(config: config)
+        
             if previewMode {
                 tiles = [TileM(text: "Tile 1"), TileM(text: "Tile 2")]
                 tileText = "Start another..."
@@ -99,17 +105,9 @@ final class FocusSessionVM: ObservableObject {
         
         chunkCountdown = Task {
             for await _ in Timer.publish(every: 1, on: .main, in: .common).autoconnect().values {
-                guard !Task.isCancelled else {
-                    debugPrint("Countdown task cancelled")
-                    return
-                }
-                if countdownRemaining > 0 {
-                    countdownRemaining -= 1
-                    debugPrint("Session countdown: \(formattedTime)")
-                } else {
-                    debugPrint("40 min session completed")
-                    break
-                }
+                guard !Task.isCancelled else {  debugPrint("Countdown task cancelled"); return  }
+                if countdownRemaining > 0 { countdownRemaining -= 1; debugPrint("Session countdown: \(formattedTime)")
+                } else {    debugPrint("40 min session completed"); break   }
             }
             
             /// Block executes when countdownRemaining reaches 0 or is cancelled

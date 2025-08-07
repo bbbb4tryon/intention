@@ -13,18 +13,24 @@ final class RecalibrationVM: ObservableObject {
         case notStarted, running, finished
     }
     
+    private let config: TimerConfig
     @Published var timeRemaining: Int = 240 // 4 min
     @Published var instruction: String = ""
     @Published var phase: Phase = .notStarted
     
     private var countdownTask: Task<Void, Never>? = nil
     
+    init(config: TimerConfig = .current) {
+        self.config = config
+        self.timeRemaining = config.recalibrationDuration
+    }
+    
     //  starts a true Swift Concurrency timer - Task + AsyncSequence
-    //      clean, cancelable and lives in the actor context
+    ///      clean, cancelable and lives in the actor context
     func start(mode: RecalibrationType) {
-        stop()      // cancels any existing timer
+        stop()          /// cancels any existing timer
         phase = .running
-        timeRemaining = 240
+        timeRemaining = config.recalibrationDuration
         instruction = mode == .balancing ? "Stand on one foot" : "Inhale"
         
         countdownTask = Task {
