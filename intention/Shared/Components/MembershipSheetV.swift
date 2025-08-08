@@ -41,7 +41,7 @@ struct MembershipSheetV: View {
                 .font(theme.fontTheme.toFont(.title2))
                 .multilineTextAlignment(.center)
             
-            Text("You've completed your free sessions. For 20 - 30 cents a day, gain unlimited sessions, more statistics, more categories, editable categories and so much more. Plus, you're supporting our time to build more features, to pay the mortgage, to buy dog food! Thank you.")
+            Text("You’ve completed your free sessions. For just 20–30¢ a day, unlock unlimited focus sessions, detailed stats, more categories, and full customization. Build momentum, track progress, and work with intention — while helping us keep the lights on, the mortgage paid, and the dog well-fed.Your focus fuels our future. Thank you.")
                 .multilineTextAlignment(.center)
                 .font(theme.fontTheme.toFont(.body))
                 .foregroundStyle(.secondary)

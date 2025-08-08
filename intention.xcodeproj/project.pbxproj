@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		7787866E2DF236D4004EDBEF /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = 7787866D2DF236D4004EDBEF /* Documentation.docc */; };
 		77DA310D2E44D7F100C6DC9E /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = 77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */; };
+		77DA31352E45872300C6DC9E /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77DA31342E45872300C6DC9E /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +35,7 @@
 		7787866D2DF236D4004EDBEF /* Documentation.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = Documentation.docc; sourceTree = "<group>"; };
 		77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		77DA311F2E45494700C6DC9E /* FocusSessionFlowUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusSessionFlowUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		77DA31342E45872300C6DC9E /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -72,6 +74,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				77DA31352E45872300C6DC9E /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -103,7 +106,16 @@
 				770F222F2E02EF2E00F9CEB3 /* IntentionTests.xctest */,
 				77DA311F2E45494700C6DC9E /* FocusSessionFlowUITests.xctest */,
 				77DA31202E45494700C6DC9E /* FocusSessionFlowUITests */,
+				77DA31332E45872300C6DC9E /* Frameworks */,
 			);
+			sourceTree = "<group>";
+		};
+		77DA31332E45872300C6DC9E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				77DA31342E45872300C6DC9E /* StoreKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -445,11 +457,13 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = intention/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = intention;
+				INFOPLIST_KEY_CFBundleDisplayName = intendly;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -478,11 +492,13 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = intention/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = intention;
+				INFOPLIST_KEY_CFBundleDisplayName = intendly;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
