@@ -8,6 +8,16 @@
 import Foundation
 
 // All I/O (encoding/decoding) logic here
+
+protocol Persistence {
+    func saveHistory<T: Codable>(_ object: T, to key: String) async throws
+    func loadHistory<T: Codable>(_ type: T.Type, from key: String) async throws -> T?
+    func clear(_ key: String) async
+}
+
+/// Make your actor conform
+extension PersistenceActor: Persistence {}
+
 //  All business logic (when to save, what to save) belongs in the VM
 actor PersistenceActor {
     // Isolated - no need for .detach elsewhere

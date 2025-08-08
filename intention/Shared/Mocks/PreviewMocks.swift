@@ -8,18 +8,22 @@
 import SwiftUI
 
 enum PreviewMocks {
+    @MainActor static var persistence: Persistence {    PersistenceActor()  }
+    
     @MainActor static var stats: StatsVM {
-        StatsVM(persistence: PersistenceActor())
+        StatsVM(persistence: persistence)
     }
-
+    
+    @MainActor static var history: HistoryVM {
+        HistoryVM(persistence: persistence)
+    }
+    
     @MainActor static var userService: UserService {
         UserService()
     }
-
     @MainActor static var theme: ThemeManager {
         ThemeManager()
     }
-
     @MainActor static var membershipVM: MembershipVM {
         MembershipVM()
     }

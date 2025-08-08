@@ -12,7 +12,7 @@ struct RootView: View {
     @AppStorage("hasInitializedDefaultCategory") private var hasInitializedDefaultCategory = false
     
     // Shared, reusable instance injected once, then passed into each viewModel: categories, stats are part of a shared domain
-    let persistence = PersistenceActor()
+    let persistence: Persistence = PersistenceActor()
     private let config = TimerConfig.current
     
     /// ViewModel is the source of truth
@@ -25,7 +25,7 @@ struct RootView: View {
     
     init() {
         /// Inject dependency so HistoryV can access tiles from the focusVM, etc
-        let persistence = PersistenceActor()
+        let persistence: Persistence = PersistenceActor()
         let config = TimerConfig.current
         _historyVM = StateObject(wrappedValue: HistoryVM(persistence: persistence))
         _focusVM = StateObject(wrappedValue: FocusSessionVM(previewMode: false, config: config))

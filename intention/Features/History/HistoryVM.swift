@@ -19,12 +19,12 @@ final class HistoryVM: ObservableObject {
     @Published var tileLimitWarning: Bool = false
     @Published var lastUndoableMove: (tile: TileM, from: UUID, to: UUID)? = nil
     @Published var lastError: Error? = nil
-
-    private let persistence: PersistenceActor
+    
+    private let persistence: Persistence
     private let archiveActor = ArchiveActor()
     private let storageKey = "categories data"
     private let tileSoftCap = 200
-
+    
     // AppStorage wrapper (private, not accessed directly from the view)
     // since `historyVM` is injected into `FocusSessionVM` at startup via `RootView`
     //  the `FocusSessionVM` `func checkSessionCompletion()`'s `addSession(tiles)`
@@ -33,11 +33,9 @@ final class HistoryVM: ObservableObject {
     
     /// `saveHistory` calls keep storage synced, the program will rehydrate using `loadHistory()` on launch only, don't watch `categoryData`
     // Don't use any `onChange`
-    init(persistence: PersistenceActor = PersistenceActor()) {
+    init(persistence: Persistence = PersistenceActor()) {
         self.persistence = persistence
-        Task {
-            await loadHistory()
-        }
+        Task {  await loadHistory() }
     }
     
     private func loadHistory() async {
@@ -55,14 +53,12 @@ final class HistoryVM: ObservableObject {
         let total = categories.reduce(0) { $0 + $1.tiles.count }
         if total > tileSoftCap {
             tileLimitWarning = true
-            Task {
-                try await archiveActor.offloadOldTiles(from: categories, maxTiles: tileSoftCap)
-            }
+            Task {  try await archiveActor.offloadOldTiles(from: categories, maxTiles: tileSoftCap) }
         } else {
             tileLimitWarning = false
         }
     }
-
+    
     // Save the current categories array -> wrapper of PersistenceActor.saveHistory
     func saveHistory() {
         let current = categories
@@ -75,7 +71,7 @@ final class HistoryVM: ObservableObject {
             }
         }
     }
-
+    
     // MARK: - Add a tile to a specific category
     func addToHistory(_ newTile: TileM, to categoryID: UUID){
         guard let index = categories.firstIndex(where: {  categoryItem in
@@ -85,7 +81,7 @@ final class HistoryVM: ObservableObject {
             self.lastError = HistoryError.categoryNotFound
             return
         }
-
+        
         // "capped FIFO" newest-first for UI display
         categories[index].tiles.insert(newTile, at: 0)
         
@@ -195,9 +191,6 @@ final class HistoryVM: ObservableObject {
         categories = []     // clears model first
         saveHistory()       // persists a cleared list
         
-        Task {
-            await persistence.clear(storageKey) // clear storage safely: see PersistenceActor
-        }
+        Task {  await persistence.clear(storageKey) }   // clear storage safely: see PersistenceActor
     }
-    
 }
