@@ -10,6 +10,16 @@ import StoreKit
 
 enum MembershipError: Error, Equatable, LocalizedError {
     case purchaseFailed, restoreFailed, invalidCode, networkError, appEnvironmentFail
+
+    var errorDescription: String? {
+        switch self {
+        case .purchaseFailed:     return "Purchase could not be completed."
+        case .restoreFailed:      return "No purchases to restore."
+        case .invalidCode:        return "That code isn’t valid."
+        case .networkError:       return "Network error. Please try again."
+        case .appEnvironmentFail: return "App environment error."
+        }
+    }
 }
 
 
@@ -18,7 +28,7 @@ final class MembershipVM: ObservableObject {
     @Published var isMember: Bool = false
     @Published var shouldPrompt: Bool = false
     @Published var showCodeEntry: Bool = false
-    @Published var lastError: Error?
+    @Published var lastError: Error?                /// Used to trigger the UI visual error overlay
     
     private let paymentService = PaymentService()
     private let codeService = MembershipCodeService()
@@ -39,50 +49,55 @@ final class MembershipVM: ObservableObject {
         await paymentService.purchaseMembership()
         isMember = paymentService.isMember
         shouldPrompt = !isMember
-        
-        if !isMember {
-            throw MembershipError.purchaseFailed
+        guard isMember else {
+            let err = MembershipError.purchaseFailed
+            setError(err)
+            throw err
         }
     }
     
     func restoreMembershipOrPrompt() async throws {
         await paymentService.restorePurchases()
         isMember = paymentService.isMember
-        
-        if !isMember {
-            throw MembershipError.restoreFailed
+        guard isMember else {
+            let err = MembershipError.restoreFailed
+            setError(err)
+            throw err
         }
     }
     
-    func verifyCode(_ code: String) async {
-        Task {
-            do {
-                let result = await codeService.verify(code: code, deviceID: UIDevice.current.identifierForVendor?.uuidString ?? "unknown")
-                
-                switch result {
-                case .success:
-                    self.isMember = true
-                    self.shouldPrompt = false
-                    self.showCodeEntry = false
-                    
-                case .invalid:
-                    throw MembershipError.invalidCode
-                    
-                case .networkError:
-                    throw MembershipError.networkError
-                }
-                
-            } catch {
-                debugPrint("[MembershipVM.verifyCode] error: ", error)
-                await MainActor.run { self.lastError = error }
-            }
+    @MainActor
+    func verifyCode(_ code: String) async throws {
+        let deviceID = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+        let result = await codeService.verify(code: code, deviceID: deviceID)
+        
+        switch result {
+        case .success:
+            isMember = true
+            shouldPrompt = false
+            showCodeEntry = false
+            
+        case .invalid:
+            let err = MembershipError.invalidCode
+            setError(err)
+            throw err
+            
+        case .networkError:
+            let err = MembershipError.networkError
+            setError(err)
+            throw err
         }
     }
-}
-extension MembershipVM {
+    
+    func setError(_ error: Error?) {
+        lastError = error
+    }
+    
     var showSheetBinding: Binding<Bool> {
-        Binding(get: { self.shouldPrompt }, set: { newVal in self.shouldPrompt = newVal }
+        Binding(
+            get: { self.shouldPrompt },
+            set: { newVal in self.shouldPrompt = newVal  }
+            // or self.shouldPrompt = $0
         )
     }
 }
-

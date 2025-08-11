@@ -28,6 +28,11 @@ import SwiftUI
 
 //
 //2. should Stats be separate from session and membership and anything non-program and user-interaction logic that are (maybe?) in other .swift files? Explain pros and cons.
+
+
+//MembershipError    case purchaseFailed, restoreFailed, invalidCode, networkError, appEnvironmentFail
+//}
+
 struct MembershipSheetV: View {
     @EnvironmentObject var membershipVM: MembershipVM
     @EnvironmentObject var theme: ThemeManager
@@ -36,12 +41,13 @@ struct MembershipSheetV: View {
     @State var codeInput: String = ""
     
     var body: some View {
+        ZStack {
         VStack(spacing: 24){
             Text("Unlock Unlimited Focus")
                 .font(theme.fontTheme.toFont(.title2))
                 .multilineTextAlignment(.center)
             
-            Text("You’ve completed your free sessions. For just 20–30¢ a day, unlock unlimited focus sessions, detailed stats, more categories, and full customization. Build momentum, track progress, and work with intention — while helping us keep the lights on, the mortgage paid, and the dog well-fed.Your focus fuels our future. Thank you.")
+            Text("You’ve completed your free sessions. For just 20–30¢ a day, unlock unlimited focus sessions, detailed stats, more categories, and full customization. Build momentum, track progress, and work with intention — while helping us keep the lights on, the mortgage paid, and the dog well-fed. Your focus fuels our future. Thank you.")
                 .multilineTextAlignment(.center)
                 .font(theme.fontTheme.toFont(.body))
                 .foregroundStyle(.secondary)
@@ -49,7 +55,7 @@ struct MembershipSheetV: View {
             
             if membershipVM.isMember {
                 Label("Member! You're supporting us!", systemImage: "star")
-                    .symbolEffect(.bounce)
+                    .symbolBounceIfAvailable()
             } else {
                 Button("Upgrade Membership") {
                     Task {
@@ -57,7 +63,7 @@ struct MembershipSheetV: View {
                             try await membershipVM.purchaseMembershipOrPrompt()
                         } catch {
                             debugPrint("[MembershipVM.purchaseMembershipOrPrompt] error: ", error)
-                            await MainActor.run { MembershipError.purchaseFailed }
+                            membershipVM.setError(error)                /// Shows ErrorOverlay
                         }
                     }
                 }
@@ -66,27 +72,27 @@ struct MembershipSheetV: View {
                 Button("Restore Purchases") {
                     Task {
                         do {
-                            try! await membershipVM.restoreMembershipOrPrompt()
+                            try await membershipVM.restoreMembershipOrPrompt()
                         } catch {
                             debugPrint("[MembershipVM.restoreMembershipOrPrompt] error:", error)
-                            await MainActor.run {  MembershipError.restoreFailed }
+                            membershipVM.setError(error)                /// Shows ErrorOverlay
+                            // _ = await MainActor.run {  MembershipError.restoreFailed }
                         }
                     }
                 }
                 .buttonStyle(.bordered)
                 
                 
+                
                 if !AppEnvironment.isAppStoreReviewing {
                     Divider()
                     Button("Visit Website") {
                         Task {
-                            do {
-                                if let url = URL(string: "https://www.argonnesoftware.com/cart/") {
-                                    await UIApplication.shared.open(url)
-                                }
-                            } catch {
-                                debugPrint("[MembershipSheetV.isAppStoreReviewing] error: ", error )
-                                await MainActor.run { MembershipError.appEnvironmentFail }
+                            if let url = URL(string: "https://www.argonnesoftware.com/cart/") {
+                                await UIApplication.shared.open(url)
+                            } else {
+                                debugPrint("[MembershipSheetV.isAppStoreReviewing] bad URL" )
+                                membershipVM.setError(MembershipError.appEnvironmentFail)   /// Shows ErrorOverlay
                             }
                         }
                     }
@@ -111,28 +117,31 @@ struct MembershipSheetV: View {
                             Button("Redeem") {
                                 Task {
                                     do {
-                                        await membershipVM.verifyCode(codeInput)
+                                        try await membershipVM.verifyCode(codeInput)
                                     } catch {
-                                        debugPrint("[] error: ", error )
-                                        await MainActor.run { MembershipError.invalidCode
-                                        }
+                                        debugPrint("[MembershipSheetV.showCodeEntry] error: ", error )
+                                        membershipVM.setError(error)                /// Shows ErrorOverlay
                                     }
                                 }
                             }
                             .buttonStyle(.borderedProminent)
                             .padding(.horizontal)
                         }
-                    } else {
-//                        break
                     }
                 }
                 .padding()
             }
         }
+        
+        /// Overlay shown if there is a lastError
+        if let error = membershipVM.lastError {
+            ErrorOverlay(error: error) {
+                membershipVM.setError(nil)  /// Dismiss
+            }
+            .transition(.opacity.combined(with: .scale))
+            .zIndex(1)
+        }
     }
 }
-
-#Preview {
-    MembershipSheetV()
-        .environmentObject(MembershipVM())
 }
+
