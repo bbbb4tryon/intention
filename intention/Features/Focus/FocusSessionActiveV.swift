@@ -60,7 +60,8 @@ struct FocusSessionActiveV: View {
     var body: some View {
         /// Get current palette for the appropriate sceen
         let palette = theme.palette(for: .homeActiveIntentions)
-        let progress = Double(viewModel.countdownRemaining) / 1200.0
+        let chunkSeconds = TimerConfig.current.chunkDuration
+        let progress = Double(viewModel.countdownRemaining) / Double(chunkSeconds)
         
         NavigationLink(destination: RecalibrateV(viewModel: recalibrationVM), isActive: $viewModel.showRecalibrate) { EmptyView()
         }.hidden()
@@ -69,6 +70,7 @@ struct FocusSessionActiveV: View {
         VStack(spacing: 20){
             
             StatsSummaryBar(palette: palette)
+                .frame(height: 56)              // "clamp" the bar height
             
             Spacer()    // pushes content towards center-top
             
@@ -117,7 +119,7 @@ struct FocusSessionActiveV: View {
             
             
             // MARK: - Countdown Display (user-facing)
-DynamicCountdown(viewModel: viewModel, palette: palette, progress: progress)
+            DynamicCountdown(viewModel: viewModel, palette: palette, progress: progress)
             
             
             // MARK: Main Action Button (Add or Begin)
@@ -130,10 +132,9 @@ DynamicCountdown(viewModel: viewModel, palette: palette, progress: progress)
                     viewModel.showRecalibrate = true
                 })
             
-            // Pushes content away from bottom
-            Spacer()
-            
-            
+            // Pushes content away from bottom, softer constraints
+            Spacer(minLength: 8)
+                        
             // MARK: - Fixed-size List: Tile container
             VStack(spacing: 8) {        // tile spacing
                 ForEach(slotData.indices, id: \.self) { index in
@@ -141,20 +142,17 @@ DynamicCountdown(viewModel: viewModel, palette: palette, progress: progress)
                         tileText: slotData[index],
                     )
                 }
-                .padding(.horizontal)    // Padding for the ForEach content
-            }   // -VStack, tile container end
-            .frame(height: 140)         // Fixed list height - (e.g., 2 tiles * ~50-60pt height each)
+                .padding(.horizontal)       // Padding for the ForEach content
+            }                               // -VStack, tile container end
+            .frame(height: 140)             // Shrinks the stack instead of Dynamics
             .background(palette.background.opacity(0.8))
             .cornerRadius(10)
             .shadow(radius: 5)
-            .padding(.horizontal)       // Horizonal padding for whole list
+            .padding(.horizontal)           // Horizonal padding for whole list
             
             Spacer()
-        }      // -VStack, primary end
-        
-        .background(palette.background.ignoresSafeArea())
-        //            .navigationTitle("")    // Hides default navigation title
-        
+        }                                   // -VStack, primary end
+        .background(palette.background.ignoresSafeArea(edges: .top))
         .task {
             if membershipVM.shouldPrompt {
                 activeSheet = .membership
@@ -163,9 +161,8 @@ DynamicCountdown(viewModel: viewModel, palette: palette, progress: progress)
         .sheet(isPresented: $viewModel.showRecalibrate){
             RecalibrateV(viewModel: recalibrationVM) // FIXME: NEED recalibrationChoice: selectedChoice?
         }
-        //        }   // -NavigationView end
-        
     }
+    
     // MARK: - slotData [String?, String?] ->
     //  Extracted computed property, easier for compliler to parse
     /// Returns two tile texts or nil placeholders

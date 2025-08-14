@@ -98,6 +98,8 @@ struct DynamicMessageAndActionArea: View {
                 }
             }
             .mainActionStyle(screen: .homeActiveIntentions)
+            .lineLimit(1)                           /// Part 1 of 2 to prevent line wrapping that increases height
+            .minimumScaleFactor(0.9)               /// Part 2 of 2 to prevent line wrapping that increases height
             
             
             Button("End Session Early") {
@@ -109,7 +111,7 @@ struct DynamicMessageAndActionArea: View {
             .foregroundStyle(.red)
             .tint(.red)
         }
-        .padding(.bottom, 44)               /// Clear tab bar on most devices
+        .padding(.bottom, 44)               /// Clears the tab bar on most devices
         .padding(.horizontal)
     }
         
