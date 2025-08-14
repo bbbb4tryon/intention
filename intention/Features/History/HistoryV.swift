@@ -22,6 +22,7 @@ struct HistoryV: View {
         
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
+                
                 Text("Group by category. Tap a category title to edit.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -30,6 +31,9 @@ struct HistoryV: View {
                 ForEach($viewModel.categories, id: \.id) { $categoryItem in   // mutate individual category fields
                     /// Disables inputs and editablity
                     let isArchive = categoryItem.id == userService.archiveCategoryID
+                    Label(isArchive ? "Archive" : categoryItem.persistedInput,
+                          systemImage: isArchive ? "lock.fill" : "folder")
+                    .foregroundStyle(isArchive ? .secondary : palette.text)
                     
                     CategorySection(
                         categoryItem: $categoryItem,
@@ -56,46 +60,43 @@ struct HistoryV: View {
                         )
                         .frame(height: UIScreen.main.bounds.height * 0.75) // whatever layout you prefer
                     }
-
+                    
                 }
                 Spacer()
                 if let move = viewModel.lastUndoableMove {
                     VStack {
+                        Spacer()
+                        HStack {
+                            Text("Moved \"\(move.tile.text)\"")
+                                .font(.footnote)
+                                .foregroundStyle(.white)
                             Spacer()
-                            HStack {
-                                Text("Moved \"\(move.tile.text)\"")
-                                    .font(.footnote)
-                                    .foregroundStyle(.white)
-                                Spacer()
-                                Button("Undo") {
-                                    viewModel.undoLastMove()
-                                }
-                                .foregroundStyle(.blue)
+                            Button("Undo") {
+                                viewModel.undoLastMove()
                             }
-                            .padding()
-                            .background(Color.black.opacity(0.85))
-                            .cornerRadius(10)
-                            .padding()
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .foregroundStyle(.blue)
                         }
-                        .animation(.easeInOut, value: viewModel.lastUndoableMove != nil)
+                        .padding()
+                        .background(Color.black.opacity(0.85))
+                        .cornerRadius(10)
+                        .padding()
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    .animation(.easeInOut, value: viewModel.lastUndoableMove != nil)
                 }
             }
-            Button(isOrganizing ? "Done" : "Organize") {
-                isOrganizing.toggle()
+            .toolbar { ToolbarItem(placement: .topBarTrailing) {
+                Button(isOrganizing ? "Done" : "Organize") {isOrganizing.toggle() }
+            }}
+            if let error = viewModel.lastError {
+                ErrorOverlay(error: error) {
+                    viewModel.lastError = nil
+                }
+                .zIndex(1)  // Keeps the above the context of it's error
             }
-            .padding(.vertical)
         }
-        .padding(.top)
-        .background(palette.background.ignoresSafeArea())
-        if let error = viewModel.lastError {
-            ErrorOverlay(error: error) {
-                viewModel.lastError = nil
-            }
-            .zIndex(1)  // Keeps the above the context of it's error
-        }
+        //        .foregroundStyle(palette.text)
     }
-//        .foregroundStyle(palette.text)
 }
 
 
