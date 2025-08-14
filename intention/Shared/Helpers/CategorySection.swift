@@ -13,6 +13,7 @@ struct CategorySection: View {
     let fontTheme: AppFontTheme
     @Binding var newTextTiles: [UUID: String]
     let saveHistory: () -> Void
+    let isArchive: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -21,14 +22,16 @@ struct CategorySection: View {
                 palette: palette,
                 fontTheme: fontTheme,
                 newTextTiles: $newTextTiles,
-                saveHistory: saveHistory
+                saveHistory: saveHistory,
+                isArchive: isArchive
             )
 
             CategoryTileList(
                 categoryItem: $categoryItem,
                 palette: palette,
                 fontTheme: fontTheme,
-                saveHistory: saveHistory
+                saveHistory: saveHistory,
+                isArchive: isArchive
             )
         }
         .padding(.horizontal)

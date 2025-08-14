@@ -15,7 +15,7 @@ actor ArchiveActor {
     private let archiveKey = "archivedTiles"
     
     // Moves tiles exceeding `maxTiles` into archive storage.
-    func offloadOldTiles(from categories: [CategoriesModel], maxTiles: Int) throws {
+    func offloadOldTiles(from categories: [CategoriesModel], maxTiles: Int) async throws {
         var allTiles: [(tile: TileM, categoryID: UUID)] = []
         
         // Flatten all tiles with their category ID
@@ -26,12 +26,14 @@ actor ArchiveActor {
         }
         // Sort by insertion order (oldest last in array)
         // Assuming tiles are newest-first in HistoryVM
-        let overflow = allTiles.dropFirst(maxTiles)
+        let sorted = allTiles.sorted { $0.tile.timeStamp < $1.tile.timeStamp }  // Is this working?
+        let overflow = sorted.dropFirst(maxTiles)
         
         guard !overflow.isEmpty else { return }
         
         // Persist overflow tiles to archive
         do {
+            let capped = Array(overflow.map { $0.tile }.suffix(maxTiles))       // Is this working?
             let data = try encoder.encode(overflow.map { $0.tile })
             UserDefaults.standard.set(data, forKey: archiveKey)
             debugPrint("ArchiveActor: Archived \(overflow.count) tiles.")
@@ -41,7 +43,7 @@ actor ArchiveActor {
     }
     
     // Load archived tiles for testing or restoration.
-    func loadArchivedTiles() -> [TileM] {
+    func loadArchivedTiles() async -> [TileM] {
         guard let data = UserDefaults.standard.data(forKey: archiveKey) else { return [] }
         do {
             return try decoder.decode([TileM].self, from: data)

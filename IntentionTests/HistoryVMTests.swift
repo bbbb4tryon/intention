@@ -12,17 +12,27 @@ import XCTest
 final class HistoryVMTests: XCTestCase {
     func testDefaultCategoryInsertion() {
         let userService = UserService()
-        let vm = HistoryVM()
+        let vm = HistoryVM(persistence: TestPersistence(), userService: userService)
         vm.ensureDefaultCategory(userService: userService)
         
         let found = vm.categories.contains { $0.id == userService.defaultCategoryID }
+        XCTAssertTrue(found, "Default/Archive category was not inserted")
+    }
+    
+    func testArchiveCategoryInsertion() {
+        let userService = UserService()
+        let vm = HistoryVM(persistence: TestPersistence(), userService: userService)
+        vm.ensureArchiveCategory(userService: userService)
+        
+        let found = vm.categories.contains { $0.id == userService.archiveCategoryID }
         XCTAssertTrue(found, "Default category was not inserted")
     }
     
     func testAddCateogryAndPersist() async throws {
         let savedExpectation = expectation(description: "Saved")
         let persistence = TestPersistence(didSave: savedExpectation)
-        let vm = HistoryVM(persistence: persistence)
+        let userService = UserService()
+        let vm = HistoryVM(persistence: persistence, userService: userService)
         
         // Creates a category
         let newCateogory = CategoriesModel(id: UUID(), persistedInput:  "Work", tiles: [])
@@ -33,7 +43,7 @@ final class HistoryVMTests: XCTestCase {
         
         // Load it back
         let loaded: [CategoriesModel]? =
-        try await persistence.loadHistory([CategoriesModel].self, from: "categories data")
+            try await persistence.loadHistory([CategoriesModel].self, from: "categories data")
         
         XCTAssertEqual(loaded?.count, 1)
         XCTAssertEqual(loaded?.first?.persistedInput, "Work")

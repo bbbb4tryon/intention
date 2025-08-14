@@ -13,6 +13,7 @@ struct CategoryHeaderRow: View {
     let fontTheme: AppFontTheme
     @Binding var newTextTiles: [UUID: String]
     let saveHistory: () -> Void         // so onCommit can Save
+    let isArchive: Bool
 
     var body: some View {
         HStack {
@@ -25,6 +26,7 @@ struct CategoryHeaderRow: View {
                 .disableAutocorrection(true)
                 .textInputAutocapitalization(.sentences)
                 .lineLimit(1)
+                .disabled(isArchive)
 
             Button {
                 newTextTiles[categoryItem.id] = newTextTiles[categoryItem.id] ?? ""

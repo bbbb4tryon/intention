@@ -13,6 +13,7 @@ struct CategoryTileList: View {
     let palette: ScreenStylePalette
     let fontTheme: AppFontTheme
     let saveHistory: () -> Void
+    let isArchive: Bool
     
     var body: some View {
         if categoryItem.tiles.isEmpty {
@@ -32,16 +33,18 @@ struct CategoryTileList: View {
                             .background(palette.primary.opacity(0.1))
                             .cornerRadius(8)
                     }
-                    .swipeActions {
-                        Button(role: .destructive) {
-                            if let index = categoryItem.tiles.firstIndex(of: tile) {
-                                withAnimation {
-                                    categoryItem.tiles.remove(at: index)
-                                    saveHistory()
+                    .swipeActions(edge: .trailing, allowsFullSwipe: !isArchive) {
+                        if !isArchive {
+                            Button(role: .destructive) {
+                                if let index = categoryItem.tiles.firstIndex(of: tile) {
+                                    withAnimation {
+                                        categoryItem.tiles.remove(at: index)
+                                        saveHistory()
+                                    }
                                 }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
-                        } label: {
-                            Label("Delete", systemImage: "trash")
                         }
                     }
                 }

@@ -79,7 +79,7 @@ struct DynamicMessageAndActionArea: View {
     }
     
     private var firstChunkCompletedView: some View {
-        VStack {
+        VStack(spacing: 16) {
             // State: First 20-min chunk completed, Overall Session paused
             Text("Completed the first intended item!")
                 .font(fontTheme.toFont(.title2))
@@ -109,6 +109,8 @@ struct DynamicMessageAndActionArea: View {
             .foregroundStyle(.red)
             .tint(.red)
         }
+        .padding(.bottom, 44)               /// Clear tab bar on most devices
+        .padding(.horizontal)
     }
         
         private var sessionInProgressView: some View {

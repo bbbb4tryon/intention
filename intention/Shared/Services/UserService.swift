@@ -12,15 +12,17 @@ import SwiftUI
 @MainActor
 final class UserService: ObservableObject {
     @AppStorage("defaultCategoryID") private var defaultCategoryIDString: String = ""
+    @AppStorage("archiveCategoryID") private var archiveCategoryIDString: String = ""
     @Published private(set) var userID: String = "Empty"
     
     init() {
         Task { @MainActor in
-            self.userID = await KeychainHelper.shared.getUserIdentifier()}
-        debugPrint("UserService grabs KeychainHelper once")
+            self.userID = await KeychainHelper.shared.getUserIdentifier()
+            debugPrint("UserService grabs KeychainHelper once")
+        }
     }
     
-    // Computed fallback ID
+    // MARK: - Computed default fallback IDs
     var defaultCategoryID: UUID {
         get {
             if let uuid = UUID(uuidString: defaultCategoryIDString) {
@@ -34,6 +36,22 @@ final class UserService: ObservableObject {
         }
         set {
             defaultCategoryIDString = newValue.uuidString
+        }
+    }
+
+    var archiveCategoryID: UUID {
+        get {
+            if let uuid = UUID(uuidString: archiveCategoryIDString) {
+                return uuid
+            } else {
+                // fallBack: if no valid UUID saved yet
+                let newID = UUID()
+                archiveCategoryIDString = newID.uuidString
+                return newID
+            }
+        }
+        set {
+            archiveCategoryIDString = newValue.uuidString
         }
     }
 }

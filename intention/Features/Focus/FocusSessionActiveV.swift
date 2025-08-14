@@ -117,24 +117,7 @@ struct FocusSessionActiveV: View {
             
             
             // MARK: - Countdown Display (user-facing)
-            if viewModel.phase == .running || viewModel.phase == .finished {
-                ZStack {
-                    Circle()
-                        .fill(palette.background.opacity(0.2))
-                        .frame(width: 200, height: 200)
-                    
-                    UnwindingPieShape(progress: progress)
-                        .fill(palette.primary)
-                        .frame(width: 200, height: 200)
-                    
-                    Text("\(viewModel.formattedTime)")
-                        .font(.system(size: 48, weight: .bold, design: .monospaced)) // Explicit: fixed-width font
-                        .id("countdownTimer") // Use an ID to ensure smooth updates
-                        .transition(.opacity) // Smooth transition if it appears/disappears
-                        .foregroundStyle(palette.text)
-                }
-                .animation(.easeInOut(duration: 0.2), value: progress)
-            }
+DynamicCountdown(viewModel: viewModel, palette: palette, progress: progress)
             
             
             // MARK: Main Action Button (Add or Begin)

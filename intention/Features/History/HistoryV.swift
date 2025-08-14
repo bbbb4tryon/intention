@@ -28,6 +28,8 @@ struct HistoryV: View {
                     .padding(.horizontal)
                 
                 ForEach($viewModel.categories, id: \.id) { $categoryItem in   // mutate individual category fields
+                    /// Disables inputs and editablity
+                    let isArchive = categoryItem.id == userService.archiveCategoryID
                     
                     CategorySection(
                         categoryItem: $categoryItem,
@@ -35,7 +37,10 @@ struct HistoryV: View {
                         fontTheme: theme.fontTheme,
                         newTextTiles: $newTextTiles,
                         saveHistory: { viewModel.saveHistory()  },
+                        isArchive: isArchive
                     )
+                    
+                    
                     if isOrganizing {
                         TileOrganizerWrapper(
                             categories: $viewModel.categories,
@@ -97,8 +102,9 @@ struct HistoryV: View {
 // Mock/ test data prepopulated
 #Preview("Populated History") {
     MainActor.assumeIsolated {
-        let historyVM = HistoryVM()
-        historyVM.ensureDefaultCategory(userService: PreviewMocks.userService)
+        let userService = PreviewMocks.userService
+        let historyVM = HistoryVM(userService: userService)
+        historyVM.ensureDefaultCategory(userService: userService)
         if let defaultID = historyVM.categories.first?.id {
             historyVM.addToHistory(TileM(text: "Do taxes"), to: defaultID)
             historyVM.addToHistory(TileM(text: "Buy groceries"), to: defaultID)
@@ -106,6 +112,7 @@ struct HistoryV: View {
 
         return PreviewWrapper {
             HistoryV(viewModel: historyVM)
+                .environmentObject(userService)
         }
     }
 }

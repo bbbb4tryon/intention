@@ -122,6 +122,17 @@ final class StatsVM: ObservableObject {
         if isTrackingCurrent { runStreakDays = currentStreak }
         maxRunStreakDays = maxStreak
     }
+    
+    
+    // MARK: Helpers + Throwing Core
+    
+    ///Throwing core (async throws): use when the caller wants to decide how to handle the error
+    
+    func logSessionThrowing( _ s: CompletedSession) async throws {
+        completedSessions.append(s)
+        recalculateStats()
+        try await persistence.saveHistory(completedSessions, to: storageKey)
+    }
 }
 
 // MARK: Supporting Types -

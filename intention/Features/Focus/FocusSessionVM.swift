@@ -47,7 +47,7 @@ final class FocusSessionVM: ObservableObject {
     private var chunkCountdown: Task<Void, Never>? = nil        /// background live time keeper/ticker
     private var sessionCompletionTask: Task<Void, Never>? = nil /// background timer for the entire session (2x 20-min chunks)
     
-    let chunkDuration: Int = 1200                   /// Default 20 min chunk duration constant
+    var chunkDuration: Int { config.chunkDuration }           /// Default 20 min chunk duration constant
     
     weak var historyVM: HistoryVM?                  /// Optional link to history view model for/to save completed sessions
 
@@ -64,7 +64,7 @@ final class FocusSessionVM: ObservableObject {
                 sessionActive = true
                 currentSessionChunk = 1
                 phase = .running
-                countdownRemaining = 600
+                countdownRemaining = config.chunkDuration / 20
             }
         }
     
@@ -140,16 +140,15 @@ final class FocusSessionVM: ObservableObject {
     // MARK: - Session Lifecycle
     
     /// Combined Trigger of Chunks Session (via "Begin")
-    /// - Throws: `FocusSessionError.badTrigger_Overall`
+    /// - Throws: `FocusSessionError.badTrigger_Overall`- DO want to bubble errors to the view
     func beginOverallSession() async throws {
         guard tiles.count == 2 && phase == .notStarted else {
             debugPrint("User pressed Begin, overall session and 1st chuck started.")
             throw FocusSessionError.badTrigger_Overall
         }
-        
         await tileAppendTrigger.startSessionTracking()
         sessionActive = true                /// Overall session activated
-        try! startCurrent20MinCountdown()   /// First Chunk started, try! disables error propagation
+        try startCurrent20MinCountdown()   /// First Chunk started, try! disables error propagation; want the view to catch, thouch
     }
     
    /// Chunks session for completion, triggers recalibration

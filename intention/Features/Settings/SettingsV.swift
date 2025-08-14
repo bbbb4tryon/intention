@@ -21,9 +21,9 @@ struct SettingsV: View {
        
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                // Header
-                theme.styledText("Settings", as: .header, in: .settings)
-                    .padding(.top, 12)
+//                // Header
+//                theme.styledText("Settings", as: .header, in: .settings)
+//                    .padding(.top, 12)
                 
                 // Preferences Section
                 VStack(alignment: .leading, spacing: 12) {

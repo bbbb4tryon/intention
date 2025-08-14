@@ -7,11 +7,7 @@
 
 import SwiftUI
 
-enum HistoryError: Error, Equatable {
-    case categoryNotFound
-    case historyNotLoaded
-    case saveHistoryFailed
-}
+enum HistoryError: Error, Equatable {   case categoryNotFound, historyNotLoaded, saveHistoryFailed, moveFailed  }
 
 @MainActor
 final class HistoryVM: ObservableObject {
@@ -22,8 +18,10 @@ final class HistoryVM: ObservableObject {
     
     private let persistence: Persistence
     private let archiveActor = ArchiveActor()
+    private let userService: UserService
     private let storageKey = "categories data"
     private let tileSoftCap = 200
+    
     
     // AppStorage wrapper (private, not accessed directly from the view)
     // since `historyVM` is injected into `FocusSessionVM` at startup via `RootView`
@@ -33,80 +31,91 @@ final class HistoryVM: ObservableObject {
     
     /// `saveHistory` calls keep storage synced, the program will rehydrate using `loadHistory()` on launch only, don't watch `categoryData`
     // Don't use any `onChange`
-    init(persistence: Persistence = PersistenceActor()) {
+    init(persistence: Persistence = PersistenceActor(), userService: UserService) {
         self.persistence = persistence
+        self.userService = userService
         Task {  await loadHistory() }
     }
     
     private func loadHistory() async {
         do {
-            if let loaded: [CategoriesModel] = try await persistence.loadHistory([CategoriesModel].self, from: storageKey) {
+            if let loaded: [CategoriesModel] =
+                try await persistence.loadHistory([CategoriesModel].self, from: storageKey) {
                 self.categories = loaded
+                
+                let archived = await archiveActor.loadArchivedTiles()
+                let archiveID = userService.archiveCategoryID
+                
+                if let index = categories.firstIndex(where: { $0.id == archiveID }) {
+                    categories[index].tiles = archived
+                } else {
+                    /// Add archive category if not found
+                    let newArchive = CategoriesModel(id: archiveID, persistedInput: "Archive", tiles: archived)
+                    categories.append(newArchive)
+                }
             }
         } catch {
-            debugPrint(("[History.loadHistory persistence.loadHistory]", error ))
+            debugPrint("[History.loadHistory] persistence.loadHistory error: ", error )
             await MainActor.run { self.lastError = error }
         }
     }
     
+    
     func limitCheck() {
         let total = categories.reduce(0) { $0 + $1.tiles.count }
-        if total > tileSoftCap {
-            tileLimitWarning = true
-            Task {  try await archiveActor.offloadOldTiles(from: categories, maxTiles: tileSoftCap) }
-        } else {
-            tileLimitWarning = false
+        tileLimitWarning = total > tileSoftCap
+        guard tileLimitWarning else { return }
+        
+        Task {
+            do {
+                try await archiveActor.offloadOldTiles(from: categories, maxTiles: tileSoftCap)
+            } catch {
+                debugPrint("[HistoryVM.limitCheck] offload error: ", error)
+                await MainActor.run { self.lastError = HistoryError.saveHistoryFailed   }
+            }
         }
     }
     
-    // Save the current categories array -> wrapper of PersistenceActor.saveHistory
+    // MARK: - Non-throwing convenience (fire-and-forget)
+    /// Non-throwing wrapper, background with a UI signal; catch internally, debugPrints, sets VM lasterror; saveHistory() calls saveHistoryThrowing() inside a Task
+    /// Save the current categories array -> wrapper of PersistenceActor.saveHistory
     func saveHistory() {
-        let current = categories
         Task {
-            do {
-                try await persistence.saveHistory(current, to: storageKey)
-            } catch {
+            do { try await saveHistoryThrowing() }
+            catch {
                 debugPrint("[HistoryVM.saveHistory] failed:", error)
                 await MainActor.run { self.lastError = HistoryError.saveHistoryFailed }
             }
         }
     }
     
-    // MARK: - Add a tile to a specific category
-    func addToHistory(_ newTile: TileM, to categoryID: UUID){
-        guard let index = categories.firstIndex(where: {  categoryItem in
+    // MARK: - Add a tile to a specific category (non-throwing convenience)
+    func addToHistory(_ newTile: TileM, to categoryID: UUID) {
+        guard let index = categories.firstIndex(where: {  categoryItem in       // $0.id == categoryID
             categoryItem.id == categoryID
         }) else {
             debugPrint("HistoryVM.addToHistory] Category ID not found. Tile not added.")
             self.lastError = HistoryError.categoryNotFound
             return
         }
-        
-        // "capped FIFO" newest-first for UI display
+        /// "capped FIFO" newest-first for UI display
         categories[index].tiles.insert(newTile, at: 0)
         
-        // Once all tiles equal 200, then offload oldest
+        /// Once all tiles equal 200, offload oldest
         let totalTileCount = categories.reduce(0) { $0 + $1.tiles.count }
-        
         if totalTileCount > tileSoftCap {
-            Task {
-                do {
-                    try await archiveActor.offloadOldTiles(from: categories, maxTiles: tileSoftCap)
-                } catch {
-                    debugPrint("[HistoryVM.addToHistory tile cap] error:", error )
-                    await MainActor.run { self.lastError = HistoryError.saveHistoryFailed }
-                }
-            }
+            limitCheck()
         }
         
         // saveHistory() is inside addToHistory() to persist automatically
         saveHistory()
+        
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
     }
     
-    //https://www.avanderlee.com/swiftui/viewbuilder/
-    // MARK: Add a new category
+    
+    // MARK: - Add a new category
     func addCategory(persistedInput: String){
         let newCategory = CategoriesModel(persistedInput: persistedInput)
         categories.append(newCategory)
@@ -116,36 +125,32 @@ final class HistoryVM: ObservableObject {
         generator.impactOccurred()
     }
     
-    // MARK: sets default category
+    // MARK: - Sets automatic Miscellanous category aka "bootstrapping"
     func ensureDefaultCategory(named name: String = "Miscellaneous", userService: UserService) {
         let defaultID = userService.defaultCategoryID
-        
-        if !categories.contains(where: { defaultCategoryItem in
-            defaultCategoryItem.id == defaultID
-        }) {
+        if !categories.contains(where: { defaultCategoryItem in defaultCategoryItem.id == defaultID }) {
             let new = CategoriesModel(id: defaultID, persistedInput: name)
             categories.insert(new, at: 0)
-            debugPrint("HistoryVM.ensureDefaultCategory error")
+            debugPrint("HistoryVM.ensureDefaultCategory: created 'Misellaneous'")
             saveHistory()
         }
     }
     
-    // MARK: sets archive category
+    // MARK: - Sets automatic Archive category aka "bootstrapping"
     func ensureArchiveCategory(named name: String = "Archive", userService: UserService) {
-        let defaultID = userService.defaultCategoryID
-        
-        if !categories.contains(where: { defaultCategoryItem in
-            defaultCategoryItem.id == defaultID
+        let archiveID = userService.archiveCategoryID
+        if !categories.contains(where: { archiveCategoryItem in
+            archiveCategoryItem.id == archiveID
         }) {
-            let new = CategoriesModel(id: defaultID, persistedInput: name)
+            let new = CategoriesModel(id: archiveID, persistedInput: name)
             categories.insert(new, at: 0)
-            debugPrint("HistoryVM.ensureArchiveCategory error")
+            debugPrint("HistoryVM.ensureArchiveCategory: created 'Archive'")
             saveHistory()
         }
     }
     
     // MARK: valid target to call to move tiles within categories
-    func moveTile(_ tile: TileM, from fromID: UUID, to toID: UUID) async {
+    func moveTile(_ tile: TileM, from fromID: UUID, to toID: UUID) {
         guard
             let fromIndex = categories.firstIndex(where: { $0.id == fromID }),
             let toIndex = categories.firstIndex(where: { $0.id == toID }),
@@ -175,8 +180,13 @@ final class HistoryVM: ObservableObject {
     func undoLastMove() {
         guard let move = lastUndoableMove else { return }
         Task {
-            await moveTile(move.tile, from: move.to, to: move.from)
-            lastUndoableMove = nil
+            do {
+                try await moveTileThrowing(move.tile, from: move.to, to: move.from)
+                await MainActor.run { lastUndoableMove = nil    }
+            } catch {
+                debugPrint("[HistoryVM.undoLastMove] error: ", error)
+                await MainActor.run { self.lastError = lastError   }
+            }
         }
     }
     
@@ -192,5 +202,39 @@ final class HistoryVM: ObservableObject {
         saveHistory()       // persists a cleared list
         
         Task {  await persistence.clear(storageKey) }   // clear storage safely: see PersistenceActor
+    }
+    
+    // MARK: Helpers + Throwing Core
+    
+    ///Throwing core (async throws): use when the caller wants to decide how to handle the error
+    /// SaveHistory() wraps Task and sets lastError internally - Throwing variant provided
+    func saveHistoryThrowing() async throws {
+        try await persistence.saveHistory(categories, to: storageKey)
+    }
+    
+    func addToHistoryThrowing(_ tile: TileM, to categoryID: UUID) async throws {
+        guard let index = categories.firstIndex(where: {  categoryItem in
+            categoryItem.id == categoryID
+        }) else {
+            debugPrint("HistoryVM.addToHistory] Category ID not found. Tile not added.")
+            throw HistoryError.categoryNotFound
+        }
+        categories[index].tiles.insert(tile, at: 0)
+        try await saveHistoryThrowing()
+    }
+    
+    
+    func moveTileThrowing(_ tile: TileM, from fromID: UUID, to toID: UUID) async throws {
+        guard
+            let fromIndex = categories.firstIndex(where: { $0.id == fromID }),
+            let toIndex = categories.firstIndex(where: { $0.id == toID }),
+            let tileIndex = categories[fromIndex].tiles.firstIndex(of: tile)
+        else {
+            debugPrint("Move failed: could not locate source or destination HistoryVM.moveTile")
+            return
+        }
+        let moving = categories[fromIndex].tiles.remove(at: tileIndex)
+        categories[toIndex].tiles.insert(moving, at: 0)
+        try await saveHistoryThrowing()
     }
 }

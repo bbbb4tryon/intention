@@ -7,9 +7,11 @@
 
 import SwiftUI
 
+/// EnvironmentObjects, Tasks, actor-backed persistence; error surface
 struct RootView: View {
-    // creates and defines default Category exactly once ever, even across relaunches
+    /// creates and defines default Category exactly once ever, even across relaunches
     @AppStorage("hasInitializedDefaultCategory") private var hasInitializedDefaultCategory = false
+    @AppStorage("hasInitializedArchiveCategory") private var hasInitializedArchiveCategory = false
     
     // Shared, reusable instance injected once, then passed into each viewModel: categories, stats are part of a shared domain
     let persistence: Persistence = PersistenceActor()
@@ -27,7 +29,10 @@ struct RootView: View {
         /// Inject dependency so HistoryV can access tiles from the focusVM, etc
         let persistence: Persistence = PersistenceActor()
         let config = TimerConfig.current
-        _historyVM = StateObject(wrappedValue: HistoryVM(persistence: persistence))
+        let userService = UserService()
+        
+        _userService = StateObject(wrappedValue: userService)
+        _historyVM = StateObject(wrappedValue: HistoryVM(persistence: persistence, userService: userService))
         _focusVM = StateObject(wrappedValue: FocusSessionVM(previewMode: false, config: config))
         _recalibrationVM = StateObject(wrappedValue: RecalibrationVM(config: config))
         _statsVM = StateObject(wrappedValue: StatsVM(persistence: persistence))
@@ -64,6 +69,11 @@ struct RootView: View {
                 historyVM.ensureDefaultCategory(userService: userService)
                 hasInitializedDefaultCategory = true
                 debugPrint("Default category initialized from RootView")
+            }
+            if !hasInitializedArchiveCategory {
+                historyVM.ensureArchiveCategory(userService: userService)
+                hasInitializedArchiveCategory = true
+                debugPrint("Archive category initialized from RootView")
             }
         }
         .environmentObject(statsVM)
