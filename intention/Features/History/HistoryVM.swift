@@ -7,7 +7,18 @@
 
 import SwiftUI
 
-enum HistoryError: Error, Equatable {   case categoryNotFound, historyNotLoaded, saveHistoryFailed, moveFailed  }
+enum HistoryError: Error, Equatable, LocalizedError {
+    case categoryNotFound, historyNotLoaded, saveHistoryFailed, moveFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .categoryNotFound: return "Category not found."
+        case .historyNotLoaded: return "History not loaded."
+        case .saveHistoryFailed: return "Could not save history."
+        case .moveFailed: return "Tile move failed."
+        }
+    }
+}
 
 @MainActor
 final class HistoryVM: ObservableObject {
@@ -18,8 +29,7 @@ final class HistoryVM: ObservableObject {
     
     private let persistence: Persistence
     private let archiveActor = ArchiveActor()
-//    private let userService: UserService
-    private let storageKey = "categories data"
+    private let storageKey = "categoriesData"
     private let tileSoftCap = 200
     
     /// HistoryVM owns IDs
@@ -30,10 +40,10 @@ final class HistoryVM: ObservableObject {
             get { UUID(uuidString: generalCategoryIDString) ?? { let u = UUID(); generalCategoryIDString = u.uuidString; return u }() }
             set { generalCategoryIDString = newValue.uuidString }
         }
-        var archiveCategoryID: UUID {
-            get { UUID(uuidString: archiveCategoryIDString) ?? { let u = UUID(); archiveCategoryIDString = u.uuidString; return u }() }
-            set { archiveCategoryIDString = newValue.uuidString }
-        }
+    var archiveCategoryID: UUID {
+        get { UUID(uuidString: archiveCategoryIDString) ?? { let u = UUID(); archiveCategoryIDString = u.uuidString; return u }() }
+        set { archiveCategoryIDString = newValue.uuidString }
+    }
     
     
     // AppStorage wrapper (private, not accessed directly from the view)
@@ -162,15 +172,17 @@ final class HistoryVM: ObservableObject {
         generator.impactOccurred()
     }
     
+    // MARK: Throwing core (UI path)
+    
     // MARK: valid target to call to move tiles within categories
-    func moveTile(_ tile: TileM, from fromID: UUID, to toID: UUID) {
+    func moveTile(_ tile: TileM, from fromID: UUID, to toID: UUID) async throws {
         guard
             let fromIndex = categories.firstIndex(where: { $0.id == fromID }),
             let toIndex = categories.firstIndex(where: { $0.id == toID }),
             let tileIndex = categories[fromIndex].tiles.firstIndex(of: tile)
         else {
             debugPrint("Move failed: could not locate source or destination HistoryVM.moveTile")
-            return
+            throw HistoryError.moveFailed
         }
         
         let movingTile = categories[fromIndex].tiles.remove(at: tileIndex)
@@ -179,7 +191,7 @@ final class HistoryVM: ObservableObject {
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
         
-        saveHistory()
+        try await saveHistory()
         
         lastUndoableMove = (movingTile, fromID, toID)
         
@@ -248,5 +260,15 @@ final class HistoryVM: ObservableObject {
         let moving = categories[fromIndex].tiles.remove(at: tileIndex)
         categories[toIndex].tiles.insert(moving, at: 0)
         try await saveHistoryThrowing()
+    }
+    
+    func autoSaveIfNeeded() {
+        Task {
+            do { try await saveHistory()    }
+            catch {
+                debugPrint("[HistoryVM.autoSaveIfNeeded] error: ", error)
+                self.lastError = error
+            }
+        }
     }
 }

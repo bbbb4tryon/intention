@@ -13,13 +13,15 @@ enum FocusSessionError: Error, Equatable {
     case emptyInput
     case tooManyTiles(limit: Int = 2)
     case invalidBegin(phase: FocusSessionVM.Phase, tilesCount: Int)
+    case persistenceFailed
     case unexpected
     
     var errorDescription: String? {
         switch self {
         case .emptyInput: return "Please enter a task, what you intend to do."
         case .tooManyTiles(let limit): return "You can only add \(limit) intentions."
-        case .invalidBegin(let phase, let count): return "Can't begin from phase \(phase) with \(count) tiles."
+        case .invalidBegin(let phase, let count): return "Can't begin with \(count) tiles."
+        case .persistenceFailed: return "Saving failed. Try again."
         case .unexpected: return "Something went wrong. Please try again."
         }
     }
@@ -27,6 +29,7 @@ enum FocusSessionError: Error, Equatable {
 }
 
 /// FocusSessionVM talks to FocusTimerActor and drives the UI
+/// Errors: make UI-called methods async throws (no wrapper)
 @MainActor
 final class FocusSessionVM: ObservableObject {
     
@@ -34,11 +37,8 @@ final class FocusSessionVM: ObservableObject {
     enum Phase {
         case notStarted, running, finished
     }
-    
-    @EnvironmentObject var userService: UserService
-    
-    // MARK: - Published UI State userservice
 
+    // MARK: - Published UI State userservice
     @Published var tileText: String = ""            /// Input field for tiles' text
     @Published var tiles: [TileM] = []              /// List of current session tiles (max 2)
     @Published var canAdd: Bool = true              /// Flag if user can add more tiles at that point
@@ -56,10 +56,17 @@ final class FocusSessionVM: ObservableObject {
     private var chunkCountdown: Task<Void, Never>? = nil        /// background live time keeper/ticker
     private var sessionCompletionTask: Task<Void, Never>? = nil /// background timer for the entire session (2x 20-min chunks)
     
-    var chunkDuration: Int { config.chunkDuration }           /// Default 20 min chunk duration constant
+    // MARK: - Cancel or teardown
+    deinit {
+        chunkCountdown?.cancel()
+        sessionCompletionTask?.cancel()
+    }
     
-    weak var historyVM: HistoryVM?                  /// Optional link to history view model for/to save completed sessions
-
+    var chunkDuration: Int { config.chunkDuration }     /// Default 20 min chunk duration constant
+    weak var historyVM: HistoryVM?                      /// Optional link to history view model for/to save completed sessions
+    @EnvironmentObject var userService: UserService
+    
+    
     // Preview-friendly Initializer of session state
     init(previewMode: Bool = false, config: TimerConfig = .current) {
         self.config = config
@@ -78,26 +85,17 @@ final class FocusSessionVM: ObservableObject {
         }
     
     // MARK: - Tile Submission Logic
-    // Called by EITHER the "Add" button or keyboard return
+    
     /// Adds a new tile to the session if under limit
-    /// - Throws: `FocusSessionError.emptyInput`, `.tooManyTiles` or `.unexpected`
-    func addTileAndPrepareForSession() async throws {
-        // throw, and let the caller decide what to do (including UI, logging, etc.)
-        let trimmed = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
+    func addTileAndPrepareForSession(_ text: String) async throws {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {   throw FocusSessionError.emptyInput    }
         guard tiles.count < 2 else {    throw FocusSessionError.tooManyTiles()    }
         
-        let tile = TileM(text: trimmed)
-        let success = await tileAppendTrigger.addTile(tile) // NOTE: - Initialization of immutable value 'success' was never used; consider replacing with assignment to '_' or removing it... is Dismissed by adding if conditions below
-        guard success else {
-            canAdd = false
-            throw FocusSessionError.unexpected
-        }
-        /// Overall session (FocusTimerActor) only truly starts when the "Begin" button is pressed
-        /// If code reaches here, tile was successfully added
-        tiles.append(tile)
-        tileText = ""
-        canAdd = tiles.count < 2            /// true if tiles.count is 0 or 1, false if 2
+        tiles.append(TileM(text: trimmed))
+        do { try await tileAppendTrigger.addTile(TileM(text: trimmed))  }
+        catch { throw   FocusSessionError.unexpected    }
+
         debugPrint("[FocusSessionVM.addTileAndPrepareForSession.Haptic.notifySuccessfullyAdded] did not occur")
         Haptic.notifySuccessfullyAdded()
     }
@@ -134,7 +132,7 @@ final class FocusSessionVM: ObservableObject {
     /// Advances chunk index and checks session completion
     func naturallyAdvanceSessionChunk(){
         currentSessionChunk += 1
-        self.checkSessionCompletion() // check if chunks session is completed
+        self.checkSessionCompletion()   /// check if chunks session is completed
     }
     
     /// Stops and resets the current countdown timer
@@ -146,16 +144,49 @@ final class FocusSessionVM: ObservableObject {
         debugPrint("Current 20-min countdown stoppped and reset")
     }
     
-    // MARK: - Session Lifecycle
+    // MARK: - Session Lifecycle/Flow
     
-    /// Non-throwing convienence wrapper that catches and writes lastError
     /// Combined Trigger of Chunks Session (via "Begin")
-    /// - Throws: `FocusSessionError.badTrigger_Overall`- DO want to bubble errors to the view
-    func beginOverallSession() {
-        Task {
-            do { try await beginOverallSessionThrowing()    }
-            catch { lastError = error }
+    func beginOverallSession() async throws {
+        guard tiles.count == 2 && phase == .notStarted else {
+            debugPrint("User pressed Begin, overall session and 1st chuck started.")
+            throw FocusSessionError.invalidBegin(phase: .notStarted, tilesCount: tiles.count)
         }
+        await tileAppendTrigger.startSessionTracking()
+        sessionActive = true                                /// Overall session activated
+        try startCurrent20MinCountdown()                    /// First Chunk started
+    }
+    
+    /// Adds a tile or starts session, depending on context
+    func beginSessionFlow() async throws {
+        if tiles.count < 2 {
+            try await addTileAndPrepareForSession(tileText)
+        } else {
+            // NOTE: -
+            /*
+             If two tiles are already present, and a countdown just finished,
+            this button could be used to explicitly start the *next* 20-min chunk
+            if the user chose not to immediately continue.
+            For now, based on your description, this button mainly triggers `addTileAndPrepareForSession`.
+            // We might need more explicit UI for "Start next 20-min chunk".
+             */
+            print("All tiles added. Consider adding logic for starting next chunk explicitly.")
+            try await beginOverallSession()
+        }
+    }
+    
+    /// Resets the session state for a new start
+    ///  KEEP non-throwing if it truly can't fail
+    func resetSessionStateForNewStart() async throws {
+        stopCurrent20MinCountdown()                     /// Ensures any running countdown is stopped
+        tiles = []
+        tileText = ""
+        canAdd = true
+        sessionActive = false
+        showRecalibrate = false
+        currentSessionChunk = 0
+        Task { await tileAppendTrigger.resetSessionTracking()   }   /// Reset the actor's state too
+        debugPrint("ViewModel state reset for a new session.")
     }
     
    /// Chunks session for completion, triggers recalibration
@@ -181,20 +212,7 @@ final class FocusSessionVM: ObservableObject {
             /// If currentSessionChunk is 1 and phase==finished, the UI will show "Start Next 20 Minutes"
         }
     }
-    
-    /// Resets the session state for a new start
-    /// - Throws: `FocusSessionError.unexpected`
-    func resetSessionStateForNewStart() async throws {
-        stopCurrent20MinCountdown()                     /// Ensures any running countdown is stopped
-        tiles = []
-        tileText = ""
-        canAdd = true
-        sessionActive = false
-        showRecalibrate = false
-        currentSessionChunk = 0
-        await tileAppendTrigger.resetSessionTracking()  /// Reset the actor's state too
-        debugPrint("ViewModel state reset for a new session.")
-    }
+
     
     
     // MARK: - Helpers
@@ -204,23 +222,6 @@ final class FocusSessionVM: ObservableObject {
         let minutes = countdownRemaining / 60
         let seconds = countdownRemaining % 60
         return String(format: "%02d:%02d", minutes,seconds)
-    }
-    
-    /// Adds a tile or starts session, depending on context
-    func beginSessionFlow() async throws {
-        if tiles.count < 2 {
-            try await addTileAndPrepareForSession()
-        } else {
-            // NOTE: -
-            /*
-             If two tiles are already present, and a countdown just finished,
-            this button could be used to explicitly start the *next* 20-min chunk
-            if the user chose not to immediately continue.
-            For now, based on your description, this button mainly triggers `addTileAndPrepareForSession`.
-            // We might need more explicit UI for "Start next 20-min chunk".
-             */
-            print("All tiles added. Consider adding logic for starting next chunk explicitly.")
-        }
     }
     
     /// Sets flag to trigger recalibration modal
@@ -247,15 +248,6 @@ final class FocusSessionVM: ObservableObject {
     // MARK: Helpers + Throwing Core
     
     ///Throwing core (async throws): use when the caller wants to decide how to handle the error
-    func beginOverallSessionThrowing() async throws {
-        guard tiles.count == 2 && phase == .notStarted else {
-            debugPrint("User pressed Begin, overall session and 1st chuck started.")
-            throw FocusSessionError.invalidBegin(phase: .notStarted, tilesCount: tiles.count)
-        }
-        await tileAppendTrigger.startSessionTracking()
-        sessionActive = true                                /// Overall session activated
-        try startCurrent20MinCountdown()                    /// First Chunk started
-    }
 }
 
 

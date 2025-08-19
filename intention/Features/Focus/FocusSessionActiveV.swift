@@ -88,7 +88,7 @@ struct FocusSessionActiveV: View {
                     Task {
                         do {
                             if viewModel.tiles.count < 2 {      // Logic adding tiles
-                                try await viewModel.addTileAndPrepareForSession()
+                                try await viewModel.addTileAndPrepareForSession(viewModel.tileText)
                             } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { // Logic starting session
                                 try await viewModel.beginOverallSession()
                             }

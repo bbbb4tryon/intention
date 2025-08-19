@@ -8,8 +8,9 @@
 import Foundation
 import SwiftUI
 
-enum StatsVMError: Error, Equatable {
-    case didNotLoadFromPersistence
+enum StatsError: Error, LocalizedError {
+    case calculationFailed
+    var errorDescription: String? { "Statistics could not be calculated." }
 }
 
 @MainActor
@@ -132,6 +133,16 @@ final class StatsVM: ObservableObject {
         completedSessions.append(s)
         recalculateStats()
         try await persistence.saveHistory(completedSessions, to: storageKey)
+    }
+    
+    // Background
+    func autosaveStats() {
+        //            Task {
+        //                do { try await persistence.saveHistory(self, to: "statsData") }
+        //                catch {
+        //                    debugPrint("[StatsVM.autosaveStats] error:", error)
+        //                    self.lastError = error
+        //                }
     }
 }
 
