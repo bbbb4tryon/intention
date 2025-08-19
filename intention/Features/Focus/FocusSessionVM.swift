@@ -8,18 +8,27 @@
 import SwiftUI
 import Foundation
 
-/// FocusSessionVM talks to FocusTimerActor and drives the UI
 /// Error cases for focus session flow
 enum FocusSessionError: Error, Equatable {
     case emptyInput
-    case tooManyTiles
+    case tooManyTiles(limit: Int = 2)
+    case invalidBegin(phase: FocusSessionVM.Phase, tilesCount: Int)
     case unexpected
-    case badTrigger_Overall
+    
+    var errorDescription: String? {
+        switch self {
+        case .emptyInput: return "Please enter a task, what you intend to do."
+        case .tooManyTiles(let limit): return "You can only add \(limit) intentions."
+        case .invalidBegin(let phase, let count): return "Can't begin from phase \(phase) with \(count) tiles."
+        case .unexpected: return "Something went wrong. Please try again."
+        }
+    }
+    
 }
 
+/// FocusSessionVM talks to FocusTimerActor and drives the UI
 @MainActor
 final class FocusSessionVM: ObservableObject {
-    
     
     /// UI state of the current 20-min chunk
     enum Phase {
@@ -76,7 +85,7 @@ final class FocusSessionVM: ObservableObject {
         // throw, and let the caller decide what to do (including UI, logging, etc.)
         let trimmed = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {   throw FocusSessionError.emptyInput    }
-        guard tiles.count < 2 else {    throw FocusSessionError.tooManyTiles    }
+        guard tiles.count < 2 else {    throw FocusSessionError.tooManyTiles()    }
         
         let tile = TileM(text: trimmed)
         let success = await tileAppendTrigger.addTile(tile) // NOTE: - Initialization of immutable value 'success' was never used; consider replacing with assignment to '_' or removing it... is Dismissed by adding if conditions below
@@ -97,7 +106,7 @@ final class FocusSessionVM: ObservableObject {
     /// Starts the 20-min countdown for the current focus session.
     /// - Throws: `FocusSessionError.tooManyTiles`
     func startCurrent20MinCountdown() throws {
-        guard tiles.count <= 2 else {    throw FocusSessionError.tooManyTiles   }
+        guard tiles.count <= 2 else {    throw FocusSessionError.tooManyTiles()   }
         
         stopCurrent20MinCountdown()         /// cancels any existing timers
         phase = .running
@@ -139,16 +148,14 @@ final class FocusSessionVM: ObservableObject {
     
     // MARK: - Session Lifecycle
     
+    /// Non-throwing convienence wrapper that catches and writes lastError
     /// Combined Trigger of Chunks Session (via "Begin")
     /// - Throws: `FocusSessionError.badTrigger_Overall`- DO want to bubble errors to the view
-    func beginOverallSession() async throws {
-        guard tiles.count == 2 && phase == .notStarted else {
-            debugPrint("User pressed Begin, overall session and 1st chuck started.")
-            throw FocusSessionError.badTrigger_Overall
+    func beginOverallSession() {
+        Task {
+            do { try await beginOverallSessionThrowing()    }
+            catch { lastError = error }
         }
-        await tileAppendTrigger.startSessionTracking()
-        sessionActive = true                /// Overall session activated
-        try startCurrent20MinCountdown()   /// First Chunk started, try! disables error propagation; want the view to catch, thouch
     }
     
    /// Chunks session for completion, triggers recalibration
@@ -160,7 +167,7 @@ final class FocusSessionVM: ObservableObject {
             // MARK: bounded tile history call, add tiles to category
             // NOTE: - The call is not `historyVM?.addToHistory(tiles[0].text)` to avoid out-of-range crashes
             
-            let targetCategoryID = userService.defaultCategoryID
+            let targetCategoryID = userService.generalCategoryID
             for tile in tiles.prefix(2){
                 historyVM?.addToHistory(tile, to: targetCategoryID)
             }
@@ -185,9 +192,6 @@ final class FocusSessionVM: ObservableObject {
         sessionActive = false
         showRecalibrate = false
         currentSessionChunk = 0
-        
-        let resetSucceeded = true
-        guard resetSucceeded else {    throw FocusSessionError.unexpected   }
         await tileAppendTrigger.resetSessionTracking()  /// Reset the actor's state too
         debugPrint("ViewModel state reset for a new session.")
     }
@@ -237,6 +241,20 @@ final class FocusSessionVM: ObservableObject {
                 self.lastError = error
             }
         }
+    }
+    
+    
+    // MARK: Helpers + Throwing Core
+    
+    ///Throwing core (async throws): use when the caller wants to decide how to handle the error
+    func beginOverallSessionThrowing() async throws {
+        guard tiles.count == 2 && phase == .notStarted else {
+            debugPrint("User pressed Begin, overall session and 1st chuck started.")
+            throw FocusSessionError.invalidBegin(phase: .notStarted, tilesCount: tiles.count)
+        }
+        await tileAppendTrigger.startSessionTracking()
+        sessionActive = true                                /// Overall session activated
+        try startCurrent20MinCountdown()                    /// First Chunk started
     }
 }
 

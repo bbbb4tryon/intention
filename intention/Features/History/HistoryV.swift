@@ -15,105 +15,130 @@ struct HistoryV: View {
     @State var newTextTiles: [UUID: String] = [:]   // Store new tile text per category using its `id` as key
     @State private var dropTargets: [UUID: Bool] = [:]  // Drop highlight state per category
     @State private var isOrganizing = false
+    @State private var createdCategoryID: UUID?
     
     var body: some View {
         
         let palette = theme.palette(for:.history)
         
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16) {
-                
-                Text("Group by category. Tap a category title to edit.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-                
-                ForEach($viewModel.categories, id: \.id) { $categoryItem in   // mutate individual category fields
-                    /// Disables inputs and editablity
-                    let isArchive = categoryItem.id == userService.archiveCategoryID
-                    Label(isArchive ? "Archive" : categoryItem.persistedInput,
-                          systemImage: isArchive ? "lock.fill" : "folder")
-                    .foregroundStyle(isArchive ? .secondary : palette.text)
+        ZStack(alignment: .bottom) {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 16) {
                     
-                    CategorySection(
-                        categoryItem: $categoryItem,
-                        palette: palette,
-                        fontTheme: theme.fontTheme,
-                        newTextTiles: $newTextTiles,
-                        saveHistory: { viewModel.saveHistory()  },
-                        isArchive: isArchive
-                    )
+                    Text("Group by category. Tap a category title to edit.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal)
                     
-                    
-                    if isOrganizing {
-                        TileOrganizerWrapper(
-                            categories: $viewModel.categories,
-                            onMoveTile: { tile, fromID, toID in
-                                Task {
-                                    await viewModel.moveTile(tile, from: fromID, to: toID)
-                                }
-                            },
-                            onReorder: { newTiles, categoryID in
-                                viewModel.updateTiles(in: categoryID, to: newTiles)
-                                viewModel.saveHistory()
-                            }
+                    ForEach($viewModel.categories, id: \.id) { $categoryItem in   // mutate individual category fields
+                        /// Disables inputs and editablity/ Provides subtle "card" treatment
+                        /// Derive isArchive from the VM
+                        let isArchive = categoryItem.id == viewModel.archiveCategoryID
+                                               
+                        CategorySection(
+                            categoryItem: $categoryItem,
+                            palette: palette,
+                            fontTheme: theme.fontTheme,
+                            newTextTiles: $newTextTiles,
+                            saveHistory: { viewModel.saveHistory()  },
+                            isArchive: isArchive,
+                            autoFocus: createdCategoryID == categoryItem.id
                         )
-                        .frame(height: UIScreen.main.bounds.height * 0.75) // whatever layout you prefer
+                        .background(isArchive ? Color.secondary.opacity(0.06) : .clear)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(isArchive ? Color.secondary.opacity(0.25) : .clear, lineWidth: 1)
+                        )
+                        .cornerRadius(12)
+                        
+                        
+                        if isOrganizing {
+                            TileOrganizerWrapper(
+                                categories: $viewModel.categories,
+                                onMoveTile: { tile, fromID, toID in
+                                    Task { @MainActor in        /// Using the throwing async core
+                                        do { try await viewModel.moveTileThrowing(tile, from: fromID, to: toID) }
+                                        catch { viewModel.lastError = error }
+                                    }
+                                },
+                                onReorder: { newTiles, categoryID in
+                                    viewModel.updateTiles(in: categoryID, to: newTiles)
+                                    viewModel.saveHistory()
+                                }
+                            )
+                            .frame(height: UIScreen.main.bounds.height * 0.75) // whatever layout you prefer
+                        }
                     }
                     
+                    Spacer()
+                    
                 }
-                Spacer()
-                if let move = viewModel.lastUndoableMove {
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Text("Moved \"\(move.tile.text)\"")
-                                .font(.footnote)
-                                .foregroundStyle(.white)
-                            Spacer()
-                            Button("Undo") {
-                                viewModel.undoLastMove()
-                            }
-                            .foregroundStyle(.blue)
-                        }
-                        .padding()
-                        .background(Color.black.opacity(0.85))
-                        .cornerRadius(10)
-                        .padding()
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                if let error = viewModel.lastError {
+                    ErrorOverlay(error: error) {
+                        viewModel.lastError = nil
                     }
-                    .animation(.easeInOut, value: viewModel.lastUndoableMove != nil)
+                    .zIndex(1)  // Keeps the above the context of it's error
                 }
-            }
-            .toolbar { ToolbarItem(placement: .topBarTrailing) {
-                Button(isOrganizing ? "Done" : "Organize") {isOrganizing.toggle() }
-            }}
-            if let error = viewModel.lastError {
-                ErrorOverlay(error: error) {
-                    viewModel.lastError = nil
+            } // end ScrollView
+            if let move = viewModel.lastUndoableMove {
+                HStack {
+                    Text("Moved: \(move.tile.text)")
+                        .font(.footnote)
+                    Spacer()
+                    Button("Undo") {    viewModel.undoLastMove()    }
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(.horizontal)
+                        .padding(.bottom, 44)       /// Tab bar clearance?
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .zIndex(1)
                 }
-                .zIndex(1)  // Keeps the above the context of it's error
+                .animation(.easeInOut, value: viewModel.lastUndoableMove != nil)
             }
         }
-        //        .foregroundStyle(palette.text)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+            Button(isOrganizing ? "Done" : "Organize") {isOrganizing.toggle() }
+                Button("Add Category") {
+                    let userDefinedCount = viewModel.categories.filter {
+                        let id = $0.id
+                        return id != userService.generalCategoryID && id != userService.archiveCategoryID
+                    }.count
+                    guard userDefinedCount < 2 else { return }
+                    
+                    let new = CategoriesModel(persistedInput: "")
+                    viewModel.categories.append(new)
+                    viewModel.saveHistory()
+                    createdCategoryID = new.id
+                }
+                .disabled({
+                    let userDefinedCount = viewModel.categories.filter {
+                        let id = $0.id
+                        return id != userService.generalCategoryID && id != userService.archiveCategoryID
+                    }.count
+                    return userDefinedCount >= 2
+                }())
+        }}
     }
 }
 
-
 // Mock/ test data prepopulated
-#Preview("Populated History") {
+#Preview("Populated Preview History") {
     MainActor.assumeIsolated {
         let userService = PreviewMocks.userService
-        let historyVM = HistoryVM(userService: userService)
-        historyVM.ensureDefaultCategory(userService: userService)
-        if let defaultID = historyVM.categories.first?.id {
-            historyVM.addToHistory(TileM(text: "Do taxes"), to: defaultID)
-            historyVM.addToHistory(TileM(text: "Buy groceries"), to: defaultID)
+        let historyVM = HistoryVM()
+        historyVM.ensureGeneralCategory()
+        
+        if let generalID = historyVM.categories.first?.id {
+            historyVM.addToHistory(TileM(text: "Do item"), to: generalID)
+            historyVM.addToHistory(TileM(text: "Get other item"), to: generalID)
         }
 
         return PreviewWrapper {
             HistoryV(viewModel: historyVM)
-                .environmentObject(userService)
+//                .environmentObject(userService)      //FIXME: - were for userService - can remove?
+
         }
     }
 }

@@ -18,35 +18,49 @@ final class HistoryVM: ObservableObject {
     
     private let persistence: Persistence
     private let archiveActor = ArchiveActor()
-    private let userService: UserService
+//    private let userService: UserService
     private let storageKey = "categories data"
     private let tileSoftCap = 200
+    
+    /// HistoryVM owns IDs
+    @AppStorage("generalCategoryID") private var generalCategoryIDString: String = ""
+    @AppStorage("archiveCategoryID") private var archiveCategoryIDString: String = ""
+    
+    var generalCategoryID: UUID {
+            get { UUID(uuidString: generalCategoryIDString) ?? { let u = UUID(); generalCategoryIDString = u.uuidString; return u }() }
+            set { generalCategoryIDString = newValue.uuidString }
+        }
+        var archiveCategoryID: UUID {
+            get { UUID(uuidString: archiveCategoryIDString) ?? { let u = UUID(); archiveCategoryIDString = u.uuidString; return u }() }
+            set { archiveCategoryIDString = newValue.uuidString }
+        }
     
     
     // AppStorage wrapper (private, not accessed directly from the view)
     // since `historyVM` is injected into `FocusSessionVM` at startup via `RootView`
     //  the `FocusSessionVM` `func checkSessionCompletion()`'s `addSession(tiles)`
     //  method successfully archives each 2-tile session in and survives app restarts:
-    @AppStorage("categoriesData") private var categoryData: Data = Data()
-    
+    @AppStorage("categoriesData") private var categoryData: Data = Data()   //FIXME: - were for userService - can remove?
     /// `saveHistory` calls keep storage synced, the program will rehydrate using `loadHistory()` on launch only, don't watch `categoryData`
     // Don't use any `onChange`
-    init(persistence: Persistence = PersistenceActor(), userService: UserService) {
+//    init(persistence: Persistence = PersistenceActor(), userService: UserService) {      //FIXME: - were for userService - can remove?
+    init(persistence: Persistence = PersistenceActor()) {
         self.persistence = persistence
-        self.userService = userService
+//        self.userService = userService
         Task {  await loadHistory() }
     }
     
     private func loadHistory() async {
         do {
-            if let loaded: [CategoriesModel] =
-                try await persistence.loadHistory([CategoriesModel].self, from: storageKey) {
+            if let loaded: [CategoriesModel] = try await persistence.loadHistory([CategoriesModel].self, from: storageKey) {
                 self.categories = loaded
                 
+                /// Ensure Archive category exists and hydrate it with persisted archived tiles
                 let archived = await archiveActor.loadArchivedTiles()
-                let archiveID = userService.archiveCategoryID
+                let archiveID = archiveCategoryID
+//                let archiveID = userService.archiveCategoryID   //FIXME: - were for userService - can remove?
                 
-                if let index = categories.firstIndex(where: { $0.id == archiveID }) {
+                if let index = categories.firstIndex(where: { archivedItem in archivedItem.id == archiveID }) {       //FIXME: alternatively, use $0.id = archivedID
                     categories[index].tiles = archived
                 } else {
                     /// Add archive category if not found
@@ -55,14 +69,37 @@ final class HistoryVM: ObservableObject {
                 }
             }
         } catch {
-            debugPrint("[History.loadHistory] persistence.loadHistory error: ", error )
+            debugPrint("[History(persistence's).loadHistory] error: ", error )
             await MainActor.run { self.lastError = error }
         }
     }
     
     
+    // MARK: - Sets automatic "General" category aka "bootstrapping"
+    func ensureGeneralCategory(named name: String = "General") {
+        let generalID = generalCategoryID
+        if !categories.contains(where: { generalCategoryItem in generalCategoryItem.id == generalID }) {
+            let new = CategoriesModel(id: generalID, persistedInput: name)
+            categories.insert(new, at: 0)
+            debugPrint("HistoryVM.ensureGeneralCategory: created 'Misellaneous'")
+            saveHistory()
+        }
+    }
+    
+    // MARK: - Sets automatic Archive category aka "bootstrapping"
+    func ensureArchiveCategory(named name: String = "Archive") {
+        let archiveID = archiveCategoryID
+        if !categories.contains(where: { archiveCategoryItem in archiveCategoryItem.id == archiveID }) {
+            let new = CategoriesModel(id: archiveID, persistedInput: name)
+            categories.insert(new, at: 0)
+            debugPrint("HistoryVM.ensureArchiveCategory: created 'Archive'")
+            saveHistory()
+        }
+    }
+    
+    
     func limitCheck() {
-        let total = categories.reduce(0) { $0 + $1.tiles.count }
+        let total = categories.reduce(0) { $0 + $1.tiles.count }        //FIXME: alternatively, use reduce(0) { $0 + $1.tiles.count }
         tileLimitWarning = total > tileSoftCap
         guard tileLimitWarning else { return }
         
@@ -123,30 +160,6 @@ final class HistoryVM: ObservableObject {
         
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
-    }
-    
-    // MARK: - Sets automatic Miscellanous category aka "bootstrapping"
-    func ensureDefaultCategory(named name: String = "Miscellaneous", userService: UserService) {
-        let defaultID = userService.defaultCategoryID
-        if !categories.contains(where: { defaultCategoryItem in defaultCategoryItem.id == defaultID }) {
-            let new = CategoriesModel(id: defaultID, persistedInput: name)
-            categories.insert(new, at: 0)
-            debugPrint("HistoryVM.ensureDefaultCategory: created 'Misellaneous'")
-            saveHistory()
-        }
-    }
-    
-    // MARK: - Sets automatic Archive category aka "bootstrapping"
-    func ensureArchiveCategory(named name: String = "Archive", userService: UserService) {
-        let archiveID = userService.archiveCategoryID
-        if !categories.contains(where: { archiveCategoryItem in
-            archiveCategoryItem.id == archiveID
-        }) {
-            let new = CategoriesModel(id: archiveID, persistedInput: name)
-            categories.insert(new, at: 0)
-            debugPrint("HistoryVM.ensureArchiveCategory: created 'Archive'")
-            saveHistory()
-        }
     }
     
     // MARK: valid target to call to move tiles within categories
@@ -222,7 +235,6 @@ final class HistoryVM: ObservableObject {
         categories[index].tiles.insert(tile, at: 0)
         try await saveHistoryThrowing()
     }
-    
     
     func moveTileThrowing(_ tile: TileM, from fromID: UUID, to toID: UUID) async throws {
         guard

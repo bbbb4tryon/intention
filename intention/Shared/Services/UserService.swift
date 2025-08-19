@@ -11,7 +11,7 @@ import SwiftUI
 // Stable, anonymous identifier without email or password and services reinstalls
 @MainActor
 final class UserService: ObservableObject {
-    @AppStorage("defaultCategoryID") private var defaultCategoryIDString: String = ""
+    @AppStorage("generalCategoryID") private var generalCategoryIDString: String = ""
     @AppStorage("archiveCategoryID") private var archiveCategoryIDString: String = ""
     @Published private(set) var userID: String = "Empty"
     
@@ -23,19 +23,19 @@ final class UserService: ObservableObject {
     }
     
     // MARK: - Computed default fallback IDs
-    var defaultCategoryID: UUID {
+    var generalCategoryID: UUID {
         get {
-            if let uuid = UUID(uuidString: defaultCategoryIDString) {
+            if let uuid = UUID(uuidString: generalCategoryIDString) {
                 return uuid
             } else {
                 // fallBack: if no valid UUID saved yet
                 let newID = UUID()
-                defaultCategoryIDString = newID.uuidString
+                generalCategoryIDString = newID.uuidString
                 return newID
             }
         }
         set {
-            defaultCategoryIDString = newValue.uuidString
+            generalCategoryIDString = newValue.uuidString
         }
     }
 

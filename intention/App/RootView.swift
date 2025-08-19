@@ -10,7 +10,7 @@ import SwiftUI
 /// EnvironmentObjects, Tasks, actor-backed persistence; error surface
 struct RootView: View {
     /// creates and defines default Category exactly once ever, even across relaunches
-    @AppStorage("hasInitializedDefaultCategory") private var hasInitializedDefaultCategory = false
+    @AppStorage("hasInitializedGeneralCategory") private var hasInitializedGeneralCategory = false
     @AppStorage("hasInitializedArchiveCategory") private var hasInitializedArchiveCategory = false
     
     // Shared, reusable instance injected once, then passed into each viewModel: categories, stats are part of a shared domain
@@ -29,16 +29,13 @@ struct RootView: View {
         /// Inject dependency so HistoryV can access tiles from the focusVM, etc
         let persistence: Persistence = PersistenceActor()
         let config = TimerConfig.current
-        let userService = UserService()
-        
-        _userService = StateObject(wrappedValue: userService)
-        _historyVM = StateObject(wrappedValue: HistoryVM(persistence: persistence, userService: userService))
+    
+        _historyVM = StateObject(wrappedValue: HistoryVM(persistence: persistence))
         _focusVM = StateObject(wrappedValue: FocusSessionVM(previewMode: false, config: config))
         _recalibrationVM = StateObject(wrappedValue: RecalibrationVM(config: config))
         _statsVM = StateObject(wrappedValue: StatsVM(persistence: persistence))
         _membershipVM = StateObject(wrappedValue: MembershipVM())
         _statsVM.wrappedValue.membershipVM = _membershipVM.wrappedValue
-        
      }
     
     var body: some View {
@@ -65,13 +62,13 @@ struct RootView: View {
             .tabItem {  Image(systemName: "gearshape.fill") }
         }
         .onAppear {
-            if !hasInitializedDefaultCategory {
-                historyVM.ensureDefaultCategory(userService: userService)
-                hasInitializedDefaultCategory = true
+            if !hasInitializedGeneralCategory {
+                historyVM.ensureGeneralCategory()
+                hasInitializedGeneralCategory = true
                 debugPrint("Default category initialized from RootView")
             }
             if !hasInitializedArchiveCategory {
-                historyVM.ensureArchiveCategory(userService: userService)
+                historyVM.ensureArchiveCategory()
                 hasInitializedArchiveCategory = true
                 debugPrint("Archive category initialized from RootView")
             }

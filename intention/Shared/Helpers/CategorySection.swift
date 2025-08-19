@@ -14,6 +14,8 @@ struct CategorySection: View {
     @Binding var newTextTiles: [UUID: String]
     let saveHistory: () -> Void
     let isArchive: Bool
+    var autoFocus: Bool = false
+    @State private var collapsed: Set<UUID> = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -23,16 +25,19 @@ struct CategorySection: View {
                 fontTheme: fontTheme,
                 newTextTiles: $newTextTiles,
                 saveHistory: saveHistory,
-                isArchive: isArchive
+                isArchive: isArchive,
+                autoFocus: autoFocus
             )
-
-            CategoryTileList(
-                categoryItem: $categoryItem,
-                palette: palette,
-                fontTheme: fontTheme,
-                saveHistory: saveHistory,
-                isArchive: isArchive
-            )
+            
+            if !collapsed.contains(categoryItem.id) {
+                CategoryTileList(
+                    categoryItem: $categoryItem,
+                    palette: palette,
+                    fontTheme: fontTheme,
+                    saveHistory: saveHistory,
+                    isArchive: isArchive
+                )
+            }
         }
         .padding(.horizontal)
         .padding(.bottom, 12)

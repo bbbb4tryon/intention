@@ -17,10 +17,19 @@ struct CategoryTileList: View {
     
     var body: some View {
         if categoryItem.tiles.isEmpty {
-            Text("Tasks you intended to complete would display here")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
+            VStack {
+                /// Gives archive section subtle card treatment
+                Text("Tasks you intended to complete would display here")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+            }
+            .background(isArchive ? Color.secondary.opacity(0.08) : .clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isArchive ? Color.secondary.opacity(0.03) : .clear, lineWidth: 1)
+            )
+            .cornerRadius(12)
         } else {
             LazyVStack(spacing: 8) {
                 ForEach(categoryItem.tiles) { tile in

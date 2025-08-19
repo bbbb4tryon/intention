@@ -14,28 +14,44 @@ struct CategoryHeaderRow: View {
     @Binding var newTextTiles: [UUID: String]
     let saveHistory: () -> Void         // so onCommit can Save
     let isArchive: Bool
-
+    var autoFocus: Bool = false
+    
+    @FocusState private var nameFocused: Bool
+    
     var body: some View {
-        HStack {
-            TextField("Category", text: $categoryItem.persistedInput, onCommit: {
-                saveHistory()
-            })
-                .font(fontTheme.toFont(.title3))
-                .foregroundStyle(palette.text)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+        HStack(spacing: 8) {
+            Image(systemName: isArchive ? "lock.fill" : "folder.fill")
+                .foregroundStyle(isArchive ? .secondary : palette.accent)
+            
+            if isArchive {
+                Text("Archive")
+                    .font(fontTheme.toFont(.headline))
+                    .foregroundStyle(.secondary)
+                Spacer()
+            } else {
+                TextField("Name this category",
+                          text: $categoryItem.persistedInput,
+                          onCommit: saveHistory)
+                .focused($nameFocused)
+                .font(fontTheme.toFont(.headline))
                 .disableAutocorrection(true)
-                .textInputAutocapitalization(.sentences)
+                .textInputAutocapitalization(.words)
                 .lineLimit(1)
-                .disabled(isArchive)
-
-            Button {
-                newTextTiles[categoryItem.id] = newTextTiles[categoryItem.id] ?? ""
-            } label: {
-                Image(systemName: "plus.circle.fill")
-                    .foregroundStyle(palette.accent)
-                    .font(.title3)
+                
+                Spacer()
+                
+                CountBadge_Archive(fontTheme: fontTheme, count: categoryItem.tiles.count)
+                
+                Button {
+                    newTextTiles[categoryItem.id] = newTextTiles[categoryItem.id] ?? "" } label: {
+                        Image(systemName: "plus.circle.fill")
+                    }
+                    .accessibilityLabel("Add tile")
             }
         }
         .padding(.horizontal)
+        .padding(.vertical, 8)
+        .onAppear { if autoFocus { nameFocused = true } }
     }
 }
+
