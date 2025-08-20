@@ -7,6 +7,7 @@
 
 import Foundation
 
+// case persistenceFailed(underlying: Error)
 enum RecalibrationError: Error, Equatable, LocalizedError {
     case alreadyActive
     case notActive
@@ -17,9 +18,9 @@ enum RecalibrationError: Error, Equatable, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .alreadyActive: return "Recalibration is already active."
-        case .notActive: return "No recalibration is running."
+        case .notActive: return "No recalibration is active."
         case .invalidType: return "Unsupported recalibration type."
-        case .persistenceFailed: return "Couldn’t save your recalibration."
+        case .persistenceFailed: return "Couldn’t save that recalibration."
         case .unexpected: return "Something went wrong. Please try again."
         }
     }
@@ -28,21 +29,42 @@ enum RecalibrationError: Error, Equatable, LocalizedError {
 
 @MainActor
 final class RecalibrationVM: ObservableObject {
+    
+    // MARK: Phase
     enum Phase {
         case notStarted, running, finished
     }
+
+//    struct rTimerConfig: Sendable {
+//        var breathingDuration: Int = 30         /// Seconds
+//        var balancingDuration: Int = 60         /// Seconds
+//        var breathingCueInterval: Int = 16      /// Seconds
+//        var balanceSwitchInterval: Int = 60     /// Seconds
+//    }
     
-    @Published var timeRemaining: Int = 240 // 4 min
-    @Published var instruction: String = ""
+    // MARK: State
     @Published var phase: Phase = .notStarted
+    @Published var timeRemaining: Int = 0
+    @Published var mode: RecalibrationMode? = nil
+    @Published var instruction: String = ""
+    @Published var lastError: Error? = nil
     
-    private let config: TimerConfig
-    private var countdownTask: Task<Void, Never>? = nil
+    /// Exposed read-only for views/tests that want to show the configured durations
+    let config: TimerConfig             // NOT TimerConfig?
+    
     private let persistence: PersistenceActor?
+    private var countdownTask: Task<Void, Never>? = nil
+    
+    /// Session-scoped trackers
+    private var sessionTotal: Int = 0
+    private var halfwayAnnounced = false
+    private var lastSwitchAnnouncementAt: Int = .max
+    private var lastCountdownTickAt: Int = -1
+    
+    // MARK: Lifecycle
     
     init(config: TimerConfig = .current, persistence: PersistenceActor? = nil) {
         self.config = config
-        self.timeRemaining = config.recalibrationDuration
         self.persistence = persistence
     }
     
@@ -51,128 +73,198 @@ final class RecalibrationVM: ObservableObject {
         countdownTask?.cancel()
     }
     
+    // MARK: Core API (async throws; View calls these)
     //  starts a true Swift Concurrency timer - Task + AsyncSequence
-    ///      clean, cancelable and lives in the actor context
-    func start(mode: RecalibrationType) {
-        stop()          /// cancels any existing timer
-        phase = .running
-        timeRemaining = config.recalibrationDuration
-        instruction = mode == .balancing ? "Stand on one foot" : "Inhale"
+    /// clean, cancelable and lives in the actor context
+    /// Starts a recalibration sesison for a given type
+    func start(mode: RecalibrationMode) async throws {
+        guard phase != .running else {  throw RecalibrationError.alreadyActive   }
         
-        countdownTask = Task {
-            for await _ in Timer.publish(every: 1, on: .main, in: .common).autoconnect().values {
-                await tick(mode: mode)
-                if timeRemaining <= 0 { break } // exit loop when time runs out
+        let duration = duration(for: mode)
+        guard duration > 0 else { throw RecalibrationError.invalidType  }
+        
+        self.mode = mode
+        self.sessionTotal = duration
+        self.timeRemaining = duration
+        self.phase = .running
+
+        /// Reset session markers
+        self.halfwayAnnounced = false
+        self.lastSwitchAnnouncementAt = duration
+        self.lastCountdownTickAt = -1
+        
+        startCountdownLoop()
+        
+//        countdownTask = Task {
+//            for await _ in Timer.publish(every: 1, on: .main, in: .common).autoconnect().values {
+//                await tick(mode: mode)
+//                if timeRemaining <= 0 { break } // exit loop when time runs out
+//            }
+//        }
+    }
+    
+    /// Stops current recalibration session
+    func stop() async throws {
+        guard phase == .running else {  throw RecalibrationError.notActive   }
+        countdownTask?.cancel()
+        countdownTask = nil
+        self.phase = .notStarted
+        self.mode = nil
+        self.timeRemaining = 0
+    }
+    
+    // MARK: Non-throwing wrappers (for background/auto callers)
+    
+    /// Non-throwing convenience that captures errors into 'lastError`
+    func startSafely(mode: RecalibrationMode) {
+        Task {
+            do { try await start(mode: mode)    }
+            catch {
+                debugPrint("[RecalibrationVM.startSafely] error: ", error.localizedDescription)
+                self.lastError = error
             }
         }
     }
     
-    func tick(mode: RecalibrationType) async {
-        timeRemaining -= 1
-        
-        if timeRemaining <= 0 {
-            phase = .finished
-            Haptic.notifyDone()
-            countdownTask?.cancel()
-            countdownTask = nil
-            return
+    /// Non-throwing convenience that captures errors into `lastError`.
+    func stopSafely() {
+        Task {
+            do   { try await stop() }
+            catch {
+                debugPrint("[RecalibrationVM.stopSafely]", error.localizedDescription)
+                self.lastError = error
+            }
         }
-        
-        if mode == .balancing && timeRemaining % 60 == 0 {
-            instruction = "Switch feet"
+    }
+    
+    // MARK: Private helpers
+    
+      private func startCountdownLoop() {
+          countdownTask?.cancel()
+          
+          let total = timeRemaining
+          countdownTask = Task { [weak self] in
+              guard let self else { return }
+              do {
+                  var remaining = total
+                  while remaining > 0 {
+                      try Task.checkCancellation()
+                      try await Task.sleep(nanoseconds: 1_000_000_000) // 1s
+
+                      remaining -= 1
+                      await MainActor.run {
+                          self.timeRemaining = remaining
+                          self.maybeHalfwayHaptic(remaining: remaining, total: total)
+                          self.maybeSwapHaptic(remaining: remaining)
+                          self.maybeEndCountdownHaptic(remaining: remaining)
+//                          self.maybeAnnounceSwitchIfNeeded(remaining: remaining)
+                      }
+                  }
+
+                  await MainActor.run {
+                      self.phase = .finished
+                  }
+                  Haptic.notifyDone()
+
+                  /// Background log; errors are captured silently or into lastError on main.
+                  await self.logCompletionIfPossible(duration: total)
+
+                  await MainActor.run {
+                      /// Reset back to idle after finishing
+                      self.mode = nil
+                      self.timeRemaining = 0
+                  }
+              } catch is CancellationError {
+                  // user canceled; ignore
+              } catch {
+                  await MainActor.run {
+                      self.lastError = RecalibrationError.unexpected
+                      self.phase = .notStarted
+                  }
+              }
+          }
+      }
+    
+    private func duration(for mode: RecalibrationMode) -> Int {
+        switch mode {
+        case .balancing: return max(5, config.balancingDuration)
+        case .breathing: return max(5, config.breathingDuration)
+        }
+    }
+    
+    
+    // MARK: Haptic helpers
+    
+    private func maybeHalfwayHaptic(remaining: Int, total: Int) {
+        guard config.haptics.halfwayTick, total > 1 else {  return  }
+        let halfway = total / 2
+        if !halfwayAnnounced && remaining == halfway {
+            halfwayAnnounced = true
+            Haptic.halfway()
+        }
+    }
+    
+    private func maybeSwapHaptic(remaining: Int) {
+        guard mode == .balancing, config.haptics.balanceSwapInterval > 0 else { return }
+        // Count-down based interval: fire when remaining % interval == 0 (avoid duplicates with tracker).
+        if remaining > 0,
+           remaining % config.haptics.balanceSwapInterval == 0,
+           remaining != lastSwitchAnnouncementAt {
+            lastSwitchAnnouncementAt = remaining
             Haptic.notifySwitch()
-        } else if mode == .breathing {
-            // ? animate or alternate phases (inhale, pause, etc)
         }
-        
     }
     
-    func stop() {
-        countdownTask?.cancel()
-        countdownTask = nil
-        phase = .notStarted
-    }
-    
-//    FIXME: USE THESE OR START() STOP()?
-//    func begin(_ type: RecalibrationType) async throws {
-//        guard !isActive else { throw RecalibrationError.alreadyActive }
-//        currentType = type
-//        secondsRemaining = duration(for: type)
-//        isActive = true
-//
-//        // Launch the ticking loop (owned by VM; cancel in deinit)
-//        startCountdownLoop()
-//    }
-//
-//    func cancel() async throws {
-//        guard isActive else { throw RecalibrationError.notActive }
-//        countdownTask?.cancel()
-//        countdownTask = nil
-//        isActive = false
-//        currentType = nil
-//        secondsRemaining = 0
-//    }
-//    
-//    func logCompletionIfPossible() {
-//        guard let persistence else { return }
-//        Task {
-//            do {
-//                // Replace with your model/record; using a trivial struct for example
-//                struct RecalibrationRecord: Codable { let date: Date; let kind: String; let duration: Int }
-//                let kind = kindString(currentType)
-//                let rec = RecalibrationRecord(date: Date(), kind: kind, duration: secondsRemaining)
-//                try await persistence.saveHistory([rec], to: "recalibrationLog")
-//            } catch {
-//                debugPrint("[RecalibrationVM.logCompletionIfPossible] error:", error)
-//                self.lastError = RecalibrationError.persistenceFailed
-//            }
+//    private func maybeAnnounceSwitchIfNeeded(remaining: Int) {
+//        guard mode == .balancing, config.haptics. > 0 else { return }
+//        /// Fire a light haptic each interval (counting down).
+//        if (remaining > 0) && (remaining % config.balanceSwitchInterval == 0) && (remaining != lastSwitchAnnouncementAt) {
+//            lastSwitchAnnouncementAt = remaining
+//            Haptic.notifySwitch()
 //        }
 //    }
-//    // MARK: Internals
-//
-//      private func startCountdownLoop() {
-//          countdownTask?.cancel()
-//          let total = secondsRemaining
-//          countdownTask = Task {
-//              do {
-//                  for sec in stride(from: total, through: 0, by: -1) {
-//                      try Task.checkCancellation()
-//                      await MainActor.run { self.secondsRemaining = sec }
-//                      try await Task.sleep(nanoseconds: 1_000_000_000)
-//                  }
-//                  await MainActor.run {
-//                      self.isActive = false
-//                  }
-//                  Haptic.notifyDone()
-//                  // background log (non-blocking)
-//                  self.logCompletionIfPossible()
-//              } catch is CancellationError {
-//                  // Swallow
-//              } catch {
-//                  await MainActor.run {
-//                      self.lastError = RecalibrationError.unexpected
-//                      self.isActive = false
-//                  }
-//              }
-//          }
-//      }
-//
-//      private func duration(for type: RecalibrationType) -> Int {
-//          switch type {
-//          case .breathe(let s): return max(5, s)
-//          case .balance(let s): return max(5, s)
-//          }
-//      }
-//
-//      private func kindString(_ type: RecalibrationType?) -> String {
-//          guard let type else { return "none" }
-//          switch type {
-//          case .breathe: return "breathe"
-//          case .balance: return "balance"
-//          }
-//      }
-//  }
-//
+    
+    private func maybeEndCountdownHaptic(remaining: Int) {
+        let start = config.haptics.endCountdownStart
+        guard start > 0, remaining > 0, remaining <= start else { return }
+        /// Tick once per second near the end; avoid duplicate if this method runs multiple times a second.
+        if lastCountdownTickAt != remaining {
+            lastCountdownTickAt = remaining
+            Haptic.countdownTick()
+        }
+    }
+    
+    private func logCompletionIfPossible(duration: Int) async {
+        guard let persistence else { return }
+        struct RecalibrationRecord: Codable {
+            let date: Date
+            let mode: String
+            let duration: Int
+        }
+        let record = RecalibrationRecord(
+            date: .now,
+            mode: {
+                switch mode {
+                case .breathing?: return "breathing"
+                case .balancing?: return "balancing"
+                default: return "none"
+                }
+            }(),
+            duration: duration
+        )
+
+        await Task.detached(priority: .background) {
+            do {
+                try await persistence.write([record], to: "recalibrationLog")
+            } catch {
+                await MainActor.run {
+                    /// Optional: surface this as a typed error
+                    self.lastError = RecalibrationError.persistenceFailed
+                }
+            }
+        }.value
+    }
+    
     // Helper to format time into MM:SS
     var formattedTime: String {
         let minutes = timeRemaining / 60

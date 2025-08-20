@@ -17,21 +17,21 @@ enum StatsError: Error, LocalizedError {
 final class StatsVM: ObservableObject {
     @Published private(set) var averageCompletionRate: Double = 1.0
     @Published private(set) var totalCompletedIntentions: Int = 0
-    @Published private(set) var recalibrationCounts: [RecalibrationType: Int] = [:] // what?
-    @Published private(set) var lastRecalibrationChoice: RecalibrationType? = nil
+    @Published private(set) var recalibrationCounts: [RecalibrationMode: Int] = [:] // what?
+    @Published private(set) var lastRecalibrationChoice: RecalibrationMode? = nil
     @Published private(set) var runStreakDays: Int = 0
     @Published private(set) var maxRunStreakDays: Int = 0
     @Published var shouldPromptForMembership: Bool = false  // is good flag
     @Published var lastError: Error?
     
-    private let persistence: Persistence
+    private let persistence: PersistenceActor
     private let storageKey = "completedSessions"
     private let membershipThreshold = 2
     private var completedSessions: [CompletedSession] = []
     
     weak var membershipVM: MembershipVM?
     
-    init(persistence: Persistence){
+    init(persistence: PersistenceActor){
         self.persistence = persistence
         Task {  await loadSessions()    }
     }
@@ -58,7 +58,7 @@ final class StatsVM: ObservableObject {
         
         Task {
             do {
-                try await persistence.saveHistory(completedSessions, to: storageKey)
+                try await persistence.write(completedSessions, to: storageKey)
             } catch {
                 debugPrint("[StatsVM.logSession persistence.saveHistory] error:", error)
                 await MainActor.run { self.lastError = error }
@@ -68,7 +68,7 @@ final class StatsVM: ObservableObject {
     
     private func loadSessions() async {
         do {
-            if let loaded: [CompletedSession] = try await persistence.loadHistory([CompletedSession].self, from: storageKey) {
+            if let loaded: [CompletedSession] = try await persistence.readIfExists([CompletedSession].self, from: storageKey) {
                 completedSessions = loaded
                 recalculateStats()
             }
@@ -132,7 +132,7 @@ final class StatsVM: ObservableObject {
     func logSessionThrowing( _ s: CompletedSession) async throws {
         completedSessions.append(s)
         recalculateStats()
-        try await persistence.saveHistory(completedSessions, to: storageKey)
+        try await persistence.write(completedSessions, to: storageKey)
     }
     
     // Background
@@ -151,6 +151,6 @@ final class StatsVM: ObservableObject {
 struct CompletedSession: Codable {
     let date: Date
     let tileTexts: [String]
-    let recalibration: RecalibrationType?
+    let recalibration: RecalibrationMode?
 }
 

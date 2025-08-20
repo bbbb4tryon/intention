@@ -16,7 +16,7 @@ enum PreviewMocks {
                 service.archiveCategoryID = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
         return service
     }
-    @MainActor static var persistence: Persistence {
+    @MainActor static var persistence: PersistenceActor {
         PersistenceActor()
     }
     

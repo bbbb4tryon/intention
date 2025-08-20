@@ -20,7 +20,7 @@ enum FocusSessionError: Error, Equatable {
         switch self {
         case .emptyInput: return "Please enter a task, what you intend to do."
         case .tooManyTiles(let limit): return "You can only add \(limit) intentions."
-        case .invalidBegin(let phase, let count): return "Can't begin with \(count) tiles."
+        case .invalidBegin(_, let count): return "Can't begin with \(count) tiles."
         case .persistenceFailed: return "Saving failed. Try again."
         case .unexpected: return "Something went wrong. Please try again."
         }
@@ -92,9 +92,15 @@ final class FocusSessionVM: ObservableObject {
         guard !trimmed.isEmpty else {   throw FocusSessionError.emptyInput    }
         guard tiles.count < 2 else {    throw FocusSessionError.tooManyTiles()    }
         
-        tiles.append(TileM(text: trimmed))
-        do { try await tileAppendTrigger.addTile(TileM(text: trimmed))  }
-        catch { throw   FocusSessionError.unexpected    }
+        let newTile = TileM(text: trimmed)
+        
+        /// Cross-actor hop; no 'try' becuase the actor method doesn't throw
+        let accepted = await tileAppendTrigger.addTile(newTile)
+        guard accepted else { throw FocusSessionError.tooManyTiles(limit: 2) }
+        
+        tiles.append(newTile)
+        tileText = ""
+        canAdd = tiles.count < 2       /// Keeps flag in sync
 
         debugPrint("[FocusSessionVM.addTileAndPrepareForSession.Haptic.notifySuccessfullyAdded] did not occur")
         Haptic.notifySuccessfullyAdded()
@@ -148,7 +154,8 @@ final class FocusSessionVM: ObservableObject {
     
     /// Combined Trigger of Chunks Session (via "Begin")
     func beginOverallSession() async throws {
-        guard tiles.count == 2 && phase == .notStarted else {
+        /// Use the *current* phase for the error payload
+        guard tiles.count == 2, phase == .notStarted else {
             debugPrint("User pressed Begin, overall session and 1st chuck started.")
             throw FocusSessionError.invalidBegin(phase: .notStarted, tilesCount: tiles.count)
         }
@@ -175,9 +182,8 @@ final class FocusSessionVM: ObservableObject {
         }
     }
     
-    /// Resets the session state for a new start
-    ///  KEEP non-throwing if it truly can't fail
-    func resetSessionStateForNewStart() async throws {
+    /// Resets the session state for a new start - non-throwing; async because we `await` the actor
+    func resetSessionStateForNewStart() async {
         stopCurrent20MinCountdown()                     /// Ensures any running countdown is stopped
         tiles = []
         tileText = ""
@@ -185,7 +191,7 @@ final class FocusSessionVM: ObservableObject {
         sessionActive = false
         showRecalibrate = false
         currentSessionChunk = 0
-        Task { await tileAppendTrigger.resetSessionTracking()   }   /// Reset the actor's state too
+        await tileAppendTrigger.resetSessionTracking()
         debugPrint("ViewModel state reset for a new session.")
     }
     

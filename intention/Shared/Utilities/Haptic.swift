@@ -9,6 +9,23 @@ import Foundation
 import UIKit
 
 enum Haptic {
+    static func halfway() {
+        // short
+        for delay in [2.0, 2.0] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            }
+        }
+    }
+    
+    static func countdownTick() {
+        // short
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        DispatchQueue.main.asyncAfter(deadline: .now()) {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
+    }
+
     static func notifyDone() {
         // long, long, short
         for delay in [0.0, 1.0, 2.0] {
@@ -33,4 +50,5 @@ enum Haptic {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         }
     }
+    
 }

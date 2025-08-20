@@ -63,8 +63,8 @@ struct FocusSessionActiveV: View {
         let chunkSeconds = TimerConfig.current.chunkDuration
         let progress = Double(viewModel.countdownRemaining) / Double(chunkSeconds)
         
-        NavigationLink(destination: RecalibrateV(viewModel: recalibrationVM), isActive: $viewModel.showRecalibrate) { EmptyView()
-        }.hidden()
+//        NavigationLink(destination: RecalibrateV(viewModel: recalibrationVM), isActive: $viewModel.showRecalibrate) { EmptyView()
+//        }.hidden()
         
         //        NavigationView {
         VStack(spacing: 20){
@@ -92,15 +92,10 @@ struct FocusSessionActiveV: View {
                             } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { // Logic starting session
                                 try await viewModel.beginOverallSession()
                             }
-                        } catch FocusSessionError.emptyInput {
-                            debugPrint("Error: empty input for tile.")
-                            print("Must have input")
-                        } catch FocusSessionError.tooManyTiles {
-                            debugPrint("Error: too many tiles")
-                            print("Two list item limit")
-                        } catch FocusSessionError.unexpected {
-                            debugPrint("Error: FocusSessionError.unexpected: \(FocusSessionError.unexpected)")
-                            print("An unexpected error occured: contact the developer")
+                        } catch {
+                            // View owns the error here
+                                        debugPrint("[FocusSessionActiveV.Button] error:", error)
+                                        viewModel.lastError = error
                         }
                     }
                 }) {
@@ -108,6 +103,7 @@ struct FocusSessionActiveV: View {
                         .font(.headline)
                         .padding(.vertical,8)
                         .frame(maxWidth: .infinity)
+                        .foregroundStyle( true ? .clear : .accentColor)
                 }
                 .mainActionStyle(screen: .homeActiveIntentions)
                 .environmentObject(theme)
@@ -159,7 +155,7 @@ struct FocusSessionActiveV: View {
             }
         }
         .sheet(isPresented: $viewModel.showRecalibrate){
-            RecalibrateV(viewModel: recalibrationVM) // FIXME: NEED recalibrationChoice: selectedChoice?
+            RecalibrationV(vm: recalibrationVM)
         }
     }
     

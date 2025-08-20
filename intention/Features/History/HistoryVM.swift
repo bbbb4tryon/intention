@@ -25,9 +25,9 @@ final class HistoryVM: ObservableObject {
     @Published var categories: [CategoriesModel] = []
     @Published var tileLimitWarning: Bool = false
     @Published var lastUndoableMove: (tile: TileM, from: UUID, to: UUID)? = nil
-    @Published var lastError: Error? = nil
+    @Published var lastError: Error?
     
-    private let persistence: Persistence
+    private let persistence: PersistenceActor
     private let archiveActor = ArchiveActor()
     private let storageKey = "categoriesData"
     private let tileSoftCap = 200
@@ -37,9 +37,9 @@ final class HistoryVM: ObservableObject {
     @AppStorage("archiveCategoryID") private var archiveCategoryIDString: String = ""
     
     var generalCategoryID: UUID {
-            get { UUID(uuidString: generalCategoryIDString) ?? { let u = UUID(); generalCategoryIDString = u.uuidString; return u }() }
-            set { generalCategoryIDString = newValue.uuidString }
-        }
+        get { UUID(uuidString: generalCategoryIDString) ?? { let u = UUID(); generalCategoryIDString = u.uuidString; return u }() }
+        set { generalCategoryIDString = newValue.uuidString }
+    }
     var archiveCategoryID: UUID {
         get { UUID(uuidString: archiveCategoryIDString) ?? { let u = UUID(); archiveCategoryIDString = u.uuidString; return u }() }
         set { archiveCategoryIDString = newValue.uuidString }
@@ -50,33 +50,33 @@ final class HistoryVM: ObservableObject {
     // since `historyVM` is injected into `FocusSessionVM` at startup via `RootView`
     //  the `FocusSessionVM` `func checkSessionCompletion()`'s `addSession(tiles)`
     //  method successfully archives each 2-tile session in and survives app restarts:
-    @AppStorage("categoriesData") private var categoryData: Data = Data()   //FIXME: - were for userService - can remove?
+
     /// `saveHistory` calls keep storage synced, the program will rehydrate using `loadHistory()` on launch only, don't watch `categoryData`
     // Don't use any `onChange`
-//    init(persistence: Persistence = PersistenceActor(), userService: UserService) {      //FIXME: - were for userService - can remove?
-    init(persistence: Persistence = PersistenceActor()) {
+    //    init(persistence: Persistence = PersistenceActor(), userService: UserService) {      //FIXME: - were for userService - can remove?
+    init(persistence: PersistenceActor) {
         self.persistence = persistence
-//        self.userService = userService
         Task {  await loadHistory() }
     }
     
     private func loadHistory() async {
         do {
-            if let loaded: [CategoriesModel] = try await persistence.loadHistory([CategoriesModel].self, from: storageKey) {
+            if let loaded: [CategoriesModel] = try await persistence.readIfExists([CategoriesModel].self, from: storageKey) {
                 self.categories = loaded
-                
-                /// Ensure Archive category exists and hydrate it with persisted archived tiles
-                let archived = await archiveActor.loadArchivedTiles()
-                let archiveID = archiveCategoryID
-//                let archiveID = userService.archiveCategoryID   //FIXME: - were for userService - can remove?
-                
-                if let index = categories.firstIndex(where: { archivedItem in archivedItem.id == archiveID }) {       //FIXME: alternatively, use $0.id = archivedID
-                    categories[index].tiles = archived
-                } else {
-                    /// Add archive category if not found
-                    let newArchive = CategoriesModel(id: archiveID, persistedInput: "Archive", tiles: archived)
-                    categories.append(newArchive)
-                }
+            } else {
+                self.categories = []
+            }
+            
+            /// Ensure Archive category exists and hydrate it with persisted archived tiles
+            let archived = await archiveActor.loadArchivedTiles()
+            let archiveID = archiveCategoryID
+            
+            if let index = categories.firstIndex(where: { archivedItem in archivedItem.id == archiveID }) {       //FIXME: alternatively, use $0.id = archivedID
+                categories[index].tiles = archived
+            } else {
+                /// Add archive category if not found
+                let newArchive = CategoriesModel(id: archiveID, persistedInput: "Archive", tiles: archived)
+                categories.append(newArchive)
             }
         } catch {
             debugPrint("[History(persistence's).loadHistory] error: ", error )
@@ -91,7 +91,7 @@ final class HistoryVM: ObservableObject {
         if !categories.contains(where: { generalCategoryItem in generalCategoryItem.id == generalID }) {
             let new = CategoriesModel(id: generalID, persistedInput: name)
             categories.insert(new, at: 0)
-            debugPrint("HistoryVM.ensureGeneralCategory: created 'Misellaneous'")
+            debugPrint("HistoryVM.ensureGeneralCategory: created 'General'")
             saveHistory()
         }
     }
@@ -126,7 +126,7 @@ final class HistoryVM: ObservableObject {
     // MARK: - Non-throwing convenience (fire-and-forget)
     /// Non-throwing wrapper, background with a UI signal; catch internally, debugPrints, sets VM lasterror; saveHistory() calls saveHistoryThrowing() inside a Task
     /// Save the current categories array -> wrapper of PersistenceActor.saveHistory
-    func saveHistory() {
+    func saveHistory() { //wrapper
         Task {
             do { try await saveHistoryThrowing() }
             catch {
@@ -191,14 +191,13 @@ final class HistoryVM: ObservableObject {
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
         
-        try await saveHistory()
-        
+        try await saveHistoryThrowing()
         lastUndoableMove = (movingTile, fromID, toID)
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            Task { @MainActor in
-                self.lastUndoableMove = nil         // clear undo after 3s if not acted upon (via toast)
-            }
+        /// Clear undo after 3s
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            self.lastUndoableMove = nil         // clear undo after 3s if not acted upon (via toast)
         }
     }
     
@@ -207,10 +206,10 @@ final class HistoryVM: ObservableObject {
         Task {
             do {
                 try await moveTileThrowing(move.tile, from: move.to, to: move.from)
-                await MainActor.run { lastUndoableMove = nil    }
+                self.lastUndoableMove = nil
             } catch {
                 debugPrint("[HistoryVM.undoLastMove] error: ", error)
-                await MainActor.run { self.lastError = lastError   }
+                self.lastError = error
             }
         }
     }
@@ -218,6 +217,7 @@ final class HistoryVM: ObservableObject {
     func updateTiles(in categoryID: UUID, to newTiles: [TileM]) {
         if let index = categories.firstIndex(where: { $0.id == categoryID }) {
             categories[index].tiles = newTiles
+            saveHistory()       /// Persist change
         }
     }
     
@@ -233,8 +233,8 @@ final class HistoryVM: ObservableObject {
     
     ///Throwing core (async throws): use when the caller wants to decide how to handle the error
     /// SaveHistory() wraps Task and sets lastError internally - Throwing variant provided
-    func saveHistoryThrowing() async throws {
-        try await persistence.saveHistory(categories, to: storageKey)
+    func saveHistoryThrowing() async throws { //core
+        try await persistence.write(categories, to: storageKey)
     }
     
     func addToHistoryThrowing(_ tile: TileM, to categoryID: UUID) async throws {
@@ -254,17 +254,17 @@ final class HistoryVM: ObservableObject {
             let toIndex = categories.firstIndex(where: { $0.id == toID }),
             let tileIndex = categories[fromIndex].tiles.firstIndex(of: tile)
         else {
-            debugPrint("Move failed: could not locate source or destination HistoryVM.moveTile")
-            return
-        }
-        let moving = categories[fromIndex].tiles.remove(at: tileIndex)
-        categories[toIndex].tiles.insert(moving, at: 0)
-        try await saveHistoryThrowing()
+            debugPrint("HistoryVM.moveTileThrowing //core] Category ID not found. Tile not added.")
+            throw HistoryError.moveFailed
+               }
+               let moving = categories[fromIndex].tiles.remove(at: tileIndex)
+               categories[toIndex].tiles.insert(moving, at: 0)
+               try await saveHistoryThrowing()
     }
     
     func autoSaveIfNeeded() {
         Task {
-            do { try await saveHistory()    }
+            do { try await saveHistoryThrowing()    }
             catch {
                 debugPrint("[HistoryVM.autoSaveIfNeeded] error: ", error)
                 self.lastError = error

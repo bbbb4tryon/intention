@@ -6,16 +6,33 @@
 //
 
 import SwiftUI
+import Foundation
 
 /// Single source of truth for all durations
-///
 /// In UI tests, pass a launch argument to flip to short timers
-struct TimerConfig {
-    let chunkDuration: Int        // 20-min chunks
-    let recalibrationDuration: Int // e.g., 4-min
+struct TimerConfig: Sendable {
+    // MARK: Focus/session
+    let chunkDuration: Int          /// 20-min chunks (1200)
+    
+    // MARK: Recalibration durations (per-mode)
+    let breathingDuration: Int      /// 2-min (120)
+    let balancingDuration: Int      /// 4-min (240)
+    
+    // MARK: Haptics policy
+    struct Haptics: Sendable {
+        /// If > 0, fire a light haptic every second when `remaining <= endCountdownStart && remaining > 0`.
+        let endCountdownStart: Int       // 3s
+        /// If true, haptic once at the halfway point for either mode.
+        let halfwayTick: Bool
+        /// If > 0 and mode == .balancing, haptic at this interval (seconds) to hint a foot swap.
+        let balanceSwapInterval: Int     // 60s
+    }
+    let haptics: Haptics
 
-    static let prod = TimerConfig(chunkDuration: 1200, recalibrationDuration: 240)
-    static let shortDebug = TimerConfig(chunkDuration: 10, recalibrationDuration: 20)
+    static let prod = TimerConfig(chunkDuration: 1200, breathingDuration: 120, balancingDuration: 240,
+                                  haptics: .init(endCountdownStart: 3, halfwayTick: true, balanceSwapInterval: 60))
+    static let shortDebug = TimerConfig(chunkDuration: 10, breathingDuration: 10, balancingDuration: 20,
+                                        haptics: .init(endCountdownStart: 3, halfwayTick: true, balanceSwapInterval: 5))
 
     // Picks prod unless DEBUG+flag set
     static var current: TimerConfig {

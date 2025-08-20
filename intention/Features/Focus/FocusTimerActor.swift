@@ -12,21 +12,20 @@ import Foundation
 actor FocusTimerActor {
     /// Short debug/UI tests without touching production logic
     private let config: TimerConfig
-    init(config: TimerConfig) { self.config = config    }
+    init(config: TimerConfig) { self.config = config }
     
     private(set) var sessionStartDate: Date?
     private(set) var currentTiles: [TileM] = [] // NOTE: adding = [] dismisses 'has no initializers'
     
+    /// Starts a new session window; clears actor's tile buffer.
     func startSessionTracking() {
         sessionStartDate = Date()
         currentTiles = []           /// Clear tiles for new session
     }
     
+    /// Attempts to append a tile; returns false if limit (2) already reached.
     func addTile(_ tile: TileM) -> Bool {
-        guard currentTiles.count < 2 else {
-            print("Sessions have 2 task limit //focusTimerActor")
-            return false
-        }
+        guard currentTiles.count < 2 else { return false }
         currentTiles.append(tile)
         return true
     }

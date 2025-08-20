@@ -127,7 +127,7 @@ struct HistoryV: View {
 #Preview("Populated Preview History") {
     MainActor.assumeIsolated {
         let userService = PreviewMocks.userService
-        let historyVM = HistoryVM()
+        let historyVM = HistoryVM(persistence: PersistenceActor())
         historyVM.ensureGeneralCategory()
         
         if let generalID = historyVM.categories.first?.id {
