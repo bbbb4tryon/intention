@@ -21,9 +21,6 @@ struct SettingsV: View {
        
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-//                // Header
-//                theme.styledText("Settings", as: .header, in: .settings)
-//                    .padding(.top, 12)
                 
                 // Preferences Section
                 VStack(alignment: .leading, spacing: 12) {
@@ -87,6 +84,11 @@ struct SettingsV: View {
                 .padding(.top, 8)
                 
                 Spacer(minLength: 40)
+                
+                Section("Legal") {
+                    NavigationLink("Terms of Use") { LegalDocV(title: "Terms of Use", markdown: termsMarkdown) }
+                    NavigationLink("Privacy Policy") { LegalDocV(title: "Privacy Policy", markdown: privacyMarkdown) }
+                }
             }
             .padding(.horizontal)
         }
@@ -128,6 +130,20 @@ private struct StatBlock: View {
         .frame(maxWidth: .infinity)
     }
 }
+
+struct LegalDocV: View {
+    let title: String
+    let markdown: String
+    
+    var body: some View {
+        ScrollView {
+            Text(.init(markdown))
+                .padding()
+        }
+        .navigationTitle(title)
+    }
+}
+
 #Preview("Stats & Settings") {
     MainActor.assumeIsolated {
         let stats = PreviewMocks.stats

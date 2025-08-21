@@ -44,6 +44,7 @@ struct HistoryV: View {
                             isArchive: isArchive,
                             autoFocus: createdCategoryID == categoryItem.id
                         )
+                        .environmentObject(viewModel)
                         .background(isArchive ? Color.secondary.opacity(0.06) : .clear)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)

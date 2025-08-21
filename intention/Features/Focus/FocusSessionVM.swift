@@ -39,7 +39,8 @@ final class FocusSessionVM: ObservableObject {
     }
 
     // MARK: - Published UI State userservice
-    @Published var tileText: String = ""            /// Input field for tiles' text
+    @Published var tileText: String = ""  { didSet { validationMessages = tileText.taskValidationMessages }}         /// Input field for tiles' text;   Validate whenever tileText changes
+        
     @Published var tiles: [TileM] = []              /// List of current session tiles (max 2)
     @Published var canAdd: Bool = true              /// Flag if user can add more tiles at that point
     @Published var sessionActive: Bool = false      /// Overall session state (two 20-min chunks)
@@ -49,6 +50,7 @@ final class FocusSessionVM: ObservableObject {
     @Published var currentSessionChunk: Int = 0     /// Index of current chunk (0 or 1): Tracks which 20-min chunk of the session is active
     @Published var sessionHistory: [[TileM]] = []   /// Array of tiles completed in this session of 2 chunks
     @Published var lastError: Error?                /// Used to trigger the UI visual error overlay
+    @Published var validationMessages: [String] = []
     
     // MARK: - Internal Properties
     private let config: TimerConfig

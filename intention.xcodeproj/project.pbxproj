@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		7787866E2DF236D4004EDBEF /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = 7787866D2DF236D4004EDBEF /* Documentation.docc */; };
+		77B8BFDE2E567C010060EFD5 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77B8BFDD2E567C010060EFD5 /* XCTest.framework */; platformFilter = ios; };
+		77B8BFDF2E567C010060EFD5 /* XCTest.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 77B8BFDD2E567C010060EFD5 /* XCTest.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		77DA310D2E44D7F100C6DC9E /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = 77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */; };
 		77DA31352E45872300C6DC9E /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77DA31342E45872300C6DC9E /* StoreKit.framework */; };
 /* End PBXBuildFile section */
@@ -29,10 +31,25 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		77B8BFE02E567C010060EFD5 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				77B8BFDF2E567C010060EFD5 /* XCTest.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		770F222E2E02EF2E00F9CEB3 /* intention.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = intention.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		770F222F2E02EF2E00F9CEB3 /* IntentionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IntentionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7787866D2DF236D4004EDBEF /* Documentation.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = Documentation.docc; sourceTree = "<group>"; };
+		77B8BFDD2E567C010060EFD5 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/iPhoneOS.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		77DA311F2E45494700C6DC9E /* FocusSessionFlowUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusSessionFlowUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		77DA31342E45872300C6DC9E /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
@@ -82,6 +99,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				77B8BFDE2E567C010060EFD5 /* XCTest.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -113,6 +131,7 @@
 		77DA31332E45872300C6DC9E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				77B8BFDD2E567C010060EFD5 /* XCTest.framework */,
 				77DA31342E45872300C6DC9E /* StoreKit.framework */,
 			);
 			name = Frameworks;
@@ -151,6 +170,7 @@
 				7792906B2DFB449C00F93B23 /* Sources */,
 				7792906C2DFB449C00F93B23 /* Frameworks */,
 				7792906D2DFB449C00F93B23 /* Resources */,
+				77B8BFE02E567C010060EFD5 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -521,6 +541,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 343T42D9R8;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "-.IntentionTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -539,6 +560,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 343T42D9R8;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "-.IntentionTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -555,6 +577,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "-.FocusSessionFlowUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -571,6 +594,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "-.FocusSessionFlowUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";

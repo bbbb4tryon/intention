@@ -51,7 +51,7 @@ struct FocusSessionActiveV: View {
     /// Session state and session logic container
     @ObservedObject var viewModel: FocusSessionVM
     
-    /// Recalibration session VM
+    /// Recalibration session VM (ObservedObject for ViewModel owned by parent)
     @ObservedObject var recalibrationVM: RecalibrationVM
     
     /// Tracks active sheet for membership prompt
@@ -62,25 +62,31 @@ struct FocusSessionActiveV: View {
         let palette = theme.palette(for: .homeActiveIntentions)
         let chunkSeconds = TimerConfig.current.chunkDuration
         let progress = Double(viewModel.countdownRemaining) / Double(chunkSeconds)
-        
-//        NavigationLink(destination: RecalibrateV(viewModel: recalibrationVM), isActive: $viewModel.showRecalibrate) { EmptyView()
-//        }.hidden()
-        
-        //        NavigationView {
+
         VStack(spacing: 20){
             
             StatsSummaryBar(palette: palette)
                 .frame(height: 56)              // "clamp" the bar height
             
-            Spacer()    // pushes content towards center-top
+            Spacer()                            // pushes content towards center-top
             
             // MARK: - Textfield for intention tile text input
-            TextField("Enter intention", text: $viewModel.tileText)
+            TextField("Enter intention", text: $viewModel.tileText, axis: .vertical)    //FIXME: is vertical weird?
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .disabled(viewModel.tiles.count == 2 && viewModel.phase == .running)
                 .padding(.horizontal)
+                .background(viewModel.validationMessages.isEmpty ? palette.accent : Color.red.opacity(0.2))
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.sentences)
+                .lineLimit(3)
+            
+            // MARK: Data validation messages for textfield
+            ForEach(viewModel.validationMessages, id: \.self) { message in
+                Text(message)
+                    .foregroundStyle(.red)
+                    .font(.caption)
+            }
+            
             
             // MARK: Main Action Inputs
             if !viewModel.showRecalibrate && viewModel.phase != .running {

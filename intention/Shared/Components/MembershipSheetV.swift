@@ -53,6 +53,11 @@ struct MembershipSheetV: View {
                 .foregroundStyle(.secondary)
                 .padding(.bottom, 12)
             
+            Text("“By continuing, you agree to our Terms and Privacy.")
+                .font(theme.fontTheme.toFont(.footnote))
+                .foregroundStyle(.secondary)
+                .padding(.bottom, 8)
+            
             if membershipVM.isMember {
                 Label("Member! You're supporting us!", systemImage: "star")
                     .symbolBounceIfAvailable()

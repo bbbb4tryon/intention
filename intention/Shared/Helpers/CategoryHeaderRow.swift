@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CategoryHeaderRow: View {
+    @EnvironmentObject var viewModel: HistoryVM             /// Or as an internal private let with init()?
     @Binding var categoryItem: CategoriesModel
     let palette: ScreenStylePalette
     let fontTheme: AppFontTheme
@@ -31,13 +32,29 @@ struct CategoryHeaderRow: View {
             } else {
                 TextField("Name this category",
                           text: $categoryItem.persistedInput,
-                          onCommit: saveHistory)
+                          onCommit: saveHistory
+                )
                 .focused($nameFocused)
                 .font(fontTheme.toFont(.headline))
                 .disableAutocorrection(true)
                 .textInputAutocapitalization(.words)
                 .lineLimit(1)
+                .border(borderColor, width: 1)                                  // FIXME: is this fucking up the layout?
+                .background(viewModel.validationMessages.isEmpty ? palette.accent : Color.red.opacity(0.2)) // FIXME: is this fucking up the layout?
+                .onChange(of: categoryItem.persistedInput ) { newValue in
+                    viewModel.validateCategory(id: categoryItem.id, title: newValue)
+                }
                 
+                /// Display validation messages from the view model
+                if let messages = viewModel.categoryValidationMessages[categoryItem.id], !messages.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(messages, id: \.self) { message in
+                            Text(message)
+                                .foregroundColor(.red)
+                                .font(.caption)
+                        }
+                    }
+                }
                 Spacer()
                 
                 CountBadge_Archive(fontTheme: fontTheme, count: categoryItem.tiles.count)
@@ -52,6 +69,14 @@ struct CategoryHeaderRow: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .onAppear { if autoFocus { nameFocused = true } }
+        
+        
+        // FIXME: is this fucking up the layout?
+        /// Helper *property* to determine border color
+        var borderColor: Color {
+            let displayValidationMessages = viewModel.categoryValidationMessages[categoryItem.id]?.isEmpty == false
+            return displayValidationMessages ? .red : .clear
+        }
     }
 }
 

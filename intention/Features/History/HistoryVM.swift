@@ -22,6 +22,7 @@ enum HistoryError: Error, Equatable, LocalizedError {
 
 @MainActor
 final class HistoryVM: ObservableObject {
+    @Published var categoryValidationMessages: [UUID: [String]] = [:]           /// Validate category text changes
     @Published var categories: [CategoriesModel] = []
     @Published var tileLimitWarning: Bool = false
     @Published var lastUndoableMove: (tile: TileM, from: UUID, to: UUID)? = nil
@@ -172,8 +173,18 @@ final class HistoryVM: ObservableObject {
         generator.impactOccurred()
     }
     
-    // MARK: Throwing core (UI path)
+    // MARK: - Validation function to be called from the view
+    func validateCategory(id: UUID, title: String) {
+        let messages = title.categoryTitleMessages
+        if messages.isEmpty {
+            categoryValidationMessages.removeValue(forKey: id)
+        } else {
+            categoryValidationMessages[id] = messages
+        }
+    }
     
+    
+    // MARK: Throwing core (UI path)
     // MARK: valid target to call to move tiles within categories
     func moveTile(_ tile: TileM, from fromID: UUID, to toID: UUID) async throws {
         guard

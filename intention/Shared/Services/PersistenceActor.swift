@@ -9,31 +9,34 @@ import Foundation
 
 // All I/O (encoding/decoding) logic here
 
-//protocol Persistence {
-//    func write<T: Codable>(_ object: T, to key: String) async throws
-//    func read<T: Codable>(_ type: T.Type, from key: String) async throws -> T?
-//    func clear(_ key: String) async
-//}
-
-/// Make your actor conform
-//extension PersistenceActor: Persistence {}
+/// Testing seam
+public protocol Persistence: Sendable {
+    func write<T: Codable>(_ object: T, to key: String) async throws
+    func readIfExists<T: Codable>(_ type: T.Type, from key: String) async throws -> T?
+    func clear(_ key: String) async
+}
 
 //  All business logic (when to save, what to save) belongs in the VM
-actor PersistenceActor {
-    enum PersistenceActorError: Error {
+public actor PersistenceActor {
+    public enum PersistenceActorError: Error {
         case encodingFailed(Error)
         case decodingFailed(Error)
-        case noData
     }
     
     // Isolated - no need for .detach elsewhere
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
+    
+    public init() {}
+}
 
+
+/// Actor conforms
+extension PersistenceActor: Persistence {
     
     // MARK: Generic write; crossing int othis actor requires `await` from outside
     /// Encode and Save any Codable object and write it (to UserDefaults)
-    func write<T: Codable>(_ object: T, to key: String) throws {
+    public func write<T: Codable>(_ object: T, to key: String) async throws {
         do {
             let data = try encoder.encode(object)   // object is `categories` here
             UserDefaults.standard.set(data, forKey: key)
@@ -44,7 +47,7 @@ actor PersistenceActor {
     }
     
     // MARK: Load a Codable object from UserDefaults
-    func readIfExists<T: Codable>(_ type: T.Type, from key: String) throws -> T? {
+    public func readIfExists<T: Codable>(_ type: T.Type, from key: String) async throws -> T? {
         guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
         do {
             return try decoder.decode(T.self, from: data)
@@ -55,7 +58,7 @@ actor PersistenceActor {
     }
     
     // MARK: Clear stored value at a key (from UserDefaults)
-    func clear(_ key: String) {
+    public func clear(_ key: String) async {
         UserDefaults.standard.removeObject(forKey: key) // keeps in-memory state (like categories), is seralized and background-safe
     }
 }
