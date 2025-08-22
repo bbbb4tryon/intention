@@ -38,7 +38,7 @@ final class FocusSessionVM: ObservableObject {
         case notStarted, running, finished
     }
 
-    // MARK: - Published UI State userservice
+    // MARK: - Published UI State
     @Published var tileText: String = ""  { didSet { validationMessages = tileText.taskValidationMessages }}         /// Input field for tiles' text;   Validate whenever tileText changes
         
     @Published var tiles: [TileM] = []              /// List of current session tiles (max 2)
@@ -57,17 +57,14 @@ final class FocusSessionVM: ObservableObject {
     private let tileAppendTrigger: FocusTimerActor
     private var chunkCountdown: Task<Void, Never>? = nil        /// background live time keeper/ticker
     private var sessionCompletionTask: Task<Void, Never>? = nil /// background timer for the entire session (2x 20-min chunks)
+    weak var historyVM: HistoryVM?                      /// Link to history view model for/to save completed sessions
+    var chunkDuration: Int { config.chunkDuration }     /// Default 20 min chunk duration constant
     
     // MARK: - Cancel or teardown
     deinit {
         chunkCountdown?.cancel()
         sessionCompletionTask?.cancel()
     }
-    
-    var chunkDuration: Int { config.chunkDuration }     /// Default 20 min chunk duration constant
-    weak var historyVM: HistoryVM?                      /// Optional link to history view model for/to save completed sessions
-    @EnvironmentObject var userService: UserService
-    
     
     // Preview-friendly Initializer of session state
     init(previewMode: Bool = false, config: TimerConfig = .current) {
@@ -158,7 +155,7 @@ final class FocusSessionVM: ObservableObject {
     func beginOverallSession() async throws {
         /// Use the *current* phase for the error payload
         guard tiles.count == 2, phase == .notStarted else {
-            debugPrint("User pressed Begin, overall session and 1st chuck started.")
+            debugPrint("Begin pressed and [FocusSessionVM.beginOverallSession] triggered.")
             throw FocusSessionError.invalidBegin(phase: .notStarted, tilesCount: tiles.count)
         }
         await tileAppendTrigger.startSessionTracking()
@@ -197,20 +194,20 @@ final class FocusSessionVM: ObservableObject {
         debugPrint("ViewModel state reset for a new session.")
     }
     
-   /// Chunks session for completion, triggers recalibration
+   /// Chunks session for completion, triggers recalibration **uses HistoryVM canonical IDs**
     private func checkSessionCompletion() {
-        if currentSessionChunk >= 2 {       /// both chunks done
-            sessionActive = false           /// 40-min overall session done
-            showRecalibrate = true          /// modal
+        if currentSessionChunk >= 2 {                               /// both chunks done
+            sessionActive = false                                   /// 40-min overall session done
+            showRecalibrate = true                                  /// modal triggered
             debugPrint("Recalibration choice modal should display")
-            // MARK: bounded tile history call, add tiles to category
-            // NOTE: - The call is not `historyVM?.addToHistory(tiles[0].text)` to avoid out-of-range crashes
-            
-            let targetCategoryID = userService.generalCategoryID
+            /// Bounded tile history call, add tiles to category
+            guard let targetCategoryID = historyVM?.generalCategoryID else {
+                debugPrint("[FocusSessionVM.checkSessionCompletion] missing historyVM.generalCategoryID"); return
+            }
             for tile in tiles.prefix(2){
                 historyVM?.addToHistory(tile, to: targetCategoryID)
             }
-            // NOTE: - Don't reset actor for new session here - user will on modal
+            /// NOTE: - Don't reset actor for new session here - user will on modal
         } else {
             print("""
                   Completed the \(currentSessionChunk)!

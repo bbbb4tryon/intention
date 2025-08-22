@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct CategoryHeaderRow: View {
-    @EnvironmentObject var viewModel: HistoryVM             /// Or as an internal private let with init()?
+    @EnvironmentObject var viewModel: HistoryVM
     @Binding var categoryItem: CategoriesModel
     let palette: ScreenStylePalette
     let fontTheme: AppFontTheme
@@ -18,6 +18,12 @@ struct CategoryHeaderRow: View {
     var autoFocus: Bool = false
     
     @FocusState private var nameFocused: Bool
+    
+    // MARK: - Local helpers
+    private var hasValidationIssues: Bool {
+        !(viewModel.categoryValidationMessages[categoryItem.id]?.isEmpty ?? true)
+    }
+    private var borderColor: Color { hasValidationIssues ? .red : .clear }
     
     var body: some View {
         HStack(spacing: 8) {
@@ -39,8 +45,8 @@ struct CategoryHeaderRow: View {
                 .disableAutocorrection(true)
                 .textInputAutocapitalization(.words)
                 .lineLimit(1)
-                .border(borderColor, width: 1)                                  // FIXME: is this fucking up the layout?
-                .background(viewModel.validationMessages.isEmpty ? palette.accent : Color.red.opacity(0.2)) // FIXME: is this fucking up the layout?
+                .border(borderColor, width: 1)                                  
+                .background(hasValidationIssues ? Color.red.opacity(0.2) : Color.clear)
                 .onChange(of: categoryItem.persistedInput ) { newValue in
                     viewModel.validateCategory(id: categoryItem.id, title: newValue)
                 }
@@ -55,6 +61,7 @@ struct CategoryHeaderRow: View {
                         }
                     }
                 }
+                
                 Spacer()
                 
                 CountBadge_Archive(fontTheme: fontTheme, count: categoryItem.tiles.count)
@@ -69,14 +76,24 @@ struct CategoryHeaderRow: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .onAppear { if autoFocus { nameFocused = true } }
-        
-        
-        // FIXME: is this fucking up the layout?
-        /// Helper *property* to determine border color
-        var borderColor: Color {
-            let displayValidationMessages = viewModel.categoryValidationMessages[categoryItem.id]?.isEmpty == false
-            return displayValidationMessages ? .red : .clear
-        }
     }
 }
 
+#Preview("CategoryHeaderRow (direct)") {
+    MainActor.assumeIsolated {
+        let theme = ThemeManager()
+        let palette = theme.palette(for: .settings)
+
+        return CategoryHeaderRow(
+            categoryItem: .constant(CategoriesModel(persistedInput: "Work")),
+            palette: palette,
+            fontTheme: theme.fontTheme,
+            newTextTiles: .constant([:]),
+            saveHistory: {},
+            isArchive: false
+        )
+        .environmentObject(HistoryVM(persistence: PreviewMocks.persistence))
+        .environmentObject(theme)
+        .previewTheme()
+    }
+}

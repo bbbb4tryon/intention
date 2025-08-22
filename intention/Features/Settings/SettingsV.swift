@@ -12,8 +12,10 @@ import UserNotifications
 
 struct SettingsV: View {
     @EnvironmentObject var theme: ThemeManager
-    @EnvironmentObject var userService: UserService
+    @EnvironmentObject var membershipVM: MembershipVM
     @ObservedObject var viewModel: StatsVM
+    
+    @State private var userID: String = ""      /// aka deviceID
     
     var body: some View {
         
@@ -22,8 +24,23 @@ struct SettingsV: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 
+                VStack(alignment: .leading, spacing: 8) {
+                    theme.styledText("Membership", as: .section, in: .settings)
+                    HStack {
+                        Text(membershipVM.isMember ? "Status: Active" : "Status: Not Active")
+                            .foregroundStyle(membershipVM.isMember ? .green : .secondary)
+                        Spacer()
+                        Button("Open") { }
+                    }
+                    Link("Manage Subscription",
+                         destination: URL(string: "https://apps.apple.com/account/subscriptions")!)
+                        .foregroundStyle(.secondary)
+                }
+                
+
                 // Preferences Section
                 VStack(alignment: .leading, spacing: 12) {
+                    
                     theme.styledText("Preferences", as: .section, in: .settings)
                     
                     Toggle(isOn: .constant(false)) {
@@ -34,11 +51,12 @@ struct SettingsV: View {
                         theme.styledText("Enable Notification", as: .body, in: .settings)
                     }
                     Toggle(isOn: .constant(false)) {
-                        theme.styledText("User ID", as: .body, in: .settings)
-                        Text("Your user id: \(userService)")
+                        theme.styledText("Device ID", as: .body, in: .settings)
+                        Text("Your user id: \(userID)")
+                            .font(.footnote).foregroundStyle(.secondary)
                     }
-                    //                Toggle("Haptics Only", isOn: $viewModel.hapticsOnly)
-                    //                Toggle("Sound Enabled", isOn: $viewModel.soundEnabled)
+//                                    Toggle("Haptics Only", isOn: $viewModel.hapticsOnly)
+//                                    Toggle("Sound Enabled", isOn: $viewModel.soundEnabled)
                 }
                 
                 // Color Theme Picker
@@ -84,16 +102,15 @@ struct SettingsV: View {
                 .padding(.top, 8)
                 
                 Spacer(minLength: 40)
-                
-                Section("Legal") {
-                    NavigationLink("Terms of Use") { LegalDocV(title: "Terms of Use", markdown: termsMarkdown) }
-                    NavigationLink("Privacy Policy") { LegalDocV(title: "Privacy Policy", markdown: privacyMarkdown) }
-                }
             }
             .padding(.horizontal)
         }
         .background(palette.background.ignoresSafeArea())
         .tint(palette.accent)
+        .task {
+        /// Read it directly from your keychain on-demand - actor requires only await, not async here
+            userID = await KeychainHelper.shared.getUserIdentifier()
+        }
     }
 
 
@@ -131,26 +148,15 @@ private struct StatBlock: View {
     }
 }
 
-struct LegalDocV: View {
-    let title: String
-    let markdown: String
-    
-    var body: some View {
-        ScrollView {
-            Text(.init(markdown))
-                .padding()
-        }
-        .navigationTitle(title)
-    }
-}
 
 #Preview("Stats & Settings") {
     MainActor.assumeIsolated {
         let stats = PreviewMocks.stats
-        stats.logSession(CompletedSession(date: .now, tileTexts: ["A", "B"], recalibration: .breathing))
+        stats.logSession(CompletedSession(date: .now, tileTexts: ["By Example", "Analysis checklist"], recalibration: .breathing))
 
         return PreviewWrapper {
-            SettingsV(viewModel: stats)
+            SettingsV(viewModel: PreviewMocks.stats)
+                .previewTheme()
         }
     }
 }

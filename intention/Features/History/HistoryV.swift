@@ -9,14 +9,12 @@ import SwiftUI
 
 struct HistoryV: View {
     @EnvironmentObject var theme: ThemeManager
-    @EnvironmentObject var userService: UserService
-    
     @ObservedObject var viewModel: HistoryVM
     @State var newTextTiles: [UUID: String] = [:]   // Store new tile text per category using its `id` as key
     @State private var dropTargets: [UUID: Bool] = [:]  // Drop highlight state per category
     @State private var isOrganizing = false
     @State private var createdCategoryID: UUID?
-    
+
     var body: some View {
         
         let palette = theme.palette(for:.history)
@@ -100,34 +98,22 @@ struct HistoryV: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-            Button(isOrganizing ? "Done" : "Organize") {isOrganizing.toggle() }
+                Button(isOrganizing ? "Done" : "Organize") {isOrganizing.toggle() }
+                
                 Button("Add Category") {
-                    let userDefinedCount = viewModel.categories.filter {
-                        let id = $0.id
-                        return id != userService.generalCategoryID && id != userService.archiveCategoryID
-                    }.count
-                    guard userDefinedCount < 2 else { return }
-                    
-                    let new = CategoriesModel(persistedInput: "")
-                    viewModel.categories.append(new)
-                    viewModel.saveHistory()
-                    createdCategoryID = new.id
+                    if let id = viewModel.addEmptyUserCategory() {
+                        createdCategoryID = id
+                    }
                 }
-                .disabled({
-                    let userDefinedCount = viewModel.categories.filter {
-                        let id = $0.id
-                        return id != userService.generalCategoryID && id != userService.archiveCategoryID
-                    }.count
-                    return userDefinedCount >= 2
-                }())
-        }}
+                .disabled(!viewModel.canAddUserCategory())
+            }
+        }
     }
 }
 
 // Mock/ test data prepopulated
 #Preview("Populated Preview History") {
     MainActor.assumeIsolated {
-        let userService = PreviewMocks.userService
         let historyVM = HistoryVM(persistence: PersistenceActor())
         historyVM.ensureGeneralCategory()
         
@@ -138,8 +124,7 @@ struct HistoryV: View {
 
         return PreviewWrapper {
             HistoryV(viewModel: historyVM)
-//                .environmentObject(userService)      //FIXME: - were for userService - can remove?
-
+                .previewTheme()
         }
     }
 }

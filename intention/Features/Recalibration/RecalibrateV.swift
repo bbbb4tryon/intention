@@ -207,6 +207,7 @@ struct RecalibrationV: View {
 #Preview("Recalibrate") {
     PreviewWrapper {
         RecalibrationV(vm: RecalibrationVM(config: .current))
+            .previewTheme()
     }
 }
 

@@ -43,7 +43,6 @@ enum ActiveSheet: Equatable {
 /// Displays countdown timer, text input for intention tiles, recalibration sheet
 struct FocusSessionActiveV: View {
     @EnvironmentObject var theme: ThemeManager
-    @EnvironmentObject var userService: UserService
     @EnvironmentObject var statsVM: StatsVM
     @EnvironmentObject var membershipVM: MembershipVM
     @Environment(\.dismiss) var dismiss
@@ -56,6 +55,10 @@ struct FocusSessionActiveV: View {
     
     /// Tracks active sheet for membership prompt
     @State private var activeSheet: ActiveSheet = .none
+    
+    /// Tracks and records consent - inline
+    @State private var showTerms = false
+    @State private var showPrivacy = false
     
     var body: some View {
         /// Get current palette for the appropriate sceen
@@ -75,7 +78,7 @@ struct FocusSessionActiveV: View {
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .disabled(viewModel.tiles.count == 2 && viewModel.phase == .running)
                 .padding(.horizontal)
-                .background(viewModel.validationMessages.isEmpty ? palette.accent : Color.red.opacity(0.2))
+//                .background(viewModel.validationMessages.isEmpty ? palette.accent : Color.red.opacity(0.2))
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.sentences)
                 .lineLimit(3)
@@ -95,7 +98,9 @@ struct FocusSessionActiveV: View {
                         do {
                             if viewModel.tiles.count < 2 {      // Logic adding tiles
                                 try await viewModel.addTileAndPrepareForSession(viewModel.tileText)
-                            } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { // Logic starting session
+                            } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { /// Logic starting session
+                                /// Inline consent: record once, then begin
+                                if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }
                                 try await viewModel.beginOverallSession()
                             }
                         } catch {
@@ -119,6 +124,19 @@ struct FocusSessionActiveV: View {
                 .padding(.horizontal)
             }
             
+            /// Inline disclosure shown only when Begin is relevant
+                if viewModel.tiles.count == 2 && viewModel.phase == .notStarted {
+                    HStack(spacing: 6) {
+                        Text("By starting, you agree to our")
+                        Button("Terms") { showTerms = true }.buttonStyle(.plain).underline()
+                        Text("and")
+                        Button("Privacy") { showPrivacy = true }.buttonStyle(.plain).underline()
+                    }
+                    .font(theme.fontTheme.toFont(.footnote))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                }
+
             
             // MARK: - Countdown Display (user-facing)
             DynamicCountdown(viewModel: viewModel, palette: palette, progress: progress)
@@ -155,10 +173,26 @@ struct FocusSessionActiveV: View {
             Spacer()
         }                                   // -VStack, primary end
         .background(palette.background.ignoresSafeArea(edges: .top))
-        .task {
-            if membershipVM.shouldPrompt {
-                activeSheet = .membership
-            }
+        
+        /// Legal doc sheets (LegalDocV + MarkdownLoader)
+        .sheet(isPresented: $showTerms) {
+                    NavigationStack {
+                        LegalDocV(title: "Terms of Use",
+                                  markdown: MarkdownLoader.load(named: LegalConfig.termsFile))
+                    }
+                }
+                .sheet(isPresented: $showPrivacy) {
+                    NavigationStack {
+                        LegalDocV(title: "Privacy Policy",
+                                  markdown: MarkdownLoader.load(named: LegalConfig.privacyFile))
+                    }
+                }
+        
+        /// Auto-dismiss when MembershipVM flips shouldPrompt to false after successful purchase
+        .sheet(isPresented: $membershipVM.shouldPrompt) {
+            MembershipSheetV()
+                .environmentObject(membershipVM)
+                .environmentObject(theme)
         }
         .sheet(isPresented: $viewModel.showRecalibrate){
             RecalibrationV(vm: recalibrationVM)
@@ -187,10 +221,10 @@ struct FocusSessionActiveV: View {
 }
 
 
-#Preview("Initial State") {
+#Preview("Focus") {
     PreviewWrapper {
         FocusSessionActiveV(
-            viewModel: FocusSessionVM(previewMode: true),
+            viewModel: PreviewMocks.focusSession,
             recalibrationVM: RecalibrationVM()
         )
         .previewTheme()

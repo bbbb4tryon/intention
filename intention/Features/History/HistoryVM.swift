@@ -20,6 +20,7 @@ enum HistoryError: Error, Equatable, LocalizedError {
     }
 }
 
+/// Single source of truth for category IDs
 @MainActor
 final class HistoryVM: ObservableObject {
     @Published var categoryValidationMessages: [UUID: [String]] = [:]           /// Validate category text changes
@@ -54,7 +55,6 @@ final class HistoryVM: ObservableObject {
 
     /// `saveHistory` calls keep storage synced, the program will rehydrate using `loadHistory()` on launch only, don't watch `categoryData`
     // Don't use any `onChange`
-    //    init(persistence: Persistence = PersistenceActor(), userService: UserService) {      //FIXME: - were for userService - can remove?
     init(persistence: PersistenceActor) {
         self.persistence = persistence
         Task {  await loadHistory() }
@@ -171,6 +171,25 @@ final class HistoryVM: ObservableObject {
         
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
+    }
+    
+    // MARK: Category logic rules where the data lives
+    /// Excluding built-ins, user-defined category limits
+    var userDefinedCategoryCount: Int {
+        categories.filter { $0.id != generalCategoryID && $0.id != archiveCategoryID }.count
+    }
+    
+    func canAddUserCategory(limit: Int = 2) -> Bool {
+        userDefinedCategoryCount < limit
+    }
+    /// Adds an empty user category if allowed and returns its id (for autofocus)
+    @discardableResult
+    func addEmptyUserCategory(limit: Int = 2) -> UUID? {
+        guard canAddUserCategory(limit: limit) else { return nil }
+        let new = CategoriesModel(persistedInput: "")
+        categories.append(new)
+        saveHistory()
+        return new.id
     }
     
     // MARK: - Validation function to be called from the view
