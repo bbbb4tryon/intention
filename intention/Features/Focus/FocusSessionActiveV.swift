@@ -70,26 +70,28 @@ struct FocusSessionActiveV: View {
             
             StatsSummaryBar(palette: palette)
                 .frame(height: 56)              // "clamp" the bar height
+                .padding(.top, 5)
             
-            Spacer()                            // pushes content towards center-top
+            Spacer(minLength: -1)                            // pushes content towards center-top
             
             // MARK: - Textfield for intention tile text input
-            TextField("Enter intention", text: $viewModel.tileText, axis: .vertical)    //FIXME: is vertical weird?
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+            TextField("Enter intention", text: $viewModel.tileText, axis: .vertical)
                 .disabled(viewModel.tiles.count == 2 && viewModel.phase == .running)
-                .padding(.horizontal)
-//                .background(viewModel.validationMessages.isEmpty ? palette.accent : Color.red.opacity(0.2))
+                .textFieldStyle(.roundedBorder)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.sentences)
                 .lineLimit(3)
+                .accessibilityLabel("Intention text")
+                .accessibilityHint("Type your intended task. Add two to begin a session.")
             
             // MARK: Data validation messages for textfield
-            ForEach(viewModel.validationMessages, id: \.self) { message in
-                Text(message)
-                    .foregroundStyle(.red)
-                    .font(.caption)
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(viewModel.validationMessages, id: \.self) { msg in
+                    theme.styledText(msg, as: .caption, in: .homeActiveIntentions)
+                        .foregroundStyle(.red)
+                }
             }
-            
+            .friendlyAnimatedHelper(viewModel.validationMessages.joined())
             
             // MARK: Main Action Inputs
             if !viewModel.showRecalibrate && viewModel.phase != .running {
@@ -116,25 +118,33 @@ struct FocusSessionActiveV: View {
                         .frame(maxWidth: .infinity)
                         .foregroundStyle( true ? .clear : .accentColor)
                 }
-                .mainActionStyle(screen: .homeActiveIntentions)
+                .primaryActionStyle(screen: .homeActiveIntentions)
                 .environmentObject(theme)
                 // Disable if empty, or 2 tiles already aadded
                 .disabled(viewModel.tiles.count < 2 && viewModel.tileText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .buttonStyle(.borderedProminent)
                 .padding(.horizontal)
             }
             
             /// Inline disclosure shown only when Begin is relevant
                 if viewModel.tiles.count == 2 && viewModel.phase == .notStarted {
-                    HStack(spacing: 6) {
-                        Text("By starting, you agree to our")
-                        Button("Terms") { showTerms = true }.buttonStyle(.plain).underline()
-                        Text("and")
-                        Button("Privacy") { showPrivacy = true }.buttonStyle(.plain).underline()
-                    }
+//                    HStack(spacing: 6) {
+//                        Text("By starting, you agree to our")
+//                        Button("Terms") { showTerms = true }.buttonStyle(.plain).underline()
+//                        Text("and")
+//                        Button("Privacy") { showPrivacy = true }.buttonStyle(.plain).underline()
+//                    }
+                    LegalAffirmationBar(
+                        onAgree: {
+                            if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }
+                            Task { try? await viewModel.beginOverallSession() }
+                        },
+                        onShowTerms: { showTerms = true },
+                        onShowPrivacy: { showPrivacy = true }
+                    )
                     .font(theme.fontTheme.toFont(.footnote))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal)
+                    .friendlyAnimatedHelper(viewModel.tiles.count == 2 && viewModel.phase == .notStarted)
                 }
 
             

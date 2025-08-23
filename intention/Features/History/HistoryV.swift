@@ -93,7 +93,7 @@ struct HistoryV: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                         .zIndex(1)
                 }
-                .animation(.easeInOut, value: viewModel.lastUndoableMove != nil)
+                .friendlyAnimatedHelper(viewModel.lastUndoableMove != nil)
             }
         }
         .toolbar {

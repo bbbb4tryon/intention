@@ -27,7 +27,7 @@ struct LegalAffirmationBar: View {
             }
             Spacer()
             Button("Agree") { onAgree() }
-                .buttonStyle(.borderedProminent)
+                .primaryActionStyle(screen: .settings)
         }
         .padding(.horizontal)
         .padding(.vertical, 10)

@@ -28,6 +28,8 @@ struct RootView: View {
     @StateObject private var recalibrationVM: RecalibrationVM
     @StateObject private var statsVM: StatsVM
     
+    @StateObject private var prefs = AppPreferencesVM()
+    
     init() {
         /// Inject dependency - all @StateObject created in init only.
         let persistence = PersistenceActor()
@@ -56,20 +58,23 @@ struct RootView: View {
             NavigationStack {
                 FocusSessionActiveV(viewModel: focusVM, recalibrationVM: recalibrationVM)
                     .navigationTitle("Focus")
+                    .friendlyHelper()
             }
-            .tabItem { Image(systemName: "house.fill") }
+            .tabItem { Image(systemName: "house.fill").accessibilityAddTraits(.isHeader) }
             
             NavigationStack {
                 HistoryV(viewModel: historyVM)
                     .navigationTitle("History")
+                    .accessibilityAddTraits(.isHeader)
             }
-            .tabItem {  Image(systemName: "book.fill")  }
+            .tabItem {  Image(systemName: "book.fill").accessibilityAddTraits(.isHeader)  }
             
             NavigationStack {
                 SettingsV(viewModel: statsVM)
                     .navigationTitle("Settings")
+                    .accessibilityAddTraits(.isHeader)
             }
-            .tabItem {  Image(systemName: "gearshape.fill") }
+            .tabItem {  Image(systemName: "gearshape.fill").accessibilityAddTraits(.isHeader) }
         }
         .sheet(isPresented: $membershipVM.shouldPrompt) {
             MembershipSheetV()
@@ -81,12 +86,14 @@ struct RootView: View {
                NavigationStack {
                    LegalDocV(title: "Terms of Use",
                              markdown: MarkdownLoader.load(named: LegalConfig.termsFile))
+                   .accessibilityAddTraits(.isHeader)
                }
            }
            .sheet(isPresented: $showPrivacy) {
                NavigationStack {
                    LegalDocV(title: "Privacy Policy",
                              markdown: MarkdownLoader.load(named: LegalConfig.privacyFile))
+                   .accessibilityAddTraits(.isHeader)
                }
            }
         .onAppear {
@@ -107,6 +114,7 @@ struct RootView: View {
         .environmentObject(statsVM)
         .environmentObject(membershipVM)
         .environmentObject(historyVM)
+        .environmentObject(prefs)
     }
 }
 

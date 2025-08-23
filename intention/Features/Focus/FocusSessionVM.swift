@@ -102,7 +102,7 @@ final class FocusSessionVM: ObservableObject {
         canAdd = tiles.count < 2       /// Keeps flag in sync
 
         debugPrint("[FocusSessionVM.addTileAndPrepareForSession.Haptic.notifySuccessfullyAdded] did not occur")
-        Haptic.notifySuccessfullyAdded()
+        hapticsEngine.notifySuccessfullyAdded()
     }
     
     /// NOTE: - Swift Concurrency timer (Task + AsyncSequence) needed
@@ -125,7 +125,7 @@ final class FocusSessionVM: ObservableObject {
             /// Block executes when countdownRemaining reaches 0 or is cancelled
             if self.countdownRemaining <= 0 && self.phase == .running {
                 self.phase = .finished
-                 Haptic.notifyDone()
+                 hapticsEngine.notifyDone()
                 debugPrint("`Haptic.notifyDone()` triggered? Current 20-min chunk completed")
                 self.chunkCountdown?.cancel()
                 self.chunkCountdown = nil

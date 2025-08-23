@@ -164,7 +164,7 @@ final class RecalibrationVM: ObservableObject {
                   await MainActor.run {
                       self.phase = .finished
                   }
-                  Haptic.notifyDone()
+                  hapticsEngine.notifyDone()
 
                   /// Background log; errors are captured silently or into lastError on main.
                   await self.logCompletionIfPossible(duration: total)
@@ -200,7 +200,7 @@ final class RecalibrationVM: ObservableObject {
         let halfway = total / 2
         if !halfwayAnnounced && remaining == halfway {
             halfwayAnnounced = true
-            Haptic.halfway()
+            hapticsEngine.halfway()
         }
     }
     
@@ -211,7 +211,7 @@ final class RecalibrationVM: ObservableObject {
            remaining % config.haptics.balanceSwapInterval == 0,
            remaining != lastSwitchAnnouncementAt {
             lastSwitchAnnouncementAt = remaining
-            Haptic.notifySwitch()
+            hapticsEngine.notifySwitch()
         }
     }
     
@@ -230,7 +230,7 @@ final class RecalibrationVM: ObservableObject {
         /// Tick once per second near the end; avoid duplicate if this method runs multiple times a second.
         if lastCountdownTickAt != remaining {
             lastCountdownTickAt = remaining
-            Haptic.countdownTick()
+            hapticsEngine.countdownTick()
         }
     }
     

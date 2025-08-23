@@ -9,21 +9,24 @@ import SwiftUI
 
 // `self.lastError = error` to trigger the ErrorOverlay
 struct ErrorOverlay: View {
+    @EnvironmentObject var theme: ThemeManager
     let error: Error
     let dismissAction: () -> Void
     
     var body: some View {
+        
+        let palette = theme.palette(for: .settings)
+        
         VStack(spacing: 12) {
             
-            Text("⚠️ Something went wrong")
-                .font(.title2)
+            theme.styledText("⚠️ Something went wrong", as: .action, in: .recalibrate)
                 .bold()
             Text(displayMessage(for: error))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
             
             Button("dismiss", action: dismissAction)
-                .buttonStyle(.borderedProminent)
+                .secondaryActionStyle(screen: .recalibrate)
         }
         .padding()
         .background(.ultraThinMaterial)

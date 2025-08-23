@@ -41,8 +41,11 @@ private struct StatBlock: View {
                 .foregroundStyle(palette.text)
             Text(caption)
                 .font(.caption)
-                .foregroundStyle(palette.accent.opacity(0.8))
+                .foregroundStyle(palette.textSecondary)
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(palette.surface)            /// Subtle cards and consistent caption style
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }

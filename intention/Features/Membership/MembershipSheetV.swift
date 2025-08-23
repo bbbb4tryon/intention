@@ -44,15 +44,13 @@ struct MembershipSheetV: View {
         ZStack {
             ScrollView {
                 VStack(spacing: 24){
-                    Text("Unlock Unlimited Focus")
-                        .font(theme.fontTheme.toFont(.title2))
+                    theme.styledText("Unlock Unlimited Focus", as: .section, in: .membership)
                         .multilineTextAlignment(.center)
+                        .friendlyHelper()
                     
-                    Text("You’ve completed your free sessions. For just 20–30¢ a day, unlock unlimited focus sessions, detailed stats, more categories, and full customization. Build momentum, track progress, and work with intention — while helping us keep the lights on, the mortgage paid, and the dog well-fed. Your focus fuels our future. Thank you.")
+                    theme.styledText("You’ve completed your free sessions. For just 20–30¢ a day, unlock unlimited focus sessions, detailed stats, more categories, and full customization. Build momentum, track progress, and work with intention — while helping us keep the lights on, the mortgage paid, and the dog well-fed. Your focus fuels our future. Thank you.", as: .body, in: .membership)
                         .multilineTextAlignment(.center)
-                        .font(theme.fontTheme.toFont(.body))
-                        .foregroundStyle(.secondary)
-                        .padding(.bottom, 12)
+                        .foregroundStyle(theme.palette(for: .membership).textSecondary)
                     
                     Text("“By continuing, you agree to our Terms and Privacy.")
                         .font(theme.fontTheme.toFont(.footnote))
@@ -73,7 +71,7 @@ struct MembershipSheetV: View {
                                 }
                             }
                         }
-                        .buttonStyle(.borderedProminent)
+                        .primaryActionStyle(screen: .membership)
                         
                         Button("Restore Purchases") {
                             Task {
@@ -86,7 +84,7 @@ struct MembershipSheetV: View {
                                 }
                             }
                         }
-                        .buttonStyle(.bordered)
+                        .secondaryActionStyle(screen: .membership)
                         
                         
                         
@@ -102,7 +100,7 @@ struct MembershipSheetV: View {
                                     }
                                 }
                             }
-                            .mainActionStyle(screen: .homeActiveIntentions)
+                            .primaryActionStyle(screen: .membership)
                             .font(.footnote)
                             .underline()
                         
@@ -110,7 +108,7 @@ struct MembershipSheetV: View {
                             Button("Enter Membership Code") {
                                 viewModel.showCodeEntry = true
                             }
-                            .mainActionStyle(screen: .homeActiveIntentions)
+                            .primaryActionStyle(screen: .membership)
                             
                             if viewModel.showCodeEntry {
                                 VStack(spacing: 8) {
@@ -129,7 +127,7 @@ struct MembershipSheetV: View {
                                             }
                                         }
                                     }
-                                    .buttonStyle(.borderedProminent)
+                                    .primaryActionStyle(screen: .membership)
                                     .padding(.horizontal)
                                 }
                             }

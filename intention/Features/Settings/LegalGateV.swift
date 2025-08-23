@@ -27,11 +27,14 @@ struct LegalGateV: View {
 
                 HStack(spacing: 12) {
                     Button("View Terms") { showTerms = true }
+                        .primaryActionStyle(screen: .settings)
                     Button("View Privacy") { showPrivacy = true }
+                        .primaryActionStyle(screen: .settings)
                 }
 
                 Toggle("I agree to the Terms of Use and Privacy Policy", isOn: $agree)
                     .toggleStyle(.switch)
+                    .accessibilityAddTraits(.isHeader)
 
                 Button(role: .none) {
                     acceptedVersion = LegalConfig.currentVersion
@@ -41,7 +44,7 @@ struct LegalGateV: View {
                     Text("Agree & Continue")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .primaryActionStyle(screen: .settings)
                 .disabled(!agree)
 
                 Spacer()

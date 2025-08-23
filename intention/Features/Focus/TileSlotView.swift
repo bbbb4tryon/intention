@@ -9,28 +9,53 @@ import SwiftUI
 
 struct TileSlotView: View {
     let tileText: String?
-    @EnvironmentObject var theme: ThemeManager     // Receive the correct, appropriate palette via ThemeManager
+    @EnvironmentObject var theme: ThemeManager
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var diffNoColor
     
     // Shows a container, so a Session has 2 slots pre-outlined
     //  “empty” slot look (plus icon or nothing), and once filled, it gets populated.
     var body: some View {
-        
         let palette = theme.palette(for: .history)
+        let slotBg = (tileText != nil
+                      ? palette.background.opacity(0.8)
+                      : palette.background.opacity(0.2))
+        
         ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(palette.accent, lineWidth: 2)
+            /// Using .surface + border from palette
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            //                .strokeBorder(palette.border, lineWidth: 2)
+                .fill(slotBg)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(palette.border, lineWidth: 1.0)         /// consistent border
+                )
                 .frame(height: 50)
-                .background(
-                    (tileText != nil ? palette.background.opacity(0.8) : palette.background.opacity(0.2)).clipShape(RoundedRectangle(cornerRadius: 8))
-                    )
-            if let text = tileText {
+                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            /// dashed outline when “Differentiate Without Color” is enabled
+                .overlay {
+                    if diffNoColor && tileText == nil {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
+                            .foregroundStyle(palette.border)
+                    }
+                }
+            if let text = tileText, !text.isEmpty {
                 Text(text)
                     .font(theme.fontTheme.toFont(.body))
-                    .foregroundStyle(palette.accent.opacity(0.8))
+                    .foregroundStyle(palette.text)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
+                    .padding(.horizontal, 8)
             } else {
-            Image(systemName: "plus")
-                    .foregroundStyle(palette.accent.opacity(0.3))
+                /// For the empty state
+                Image(systemName: "plus")
+                    .font(.headline)
+                    .foregroundStyle(palette.accent.opacity(0.55))
+                    .accessibilityHidden(true)          /// label provided on container below
             }
-        }            
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(tileText == nil ? "Empty slot" : "Intention slot")
+        .accessibilityHint(tileText == nil ? "Add an intention above, then press Add." : "")
     }
 }

@@ -21,6 +21,7 @@ struct RecalibrationV: View {
             VStack(spacing: 20) {
                 Text("Reset & Recenter")
                     .font(theme.fontTheme.toFont(.title2)).bold()
+                    .accessibilityAddTraits(.isHeader)
                 
                 
                 /// When inactive, show simple, obvious choices
@@ -32,14 +33,14 @@ struct RecalibrationV: View {
                                   systemImage: RecalibrationMode.breathing.iconName)
                             .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .primaryActionStyle(screen: .recalibrate)
                         
                         Button { start(.balancing) } label: {
                             Label("\(label(for: vm.config.balancingDuration)) Balance",
                                   systemImage: RecalibrationMode.balancing.iconName)
                             .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered)
+                        .primaryActionStyle(screen: .recalibrate)
                     }
                     
                     Text("Short resets help you start your next 20-minute focus chunk fresh.")
@@ -62,8 +63,8 @@ struct RecalibrationV: View {
                         Button(role: .destructive) { stop() } label: {
                             Label("Cancel", systemImage: "xmark.circle")
                                 .frame(maxWidth: .infinity)
+                                .tint(.red)
                         }
-                        .buttonStyle(.bordered)
                     }
                     .padding(.top, 8)
                 }
@@ -160,7 +161,7 @@ struct RecalibrationV: View {
 //                Label("Begin", systemImage: "play.circle.fill")
 //                    .font(.title)
 //            }
-//            .mainActionStyle(screen: .recalibrate)
+//            .primaryActionStyle(screen: .recalibrate)
 //            .environmentObject(theme)
 //            
 //            // Coundown Displayed
@@ -189,7 +190,7 @@ struct RecalibrationV: View {
 //            Button("Exit")  {
 //                viewModel.stop()
 //            }
-//            .notMainActionStyle(screen: .recalibrate)
+//            .secondaryActionStyle(screen: .recalibrate)
 //            .environmentObject(theme)
 //        }
 //        .padding()

@@ -12,6 +12,7 @@ import UserNotifications
 
 struct SettingsV: View {
     @EnvironmentObject var theme: ThemeManager
+    @EnvironmentObject var prefs: AppPreferencesVM
     @EnvironmentObject var membershipVM: MembershipVM
     @ObservedObject var viewModel: StatsVM
     
@@ -26,15 +27,20 @@ struct SettingsV: View {
                 
                 VStack(alignment: .leading, spacing: 8) {
                     theme.styledText("Membership", as: .section, in: .settings)
+                        .friendlyHelper()
+                    
                     HStack {
                         Text(membershipVM.isMember ? "Status: Active" : "Status: Not Active")
                             .foregroundStyle(membershipVM.isMember ? .green : .secondary)
                         Spacer()
                         Button("Open") { }
                     }
-                    Link("Manage Subscription",
-                         destination: URL(string: "https://apps.apple.com/account/subscriptions")!)
-                        .foregroundStyle(.secondary)
+                    /// Instead of Link()
+                    if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+                        Link(destination: url) {
+                            theme.styledText("Manage Subscription", as: .secondary, in: .settings)
+                        }
+                    }
                 }
                 
 
@@ -42,26 +48,42 @@ struct SettingsV: View {
                 VStack(alignment: .leading, spacing: 12) {
                     
                     theme.styledText("Preferences", as: .section, in: .settings)
+                        .friendlyHelper()
                     
                     Toggle(isOn: .constant(false)) {
                         theme.styledText("Dark Mode", as: .body, in: .settings)
                     }
+                    .friendlyAnimatedHelper("DarkMode-\(false)")
+                    
                     
                     Toggle(isOn: .constant(true)) {
                         theme.styledText("Enable Notification", as: .body, in: .settings)
                     }
+                    
                     Toggle(isOn: .constant(false)) {
-                        theme.styledText("Device ID", as: .body, in: .settings)
-                        Text("Your user id: \(userID)")
-                            .font(.footnote).foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            theme.styledText("Device ID", as: .body, in: .settings)
+                            theme.styledText("Your user id: \(userID)", as: .caption, in: .settings)
+                                .foregroundStyle(theme.palette(for: .settings).textSecondary)
+                            theme.styledText("Sound Off", as: .caption, in: .settings)
+                                .foregroundStyle(theme.palette(for: .settings).textSecondary)
+                        }
+                        
+                        Toggle(isOn: $prefs.hapticsOnly) {
+                            VStack(alignment: .leading, spacing: 2){
+                                theme.styledText("Haptics Only", as: .body, in: .settings)
+                                theme.styledText("Using *vibration* cues only. No sounds or alerts", as: .caption, in: .settings)
+                                    .foregroundStyle(theme.palette(for: .settings).textSecondary)
+                            }
+                        }
+                        .friendlyAnimatedHelper("hapticsOnly-\(prefs.hapticsOnly ? "on" : "off")")
                     }
-//                                    Toggle("Haptics Only", isOn: $viewModel.hapticsOnly)
-//                                    Toggle("Sound Enabled", isOn: $viewModel.soundEnabled)
                 }
                 
                 // Color Theme Picker
                 VStack(alignment: .leading, spacing: 12) {
                     theme.styledText("App Color Theme", as: .section, in: .settings)
+                        .friendlyHelper()
                     
                     Picker("Color Theme", selection: $theme.colorTheme) {
                         ForEach(AppColorTheme.allCases, id: \.self) { theme in
@@ -69,12 +91,13 @@ struct SettingsV: View {
                         }
                     }
                     .pickerStyle(SegmentedPickerStyle())
-                    .tint(palette.accent)   // Explicitly override for visibility
+                    .tint(palette.accent)           /// Explicitly override for visibility
                 }
                 
                 // Font Theme Picker
                 VStack(alignment: .leading, spacing: 12) {
                     theme.styledText("Font Style", as: .section, in: .settings)
+                        .friendlyHelper()
                     
                     Picker("Font Choice", selection: $theme.fontTheme) {
                         ForEach(AppFontTheme.allCases, id: \.self) { theme in
@@ -82,22 +105,42 @@ struct SettingsV: View {
                         }
                     }
                     .pickerStyle(SegmentedPickerStyle())
-                    .tint(palette.accent)
+                    .friendlyAnimatedHelper(theme.fontTheme.rawValue)
+//                    .tint(palette.accent)
                 }
                 
                 // Stats
                 VStack(alignment: .leading, spacing: 16) {
                     theme.styledText("Your Progress", as: .section, in: .settings)
+                        .friendlyHelper()
                     
-                    HStack(spacing: 24) {
-                        StatBlock(icon: "list.bullet", value: "\(viewModel.totalCompletedIntentions)", caption: "Total Intentions", palette: palette)
-                        StatBlock(icon: "rosette", value: "Max Run of  \(viewModel.maxRunStreakDays) Days", caption: "Brag Stat: Longest Streak", palette: palette)
+                    HStack(spacing: 20) {
+                        StatBlock(icon: "list.bullet",
+                            value: "\(viewModel.totalCompletedIntentions)",
+                            caption: "Total Intentions",
+                            palette: palette
+                        )
+                        StatBlock(icon: "rosette",
+                            value: "Longest Run: \(viewModel.maxRunStreakDays) Days",
+                            caption: "Brag Stat: Streak",
+                            palette: palette)
                     }
+                    .friendlyAnimatedHelper("stats-\(viewModel.totalCompletedIntentions)-\(viewModel.maxRunStreakDays)")
                     
-                    HStack(spacing: 24){
-                        StatBlock(icon: "leaf.fill", value: "\(viewModel.recalibrationCounts[.breathing, default: 0])", caption: "Breathing Sessions Completed", palette: palette)
-                        StatBlock(icon: "figure.walk", value: "\(viewModel.recalibrationCounts[.balancing, default: 0])", caption: "balancing Sessions Completed", palette: palette)
+                    HStack(spacing: 20){
+                        StatBlock(icon: "leaf.fill",
+                            value: "\(viewModel.recalibrationCounts[.breathing, default: 0])",
+                            caption: "Breathing Sessions Completed",
+                            palette: palette
+                        )
+                        StatBlock(
+                            icon: "figure.walk",
+                            value: "\(viewModel.recalibrationCounts[.balancing, default: 0])",
+                            caption: "Balancing Sessions Completed",
+                            palette: palette
+                        )
                     }
+                    .friendlyAnimatedHelper("recal-\(viewModel.recalibrationCounts[ .breathing, default: 0])-\(viewModel.recalibrationCounts[ .balancing, default: 0])")
                 }
                 .padding(.top, 8)
                 
@@ -142,9 +185,12 @@ private struct StatBlock: View {
                 .foregroundStyle(palette.text)
             Text(caption)
                 .font(.caption)
-                .foregroundStyle(palette.accent.opacity(0.8))
+                .foregroundStyle(palette.textSecondary)
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(palette.surface)            /// Subtle cards and consistent caption style
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

@@ -44,7 +44,7 @@
 //                Button("Start Membership — \(priceLine)") {
 //                    Task { try await pay.purchaseMembership() }
 //                }
-//                .buttonStyle(.borderedProminent)
+//                .primaryActionStyle(screen: .settings
 //
 //                Button("Restore Purchases") {
 //                    Task { try await pay.restorePurchases() }
