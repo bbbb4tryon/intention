@@ -9,7 +9,7 @@ import SwiftUI
 
 /// RootView wires shared VMs, persistence, and the single paywall sheet.
 struct RootView: View {
-    // NOTE: any change in docs, bump LegalConfig.currentVersion to force a re-accept (users will see the gate again)
+    // NOTE: any change in docs, bump LegalConfig.currentVersion to force a re-accept (users see gate again)
     /// Legal gate
     @AppStorage(LegalKeys.acceptedVersion) private var acceptedVersion: Int = 0
     @AppStorage(LegalKeys.acceptedAtEpoch) private var acceptedAtEpoch: Double = 0
@@ -27,30 +27,45 @@ struct RootView: View {
     @StateObject private var focusVM: FocusSessionVM
     @StateObject private var recalibrationVM: RecalibrationVM
     @StateObject private var statsVM: StatsVM
-    
-    @StateObject private var prefs = AppPreferencesVM()
+    @StateObject private var prefs: AppPreferencesVM
+    @StateObject private var haptics: HapticsService     /// One 'warmed' main-actor engine per UI scene, see .environmentObject()
     
     init() {
         /// Inject dependency - all @StateObject created in init only.
-        let persistence = PersistenceActor()
-        let config = TimerConfig.current
-    
+        /// Make plain local instances (no self involved) as in let live = LiveHapticsClients( prefs:  _pref...
+        let persistence     = PersistenceActor()
+        let config          = TimerConfig.current
+        
+        let theme           = ThemeManager()
+        let membership    = MembershipVM()
+        let prefs          = AppPreferencesVM()
+        let engine         = HapticsService()
+        let liveHaptics    = LiveHapticsClient(prefs: prefs, engine: engine)
+        let history         = HistoryVM(persistence: persistence)
+        let focus           = FocusSessionVM(previewMode: false, haptics: liveHaptics, config: config)
+        let recal           = RecalibrationVM(haptics: liveHaptics, config: config, persistence: persistence)
+        let stats           = StatsVM(persistence: persistence)
+        
         _theme = StateObject(wrappedValue: ThemeManager())
         _membershipVM = StateObject(wrappedValue: MembershipVM())
         
-        /// Wire (crate) the same HistoryVM into the FocusSessionVM here in the init, then **assign the weak link once**
-        let history = HistoryVM(persistence: persistence)
-        let focus = FocusSessionVM(previewMode: false, config: config)
+        /// Wire (create) the same HistoryVM into the FocusSessionVM here in the init, then **assign the weak link once**; Locals only
         focus.historyVM = history                               /// ☑️ single wiring point
+        stats.membershipVM = membership
         
-        _historyVM = StateObject(wrappedValue: HistoryVM(persistence: persistence))
-        _focusVM = StateObject(wrappedValue: FocusSessionVM(previewMode: false, config: config))
-        _recalibrationVM = StateObject(wrappedValue: RecalibrationVM(config: config))
-        _statsVM = StateObject(wrappedValue: StatsVM(persistence: persistence))
+        /// Assign to the wrappers
+        _theme          = StateObject(wrappedValue: theme)
+        _membershipVM   = StateObject(wrappedValue: membership)
+        _historyVM      = StateObject(wrappedValue: history)
+        _focusVM        = StateObject(wrappedValue: focus)
+        _recalibrationVM = StateObject(wrappedValue: recal)
+        _statsVM        = StateObject(wrappedValue: stats)
+        _prefs          = StateObject(wrappedValue: prefs)
+        _haptics        = StateObject(wrappedValue: engine)
         
         //FIXME: If StatsVM needs the membershipVM reference, set it post-create:
-//        _statsVM.wrappedValue.membershipVM = _membershipVM.wrappedValue
-     }
+        //        _statsVM.wrappedValue.membershipVM = _membershipVM.wrappedValue
+    }
     
     var body: some View {
         TabView {
@@ -109,12 +124,13 @@ struct RootView: View {
                 debugPrint("Archive category initialized from RootView")
             }
         }
-        /// Provide shared environment objects once, from the root
+        /// Provide shared environment objects once, from the root/ so SwiftUI views can call it easily if they want to.
         .environmentObject(theme)
         .environmentObject(statsVM)
         .environmentObject(membershipVM)
         .environmentObject(historyVM)
         .environmentObject(prefs)
+        .environmentObject(haptics)
     }
 }
 

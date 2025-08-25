@@ -34,13 +34,6 @@ final class RecalibrationVM: ObservableObject {
     enum Phase {
         case notStarted, running, finished
     }
-
-//    struct rTimerConfig: Sendable {
-//        var breathingDuration: Int = 30         /// Seconds
-//        var balancingDuration: Int = 60         /// Seconds
-//        var breathingCueInterval: Int = 16      /// Seconds
-//        var balanceSwitchInterval: Int = 60     /// Seconds
-//    }
     
     // MARK: State
     @Published var phase: Phase = .notStarted
@@ -50,8 +43,8 @@ final class RecalibrationVM: ObservableObject {
     @Published var lastError: Error? = nil
     
     /// Exposed read-only for views/tests that want to show the configured durations
-    let config: TimerConfig             // NOT TimerConfig?
-    
+    private let haptics: HapticsClient
+    let config: TimerConfig
     private let persistence: PersistenceActor?
     private var countdownTask: Task<Void, Never>? = nil
     
@@ -63,7 +56,12 @@ final class RecalibrationVM: ObservableObject {
     
     // MARK: Lifecycle
     
-    init(config: TimerConfig = .current, persistence: PersistenceActor? = nil) {
+    init(
+        haptics: HapticsClient? = nil,
+        config: TimerConfig = .current,
+        persistence: PersistenceActor? = nil
+    ) {
+        self.haptics = haptics ?? NoopHapticsClient() /// Runs on main actor
         self.config = config
         self.persistence = persistence
     }
@@ -163,8 +161,8 @@ final class RecalibrationVM: ObservableObject {
 
                   await MainActor.run {
                       self.phase = .finished
+                      self.haptics.notifyDone()
                   }
-                  hapticsEngine.notifyDone()
 
                   /// Background log; errors are captured silently or into lastError on main.
                   await self.logCompletionIfPossible(duration: total)
@@ -200,7 +198,7 @@ final class RecalibrationVM: ObservableObject {
         let halfway = total / 2
         if !halfwayAnnounced && remaining == halfway {
             halfwayAnnounced = true
-            hapticsEngine.halfway()
+            haptics.halfway()
         }
     }
     
@@ -211,7 +209,7 @@ final class RecalibrationVM: ObservableObject {
            remaining % config.haptics.balanceSwapInterval == 0,
            remaining != lastSwitchAnnouncementAt {
             lastSwitchAnnouncementAt = remaining
-            hapticsEngine.notifySwitch()
+            haptics.notifySwitch()
         }
     }
     
@@ -230,7 +228,7 @@ final class RecalibrationVM: ObservableObject {
         /// Tick once per second near the end; avoid duplicate if this method runs multiple times a second.
         if lastCountdownTickAt != remaining {
             lastCountdownTickAt = remaining
-            hapticsEngine.countdownTick()
+            haptics.countdownTick()
         }
     }
     

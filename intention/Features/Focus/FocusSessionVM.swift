@@ -40,7 +40,6 @@ final class FocusSessionVM: ObservableObject {
 
     // MARK: - Published UI State
     @Published var tileText: String = ""  { didSet { validationMessages = tileText.taskValidationMessages }}         /// Input field for tiles' text;   Validate whenever tileText changes
-        
     @Published var tiles: [TileM] = []              /// List of current session tiles (max 2)
     @Published var canAdd: Bool = true              /// Flag if user can add more tiles at that point
     @Published var sessionActive: Bool = false      /// Overall session state (two 20-min chunks)
@@ -53,6 +52,7 @@ final class FocusSessionVM: ObservableObject {
     @Published var validationMessages: [String] = []
     
     // MARK: - Internal Properties
+    private let haptics: HapticsClient
     private let config: TimerConfig
     private let tileAppendTrigger: FocusTimerActor
     private var chunkCountdown: Task<Void, Never>? = nil        /// background live time keeper/ticker
@@ -67,7 +67,8 @@ final class FocusSessionVM: ObservableObject {
     }
     
     // Preview-friendly Initializer of session state
-    init(previewMode: Bool = false, config: TimerConfig = .current) {
+    init(previewMode: Bool = false, haptics: HapticsClient, config: TimerConfig = .current) {
+        self.haptics = haptics
         self.config = config
         self.countdownRemaining = config.chunkDuration
         self.tileAppendTrigger = FocusTimerActor(config: config)
@@ -101,8 +102,8 @@ final class FocusSessionVM: ObservableObject {
         tileText = ""
         canAdd = tiles.count < 2       /// Keeps flag in sync
 
-        debugPrint("[FocusSessionVM.addTileAndPrepareForSession.Haptic.notifySuccessfullyAdded] did not occur")
-        hapticsEngine.notifySuccessfullyAdded()
+        debugPrint("[FocusSessionVM.addTileAndPrepareForSession.Haptic.added] did not occur")
+        haptics.added()
     }
     
     /// NOTE: - Swift Concurrency timer (Task + AsyncSequence) needed
@@ -124,9 +125,11 @@ final class FocusSessionVM: ObservableObject {
             
             /// Block executes when countdownRemaining reaches 0 or is cancelled
             if self.countdownRemaining <= 0 && self.phase == .running {
-                self.phase = .finished
-                 hapticsEngine.notifyDone()
-                debugPrint("`Haptic.notifyDone()` triggered? Current 20-min chunk completed")
+                await MainActor.run {
+                    self.phase = .finished
+                    self.haptics.notifyDone()
+                    debugPrint("`Haptic.notifyDone()` triggered? Current 20-min chunk completed")
+                }
                 self.chunkCountdown?.cancel()
                 self.chunkCountdown = nil
                 naturallyAdvanceSessionChunk()
