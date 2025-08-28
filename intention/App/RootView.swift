@@ -16,7 +16,7 @@ struct RootView: View {
     @State private var showTerms = false
     @State private var showPrivacy = false
     
-    /// bootsraps creates and defines default Category exactly once ever, even across relaunches
+    /// bootstraps creates and defines default Category exactly once ever, even across relaunches
     @AppStorage("hasInitializedGeneralCategory") private var hasInitializedGeneralCategory = false
     @AppStorage("hasInitializedArchiveCategory") private var hasInitializedArchiveCategory = false
     
@@ -29,6 +29,7 @@ struct RootView: View {
     @StateObject private var statsVM: StatsVM
     @StateObject private var prefs: AppPreferencesVM
     @StateObject private var haptics: HapticsService     /// One 'warmed' main-actor engine per UI scene, see .environmentObject()
+
     
     init() {
         /// Inject dependency - all @StateObject created in init only.
@@ -68,14 +69,24 @@ struct RootView: View {
     }
     
     var body: some View {
+        
+        /// Makes tab bar match app theme (iOS 16+)
+        let tabBG = theme.palette(for: .homeActiveIntentions).background.opacity(0.8)
+        
         TabView {
-            /// Lets `RootView` supply navigation via `NavigationStack`, pass in VMs
+            /// allows `RootView` supply navigation via `NavigationStack`, pass in VMs
             NavigationStack {
                 FocusSessionActiveV(viewModel: focusVM, recalibrationVM: recalibrationVM)
                     .navigationTitle("Focus")
+                    .navigationBarTitleDisplayMode(.large)
+                    .toolbarBackground(theme.palette(for: .homeActiveIntentions).background, for: .navigationBar)
+                    .toolbarBackground(tabBG, for: .tabBar)
+                    .toolbarBackground(.visible, for: .tabBar)
+                    .toolbarBackground(tabBG, for: .navigationBar)
+                    .toolbarBackground(.visible, for: .navigationBar)
                     .friendlyHelper()
             }
-            .tabItem { Image(systemName: "house.fill").accessibilityAddTraits(.isHeader) }
+            .tabItem { Image(systemName: "house.fill") }
             
             NavigationStack {
                 HistoryV(viewModel: historyVM)
@@ -91,6 +102,14 @@ struct RootView: View {
             }
             .tabItem {  Image(systemName: "gearshape.fill").accessibilityAddTraits(.isHeader) }
         }
+        
+        /// consistent color schemes for app tab bar
+        .toolbarBackground(tabBG, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
+        /// consistent color schemes for nav bars
+        .toolbarBackground(tabBG, for: .navigationBar)
+        
+        
         .sheet(isPresented: $membershipVM.shouldPrompt) {
             MembershipSheetV()
                 .environmentObject(membershipVM)

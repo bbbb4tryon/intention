@@ -61,142 +61,141 @@ struct FocusSessionActiveV: View {
     @State private var showPrivacy = false
     
     var body: some View {
-        /// Get current palette for the appropriate sceen
+        /// Get current palette for the appropriate screen
         let palette = theme.palette(for: .homeActiveIntentions)
         let chunkSeconds = TimerConfig.current.chunkDuration
-        let progress = Double(viewModel.countdownRemaining) / Double(chunkSeconds)
-
-        VStack(spacing: 20){
-            
-            StatsSummaryBar(palette: palette)
-                .frame(height: 56)              // "clamp" the bar height
-                .padding(.top, 5)
-            
-            Spacer(minLength: -1)                            // pushes content towards center-top
-            
-            // MARK: - Textfield for intention tile text input
-            TextField("Enter intention", text: $viewModel.tileText, axis: .vertical)
-                .disabled(viewModel.tiles.count == 2 && viewModel.phase == .running)
-                .textFieldStyle(.roundedBorder)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.sentences)
-                .lineLimit(3)
-                .accessibilityLabel("Intention text")
-                .accessibilityHint("Type your intended task. Add two to begin a session.")
-            
-            // MARK: Data validation messages for textfield
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(viewModel.validationMessages, id: \.self) { msg in
-                    theme.styledText(msg, as: .caption, in: .homeActiveIntentions)
-                        .foregroundStyle(.red)
-                }
-            }
-            .friendlyAnimatedHelper(viewModel.validationMessages.joined())
-            
-            // MARK: Main Action Inputs
-            if !viewModel.showRecalibrate && viewModel.phase != .running {
-                Button(action: {
-                    Task {
-                        do {
-                            if viewModel.tiles.count < 2 {      // Logic adding tiles
-                                try await viewModel.addTileAndPrepareForSession(viewModel.tileText)
-                            } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { /// Logic starting session
-                                /// Inline consent: record once, then begin
-                                if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }
-                                try await viewModel.beginOverallSession()
-                            }
-                        } catch {
-                            // View owns the error here
-                                        debugPrint("[FocusSessionActiveV.Button] error:", error)
-                                        viewModel.lastError = error
+        
+        ScrollView {                            /// Allows content to breath on small screens
+            Page {
+                StatsSummaryBar(palette: palette)
+                    .padding(.top, 4)
+                
+                // MARK: - *mounted* Textfield for intention tile text input
+                let isInputActive = ( viewModel.phase != .running && viewModel.tiles.count < 2)
+                    TextField("Enter intention", text: $viewModel.tileText, axis: .vertical)
+                        .textFieldStyle(.roundedBorder)
+                        .padding(10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(isInputActive ? Color(UIColor.systemBackground) : Color(UIColor.secondarySystemFill))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(Color.secondary.opacity(isInputActive ? 0.25 : 0.15), lineWidth: 1)
+                        )
+                        .disabled(!isInputActive)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.sentences)
+                        .accessibilityLabel("Intention text")
+                        .accessibilityHint("Type your intended task. Add two to begin a session.")
+                        .zIndex(1)
+                
+                
+                // MARK: validation ONLY where there ARE messages
+                if !viewModel.validationMessages.isEmpty && viewModel.phase != .running {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(viewModel.validationMessages, id: \.self) { msg in
+                            theme.styledText(msg, as: .caption, in: .homeActiveIntentions)
+                                .foregroundStyle(.red)      //FIXME: NOT red
                         }
                     }
-                }) {
-                    Text(viewModel.tiles.count < 2 ? "Add" : "Begin")
-                        .font(.headline)
-                        .padding(.vertical,8)
-                        .frame(maxWidth: .infinity)
-                        .foregroundStyle( true ? .clear : .accentColor)
+                    .friendlyAnimatedHelper(viewModel.validationMessages.joined())
                 }
-                .primaryActionStyle(screen: .homeActiveIntentions)
-                .environmentObject(theme)
-                // Disable if empty, or 2 tiles already aadded
-                .disabled(viewModel.tiles.count < 2 && viewModel.tileText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .padding(.horizontal)
-            }
-            
-            /// Inline disclosure shown only when Begin is relevant
+                
+                // MARK: Add/Begin
+                if !viewModel.showRecalibrate && viewModel.phase != .running {
+                    Button {
+                        Task {
+                            do {
+                                if viewModel.tiles.count < 2 {      /// Logic adding tiles
+                                    try await viewModel.addTileAndPrepareForSession(viewModel.tileText)
+                                    if viewModel.tiles.count == 2 { viewModel.validationMessages.removeAll() }
+                                } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { /// Logic starting session
+                                    /// Inline consent: record once, then begin
+                                    if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }
+                                    try await viewModel.beginOverallSession()
+                                }
+                            } catch {
+                                debugPrint("[FocusSessionActiveV.Button] error:", error)
+                                viewModel.lastError = error
+                            }
+                        }
+                    } label: {
+                        Text(viewModel.tiles.count < 2 ? "Add" : "Begin")
+                            .font(.headline).monospacedDigit()
+                        //FIXME: blocking the button text no matter what
+                        //                        .foregroundStyle( true ? .clear : .accentColor)       /// opacity when inactive
+                    }
+                    .primaryActionStyle(screen: .homeActiveIntentions)
+                    //                .environmentObject(theme)         //FIXME: What is this doing?
+                    /// Disable if empty, or 2 tiles already aadded
+                    .disabled(viewModel.tiles.count < 2 && viewModel.tileText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                
+                /// Inline disclosure shown only when Begin is relevant
                 if viewModel.tiles.count == 2 && viewModel.phase == .notStarted {
-//                    HStack(spacing: 6) {
-//                        Text("By starting, you agree to our")
-//                        Button("Terms") { showTerms = true }.buttonStyle(.plain).underline()
-//                        Text("and")
-//                        Button("Privacy") { showPrivacy = true }.buttonStyle(.plain).underline()
-//                    }
                     LegalAffirmationBar(
-                        onAgree: {
-                            if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }
-                            Task { try? await viewModel.beginOverallSession() }
-                        },
+                        onAgree: { if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }; Task { try? await viewModel.beginOverallSession() } },
                         onShowTerms: { showTerms = true },
                         onShowPrivacy: { showPrivacy = true }
                     )
-                    .font(theme.fontTheme.toFont(.footnote))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-                    .friendlyAnimatedHelper(viewModel.tiles.count == 2 && viewModel.phase == .notStarted)
+                    //                .font(theme.fontTheme.toFont(.footnote))
+                    //                .foregroundStyle(.secondary)
+                    //                .padding(.horizontal)
+                    //                .friendlyAnimatedHelper(viewModel.tiles.count == 2 && viewModel.phase == .notStarted)
                 }
-
-            
-            // MARK: - Countdown Display (user-facing)
-            DynamicCountdown(viewModel: viewModel, palette: palette, progress: progress)
-            
-            
-            // MARK: Main Action Button (Add or Begin)
-            /// If under two tiles, add the next one. If both are present, begin countdown
-            DynamicMessageAndActionArea(
-                viewModel: viewModel,
-                fontTheme: theme.fontTheme, // passing in fontTheme property
-                palette: theme.palette(for: .homeActiveIntentions),
-                onRecalibrateNow: {
-                    viewModel.showRecalibrate = true
-                })
-            
-            // Pushes content away from bottom, softer constraints
-            Spacer(minLength: 8)
-                        
-            // MARK: - Fixed-size List: Tile container
-            VStack(spacing: 8) {        // tile spacing
-                ForEach(slotData.indices, id: \.self) { index in
-                    TileSlotView(
-                        tileText: slotData[index],
-                    )
+                
+                
+                // MARK: - Countdown Display (user-facing)
+                DynamicCountdown(viewModel: viewModel, palette: palette,
+                                 progress: Double(viewModel.countdownRemaining) / Double(TimerConfig.current.chunkDuration))
+                
+                
+                // MARK: Add/Begin??
+                /// If under two tiles, add the next one. If both are present, begin countdown
+                DynamicMessageAndActionArea(
+                    viewModel: viewModel,
+                    fontTheme: theme.fontTheme, // passing in fontTheme property
+                    palette: theme.palette(for: .homeActiveIntentions),
+                    onRecalibrateNow: {
+                        viewModel.showRecalibrate = true
+                    })
+                
+                // MARK: Tile slots: let content decide height
+                VStack(spacing: 8) {                            /// tile spacing
+                    ForEach(slotData.indices, id: \.self) { index in
+                        TileSlotView(tileText: slotData[index])
+                    }
                 }
-                .padding(.horizontal)       // Padding for the ForEach content
-            }                               // -VStack, tile container end
-            .frame(height: 140)             // Shrinks the stack instead of Dynamics
-            .background(palette.background.opacity(0.8))
-            .cornerRadius(10)
-            .shadow(radius: 5)
-            .padding(.horizontal)           // Horizonal padding for whole list
-            
-            Spacer()
-        }                                   // -VStack, primary end
-        .background(palette.background.ignoresSafeArea(edges: .top))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 8)
+                .background(palette.background.opacity(0.8))
+                //            .debugBorder(.green)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .cornerRadius(10)               // FIXME: what is this impacting?
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .shadow(radius: 5)
+            }
+        }
+        .background(palette.background.ignoresSafeArea())       /// Paints edge to edge
+        
+        //.safeAreaTopPadding()                                   // FIXME: what is this impacting?
+        .ignoresSafeArea(.keyboard, edges: .bottom) // prevent keyboard from shoving whole page up
+        .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 12)  } // Content breathing room value above the tab bar
         
         /// Legal doc sheets (LegalDocV + MarkdownLoader)
         .sheet(isPresented: $showTerms) {
-                    NavigationStack {
-                        LegalDocV(title: "Terms of Use",
-                                  markdown: MarkdownLoader.load(named: LegalConfig.termsFile))
-                    }
-                }
-                .sheet(isPresented: $showPrivacy) {
-                    NavigationStack {
-                        LegalDocV(title: "Privacy Policy",
-                                  markdown: MarkdownLoader.load(named: LegalConfig.privacyFile))
-                    }
-                }
+            NavigationStack {
+                LegalDocV(title: "Terms of Use",
+                          markdown: MarkdownLoader.load(named: LegalConfig.termsFile))
+            }
+        }
+        .sheet(isPresented: $showPrivacy) {
+            NavigationStack {
+                LegalDocV(title: "Privacy Policy",
+                          markdown: MarkdownLoader.load(named: LegalConfig.privacyFile))
+            }
+        }
         
         /// Auto-dismiss when MembershipVM flips shouldPrompt to false after successful purchase
         .sheet(isPresented: $membershipVM.shouldPrompt) {

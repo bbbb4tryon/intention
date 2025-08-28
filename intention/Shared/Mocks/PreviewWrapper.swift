@@ -14,6 +14,7 @@ struct PreviewWrapper<Content: View>: View {
     var body: some View {
         content()
             .environmentObject(PreviewMocks.theme)
+            .environmentObject(PreviewMocks.prefs)
             .environmentObject(PreviewMocks.membershipVM)
             .environmentObject(PreviewMocks.history)        /// some subviews use HistoryVM via EnvironmentObject
             .environmentObject(PreviewMocks.stats)

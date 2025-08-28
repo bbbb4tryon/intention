@@ -43,9 +43,9 @@ struct MembershipSheetV: View {
     var body: some View {
         ZStack {
             ScrollView {
-                VStack(spacing: 24){
+                Page {
                     theme.styledText("Unlock Unlimited Focus", as: .section, in: .membership)
-                        .multilineTextAlignment(.center)
+//                        .multilineTextAlignment(.center)
                         .friendlyHelper()
                     
                     theme.styledText("You’ve completed your free sessions. For just 20–30¢ a day, unlock unlimited focus sessions, detailed stats, more categories, and full customization. Build momentum, track progress, and work with intention — while helping us keep the lights on, the mortgage paid, and the dog well-fed. Your focus fuels our future. Thank you.", as: .body, in: .membership)
@@ -136,7 +136,6 @@ struct MembershipSheetV: View {
                     }
                     }
                 }
-                .padding(.horizontal)
             }
             /// Signals if a product is loaded + VM bridge (sheet cannot create own PaymentService)
             if let p = viewModel.primaryProduct {

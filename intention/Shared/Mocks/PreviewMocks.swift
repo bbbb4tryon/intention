@@ -11,13 +11,10 @@ enum PreviewMocks {
     // One persistence for everything in previews
     @MainActor static let persistence = PersistenceActor()
 
-    // HistoryVM: single instance + fixed IDs + basic bootstrap
     @MainActor static let history: HistoryVM = {
         let h = HistoryVM(persistence: persistence)
-        // Safe static UUIDs for previews
         h.generalCategoryID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
         h.archiveCategoryID = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
-        // Create categories if needed
         h.ensureGeneralCategory()
         h.ensureArchiveCategory()
         return h
@@ -31,14 +28,30 @@ enum PreviewMocks {
         MembershipVM()
     }()
 
+    @MainActor static let prefs: AppPreferencesVM = {
+        AppPreferencesVM()
+    }()
+    
     @MainActor static let theme: ThemeManager = {
         ThemeManager()
     }()
 
-    // FocusSessionVM shares the SAME HistoryVM instance
     @MainActor static let focusSession: FocusSessionVM = {
-        let vm = FocusSessionVM(previewMode: true, config: .current)
+        let vm = FocusSessionVM(previewMode: true,
+                                haptics: NoopHapticsClient(),    // ← ignore haptics in previews
+                                config: .current)                 // your TimerConfig already returns .shortDebug in previews
         vm.historyVM = history
         return vm
     }()
+    
+    @MainActor static let recal: RecalibrationVM = {
+            RecalibrationVM(haptics: NoopHapticsClient(),             // ← ignore in previews
+                            config: .current,
+                            persistence: persistence)
+        }()
 }
+
+//@StateObject private var focusVM: FocusSessionVM
+//@StateObject private var recalibrationVM: RecalibrationVM
+//@StateObject private var prefs: AppPreferencesVM
+//@StateObject private var haptics: HapticsService

@@ -17,38 +17,57 @@ struct RecalibrationV: View {
     private let balancePreset = 30   // 30 sec
     
     var body: some View {
+        
+        let p = theme.palette(for: .recalibrate)
         ZStack {
-            VStack(spacing: 20) {
-                Text("Reset & Recenter")
-                    .font(theme.fontTheme.toFont(.title2)).bold()
-                    .accessibilityAddTraits(.isHeader)
+            LinearGradient(
+                colors: [p.background, p.background.opacity(0.85)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            Page {
+                theme.styledText("Reset & Recalibrate", as: .largeTitle, in: .recalibrate).underline()
+                    .foregroundStyle(p.text)
+                    .friendlyHelper()
+                
+                Text("""
+                    Short resets help you start your next 20-minute focus chunk fresh.
+                     **Choose one below:**
+                    """)
+                    .font(theme.fontTheme.toFont(.footnote))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 4)
                 
                 
                 /// When inactive, show simple, obvious choices
                 if vm.phase != .running {
                     
                     VStack(spacing: 12) {
-                        Button { start(.breathing) } label: {
-                            Label("\(label(for: vm.config.breathingDuration)) Breathe",
-                                  systemImage: RecalibrationMode.breathing.iconName)
-                            .frame(maxWidth: .infinity)
+                        if vm.mode == nil {
+                            Button { start(.breathing) } label: {
+                                Label {
+                                    theme.styledText("Breathe", as: .tile, in: .recalibrate)
+                                } icon: {
+                                Image(systemName: RecalibrationMode.breathing.iconName)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .inactivePulsingEffect(isSelected: false)
+                            }
+                            .primaryActionStyle(screen: .recalibrate)
+                            
+                            Button { start(.balancing) } label: {
+                                HStack(spacing: 8){
+                                    Image(systemName: RecalibrationMode.breathing.iconName)
+                                    theme.styledText(activeTitle, as: .tile, in: .recalibrate)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .inactivePulsingEffect(isSelected: false)
+                            }
+                            .primaryActionStyle(screen: .recalibrate)
                         }
-                        .primaryActionStyle(screen: .recalibrate)
-                        
-                        Button { start(.balancing) } label: {
-                            Label("\(label(for: vm.config.balancingDuration)) Balance",
-                                  systemImage: RecalibrationMode.balancing.iconName)
-                            .frame(maxWidth: .infinity)
-                        }
-                        .primaryActionStyle(screen: .recalibrate)
                     }
-                    
-                    Text("Short resets help you start your next 20-minute focus chunk fresh.")
-                        .font(theme.fontTheme.toFont(.footnote))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 4)
-                    
                 } else {
                     
                     /// Active countdown view: big, legible, tappable cancel

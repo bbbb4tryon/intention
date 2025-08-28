@@ -25,7 +25,6 @@ struct LegalAffirmationBar: View {
                     Button("Privacy") { onShowPrivacy() }.buttonStyle(.plain).underline()
                 }
             }
-            Spacer()
             Button("Agree") { onAgree() }
                 .primaryActionStyle(screen: .settings)
         }
@@ -34,7 +33,6 @@ struct LegalAffirmationBar: View {
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(radius: 2, y: 1)
-        .padding(.horizontal)
         .padding(.bottom, 8)
     }
 }

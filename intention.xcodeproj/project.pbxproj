@@ -56,6 +56,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		77756FC72E5F64FA0099EAEC /* Exceptions for "intention" folder in "IntentionTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Shared/HelperLayout/Layout+Helpers.swift",
+			);
+			target = 7792906E2DFB449C00F93B23 /* IntentionTests */;
+		};
 		7792901E2DFA2D7D00F93B23 /* Exceptions for "intention" folder in "intention" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -70,6 +77,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				7792901E2DFA2D7D00F93B23 /* Exceptions for "intention" folder in "intention" target */,
+				77756FC72E5F64FA0099EAEC /* Exceptions for "intention" folder in "IntentionTests" target */,
 			);
 			path = intention;
 			sourceTree = "<group>";

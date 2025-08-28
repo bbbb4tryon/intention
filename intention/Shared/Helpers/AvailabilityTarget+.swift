@@ -19,13 +19,22 @@ extension View {
     @ViewBuilder
     func symbolBounceIfAvailable(active: Bool = true) -> some View {
         if #available(iOS 18.0, *) {
-            self.bounceSymbolEffect(isActive: active)   // uses .bounce only in an iOS18 context
+            self.bounceSymbolEffect(isActive: active)               /// uses .bounce only in an iOS18 context
         } else if #available(iOS 17.0, *) {
-            // Fallback for iOS 17 (choose any 17-compatible effect)
+            /// fallback for iOS 17
             self.symbolEffect(.pulse, isActive: active)
         } else {
             self
         }
     }
+    
+    
+    @ViewBuilder
+    func safeAreaTopPadding() -> some View {
+        if #available(iOS 17.0, *) {
+            self.safeAreaPadding(.top)      /// adjusts with device & bars
+        } else {
+            self.padding(.top)              /// simple fallback
+        }
+    }
 }
-

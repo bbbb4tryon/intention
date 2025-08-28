@@ -19,7 +19,6 @@ struct StatsSummaryBar: View {
                 StatBlock(icon: last.iconName, value: last.label, caption: "Last Reset", palette: palette)
             }
         }
-        .padding(.horizontal)
     }
 }
 
@@ -43,9 +42,9 @@ private struct StatBlock: View {
                 .font(.caption)
                 .foregroundStyle(palette.textSecondary)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(palette.surface)            /// Subtle cards and consistent caption style
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+//        .frame(maxWidth: .infinity)
+//        .padding(.vertical, 8)
+//        .background(palette.surface)            /// Subtle cards and consistent caption style
+//        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
