@@ -61,7 +61,10 @@ struct HistoryV: View {
                                         viewModel.saveHistory()
                                     }
                                 )
-                                .frame(height: UIScreen.main.bounds.height * 0.75)
+                                GeometryReader { proxy in
+                                TileOrganizerWrapper()
+                                        .frame(height: UIScreen.main.bounds.height * 0.75)
+                                }
                             }
                         }
                         Spacer(minLength: 16)
@@ -81,14 +84,6 @@ struct HistoryV: View {
                             Text("Moved: \(move.tile.text)").font(.footnote)
                             Spacer()
                             Button("Undo") {    viewModel.undoLastMove()    }
-                            //FIXME: What is this doing?
-                                                    .padding()
-                                                    .background(.ultraThinMaterial)
-                                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                                    .padding(.horizontal)
-                                                    .padding(.bottom, 44)       /// Tab bar clearance?
-                                                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                                                    .zIndex(1)
                         }
                     }
                     .padding(.horizontal, 16)

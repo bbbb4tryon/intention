@@ -88,7 +88,6 @@ struct RecalibrationV: View {
                     .padding(.top, 8)
                 }
             }
-            .padding()
             .presentationDetents([.height(320), .medium])
             .presentationDragIndicator(.visible)
             

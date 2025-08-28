@@ -97,8 +97,9 @@ struct DynamicMessageAndActionArea: View {
             }
             .destructiveActionStyle(screen: screen)
         }
-        .padding(.bottom, 44)               /// Clears the tab bar on most devices
-        .padding(.horizontal)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: 12)
+        }
     }
         
         private var sessionInProgressView: some View {

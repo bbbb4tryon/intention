@@ -133,17 +133,18 @@ struct FocusSessionActiveV: View {
                 }
                 
                 /// Inline disclosure shown only when Begin is relevant
-                if viewModel.tiles.count == 2 && viewModel.phase == .notStarted {
-                    LegalAffirmationBar(
-                        onAgree: { if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }; Task { try? await viewModel.beginOverallSession() } },
-                        onShowTerms: { showTerms = true },
-                        onShowPrivacy: { showPrivacy = true }
-                    )
-                    //                .font(theme.fontTheme.toFont(.footnote))
-                    //                .foregroundStyle(.secondary)
-                    //                .padding(.horizontal)
-                    //                .friendlyAnimatedHelper(viewModel.tiles.count == 2 && viewModel.phase == .notStarted)
-                }
+                
+//                if viewModel.tiles.count == 2 && viewModel.phase == .notStarted {
+//                    LegalAffirmationBar(
+//                        onAgree: { if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }; Task { try? await viewModel.beginOverallSession() } },
+//                        onShowTerms: { showTerms = true },
+//                        onShowPrivacy: { showPrivacy = true }
+//                    )
+//                    //                .font(theme.fontTheme.toFont(.footnote))
+//                    //                .foregroundStyle(.secondary)
+//                    //                .padding(.horizontal)
+//                    //                .friendlyAnimatedHelper(viewModel.tiles.count == 2 && viewModel.phase == .notStarted)
+//                }
                 
                 
                 // MARK: - Countdown Display (user-facing)
@@ -181,7 +182,21 @@ struct FocusSessionActiveV: View {
         
         //.safeAreaTopPadding()                                   // FIXME: what is this impacting?
         .ignoresSafeArea(.keyboard, edges: .bottom) // prevent keyboard from shoving whole page up
-        .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 12)  } // Content breathing room value above the tab bar
+        .safeAreaInset(edge: .bottom, alignment: .center){
+            if viewModel.tiles.count == 2 && viewModel.phase == .notStarted {
+                LegalAffirmationBar(
+                    onAgree: { if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }; Task { try? await viewModel.beginOverallSession() } },
+                    onShowTerms: { showTerms = true },
+                    onShowPrivacy: { showPrivacy = true }
+                )
+                //                .font(theme.fontTheme.toFont(.footnote))
+                //                .foregroundStyle(.secondary)
+                //                .padding(.horizontal)
+                //                .friendlyAnimatedHelper(viewModel.tiles.count == 2 && viewModel.phase == .notStarted)
+            }
+
+        }
+        .safeAreaInset(edge: .bottom, alignment: .center) { Color.clear.frame(height: 12)  } // Content breathing room value above the tab bar
         
         /// Legal doc sheets (LegalDocV + MarkdownLoader)
         .sheet(isPresented: $showTerms) {

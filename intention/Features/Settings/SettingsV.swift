@@ -27,11 +27,12 @@ struct SettingsV: View {
                         //                        .friendlyHelper()                   //FIXME: NEED THESE IN EACH?
                         theme.styledText((membershipVM.isMember ? "Status: Active" : "Status: Not Active"), as: .secondary, in: .settings)
                             .foregroundStyle(membershipVM.isMember ? .green : .secondary)
-//                            .foregroundStyle(palette.textSecondary)
+                        //                            .foregroundStyle(palette.textSecondary)
                         
                         theme.styledText("Device ID: ", as: .caption, in: .settings)
                             .foregroundStyle(palette.textSecondary)
                         theme.styledText("Your user id: \(userID)", as: .caption, in: .settings)
+                            .foregroundStyle(palette.textSecondary)
                         HStack(spacing: 12){
                             Button ("Manage Subscription") {
                                 /// Instead of Link()
@@ -47,59 +48,67 @@ struct SettingsV: View {
                 
                 /// Stats
                 Card {
-                    theme.styledText("Your Progress", as: .section, in: .settings)
-                        .friendlyHelper()
-                    
-                    HStack(spacing: 20) {
-                        StatBlock(icon: "list.bullet", value: "\(viewModel.totalCompletedIntentions)", caption: "Total Intentions", palette: palette  )
-                        StatBlock(icon: "rosette", value: "Longest Run: \(viewModel.maxRunStreakDays) Days", caption: "Brag Stat: Streak", palette: palette )
+                    VStack(alignment: .leading,spacing: 8){
+                        theme.styledText("Your Progress", as: .section, in: .settings)
+                            .friendlyHelper()
+                        
+                        HStack(spacing: 20) {
+                            StatBlock(icon: "list.bullet", value: "\(viewModel.totalCompletedIntentions)", caption: "Total Intentions", palette: palette  )
+                            StatBlock(icon: "rosette", value: "Longest Run: \(viewModel.maxRunStreakDays) Days", caption: "Brag Stat: Streak", palette: palette )
+                        }
+                        .friendlyAnimatedHelper("stats-\(viewModel.totalCompletedIntentions)-\(viewModel.maxRunStreakDays)")
+                        
+                        Divider()
+                        HStack(spacing: 20){
+                            StatBlock(icon: "leaf.fill", value: "\(viewModel.recalibrationCounts[.breathing, default: 0])", caption: "Breathing Sessions Completed", palette: palette )
+                            StatBlock(icon: "figure.walk", value: "\(viewModel.recalibrationCounts[.balancing, default: 0])", caption: "Balancing Sessions Completed", palette: palette )
+                        }
+                        .friendlyAnimatedHelper("recal-\(viewModel.recalibrationCounts[ .breathing, default: 0])-\(viewModel.recalibrationCounts[ .balancing, default: 0])")
                     }
-                    .friendlyAnimatedHelper("stats-\(viewModel.totalCompletedIntentions)-\(viewModel.maxRunStreakDays)")
-                    
-                    Divider()
-                    HStack(spacing: 20){
-                        StatBlock(icon: "leaf.fill", value: "\(viewModel.recalibrationCounts[.breathing, default: 0])", caption: "Breathing Sessions Completed", palette: palette )
-                        StatBlock(icon: "figure.walk", value: "\(viewModel.recalibrationCounts[.balancing, default: 0])", caption: "Balancing Sessions Completed", palette: palette )
-                    }
-                    .friendlyAnimatedHelper("recal-\(viewModel.recalibrationCounts[ .breathing, default: 0])-\(viewModel.recalibrationCounts[ .balancing, default: 0])")
                 }
                 
                 Divider()
                 
                 /// Preferences Section
                 Card {
+                    VStack(alignment: .leading,spacing: 8){
                     theme.styledText("Preferences", as: .section, in: .settings)
                     Toggle(isOn: .constant(true))
                     { theme.styledText("Enable Notification", as: .caption, in: .settings) }
                     Toggle(isOn: .constant(false))
                     { theme.styledText("Sound Off", as: .caption, in: .settings) }
                     Toggle(isOn: $prefs.hapticsOnly)
-                    { theme.styledText("Haptics Only: Vibration cues only", as: .caption, in: .settings)
-                            .foregroundStyle(palette.textSecondary) }
-                    }
-                    .friendlyAnimatedHelper("hapticsOnly-\(prefs.hapticsOnly ? "on" : "off")")
+                        { theme.styledText("Haptics Only: Vibration cues only", as: .caption, in: .settings)
+                                .foregroundStyle(palette.textSecondary)
+                        }
+                        .controlSize(.small)        /// Toggle size
+                        .toggleStyle(SwitchToggleStyle(tint: palette.accent))
+                }
+                .friendlyAnimatedHelper("hapticsOnly-\(prefs.hapticsOnly ? "on" : "off")")
+            }
                 
                 /// Color Theme Picker
                 Card {
-                    theme.styledText("Personalization", as: .section, in: .settings)
-                    theme.styledText("App Color Theme", as: .secondary, in: .settings)
-                    Picker("Color Theme", selection: $theme.colorTheme) {
-                        ForEach(AppColorTheme.allCases, id: \.self) { theme in Text(theme.displayName).tag(theme) }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                
-                /// Font Theme Picker
-                    theme.styledText("Font Style", as: .section, in: .settings)
-                    Picker("Font Choice", selection: $theme.fontTheme) {
-                        ForEach(AppFontTheme.allCases, id: \.self) { theme in
-                            Text(theme.displayName).tag(theme)
+                    VStack(alignment: .leading, spacing: 8) {
+                        theme.styledText("Personalization", as: .section, in: .settings)
+                        theme.styledText("App Color Theme", as: .secondary, in: .settings)
+                        Picker("Color Theme", selection: $theme.colorTheme) {
+                            ForEach(AppColorTheme.allCases, id: \.self) { theme in Text(theme.displayName).tag(theme) }
                         }
+                        .pickerStyle(SegmentedPickerStyle())
+                        
+                        /// Font Theme Picker
+                        theme.styledText("Font Style", as: .section, in: .settings)
+                        Picker("Font Choice", selection: $theme.fontTheme) {
+                            ForEach(AppFontTheme.allCases, id: \.self) { theme in
+                                Text(theme.displayName).tag(theme)
+                            }
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .friendlyAnimatedHelper(theme.fontTheme.rawValue)
+                        // .tint(palette.accent) /// Explicitly override for visibility //FIXME: DO THIS FOR ALL CARDS?
                     }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .friendlyAnimatedHelper(theme.fontTheme.rawValue)
-                    // .tint(palette.accent) /// Explicitly override for visibility //FIXME: DO THIS FOR ALL CARDS?
                 }
-//                Spacer(minLength: 24)
             }
         }
         .background(palette.background.ignoresSafeArea())

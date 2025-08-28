@@ -29,7 +29,6 @@ struct LegalAffirmationBar: View {
                 .primaryActionStyle(screen: .settings)
         }
         .padding(.horizontal)
-        .padding(.vertical, 10)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(radius: 2, y: 1)
