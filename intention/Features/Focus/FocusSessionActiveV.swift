@@ -60,6 +60,11 @@ struct FocusSessionActiveV: View {
     @State private var showTerms = false
     @State private var showPrivacy = false
     
+    /// Drive legal bar visibility via flag and clean animation
+    private var showLegalBar: Bool {
+        viewModel.tiles.count == 2 && viewModel.phase == .notStarted
+    }
+    
     var body: some View {
         /// Get current palette for the appropriate screen
         let palette = theme.palette(for: .homeActiveIntentions)
@@ -179,9 +184,8 @@ struct FocusSessionActiveV: View {
             }
         }
         .background(palette.background.ignoresSafeArea())       /// Paints edge to edge
+        .ignoresSafeArea(.keyboard, edges: .bottom)             /// prevent keyboard from shoving whole page up
         
-        //.safeAreaTopPadding()                                   // FIXME: what is this impacting?
-        .ignoresSafeArea(.keyboard, edges: .bottom) // prevent keyboard from shoving whole page up
         .safeAreaInset(edge: .bottom, alignment: .center){
             if viewModel.tiles.count == 2 && viewModel.phase == .notStarted {
                 LegalAffirmationBar(
