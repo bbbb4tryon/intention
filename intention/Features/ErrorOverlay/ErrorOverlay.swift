@@ -14,11 +14,8 @@ struct ErrorOverlay: View {
     let dismissAction: () -> Void
     
     var body: some View {
-        
         let palette = theme.palette(for: .settings)
-        
         VStack(spacing: 12) {
-            
             theme.styledText("⚠️ Something went wrong", as: .action, in: .recalibrate)
                 .bold()
             Text(displayMessage(for: error))

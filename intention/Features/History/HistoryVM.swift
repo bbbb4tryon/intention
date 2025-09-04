@@ -22,7 +22,7 @@ enum HistoryError: Error, Equatable, LocalizedError {
 
 /// Single source of truth for category IDs
 @MainActor
-final class HistoryVM: ObservableObject {
+final class HistoryVM: ObservableObject {   
     @Published var categoryValidationMessages: [UUID: [String]] = [:]           /// Validate category text changes
     @Published var categories: [CategoriesModel] = []
     @Published var tileLimitWarning: Bool = false
@@ -33,6 +33,10 @@ final class HistoryVM: ObservableObject {
     private let archiveActor = ArchiveActor()
     private let storageKey = "categoriesData"
     private let tileSoftCap = 200
+    private var debouncedSaveTask: Task<Void, Never>? = nil     ///Coalesced save task; only latest survives
+    private var lastSavedSignature: Int = 0                     /// VM computes a lightweight signature and coalesces writes
+    private let saveDebouncedDelayNanos: UInt64 = 300_000_000   /// 300 ms
+    
     
     /// HistoryVM owns IDs
     @AppStorage("generalCategoryID") private var generalCategoryIDString: String = ""
@@ -85,6 +89,27 @@ final class HistoryVM: ObservableObject {
         }
     }
     
+    // Writes only if content changed since last success - if `snapshot` is nil, uses live `categories`
+    private func performSaveIfChanged(_ snapshot: [CategoriesModel]? = nil) async {
+        let toWrite = snapshot ?? categories
+        let signature = saveSignature(for: toWrite)
+        guard signature != lastSavedSignature else { return }
+        do {
+            try await persistence.write(toWrite, to: storageKey)
+            lastSavedSignature = signature
+        } catch {
+            debugPrint("[HistoryVM.performSaveIfChanged] error: ", error)
+            await MainActor.run { self.lastError = HistoryError.saveHistoryFailed }
+        }
+    }
+    private func saveSignature(for categories: [CategoriesModel]) -> Int {
+        var acc = categories.count
+        for cat in categories {
+            acc = acc &* 31 &* cat.tiles.count
+        }
+        return acc
+    }
+    
     
     // MARK: - Sets automatic "General" category aka "bootstrapping"
     func ensureGeneralCategory(named name: String = "General") {
@@ -127,7 +152,25 @@ final class HistoryVM: ObservableObject {
     // MARK: - Non-throwing convenience (fire-and-forget)
     /// Non-throwing wrapper, background with a UI signal; catch internally, debugPrints, sets VM lasterror; saveHistory() calls saveHistoryThrowing() inside a Task
     /// Save the current categories array -> wrapper of PersistenceActor.saveHistory
-    func saveHistory() { //wrapper
+    func saveHistory(immediate: Bool = false) { //wrapper
+        if immediate {
+            debouncedSaveTask?.cancel()
+            debouncedSaveTask = nil
+            Task { await performSaveIfChanged() }
+            return
+        }
+        
+        /// Debounced path
+        debouncedSaveTask?.cancel()
+        // Capture snapshot to avoid reading while UI is mid-mutation
+        let snapshot = categories
+        debouncedSaveTask = Task { [weak self] in
+        // Coalesce bursts of calls into one
+            guard let self else { return }
+            try? await Task.sleep(nanoseconds: saveDebouncedDelayNanos)
+            await self.performSaveIfChanged(snapshot)
+        }
+        
         Task {
             do { try await saveHistoryThrowing() }
             catch {
@@ -135,6 +178,22 @@ final class HistoryVM: ObservableObject {
                 await MainActor.run { self.lastError = HistoryError.saveHistoryFailed }
             }
         }
+    }
+    
+    // MARK: - Forces any pending debounced save to run now
+    func flushPendingSaves() async {
+        // Runs any pending debounce, immediate save and cancel
+        if debouncedSaveTask != nil {
+            debouncedSaveTask?.cancel()
+            debouncedSaveTask = nil
+            await performSaveIfChanged()
+        }
+    }
+    
+    // MARK: - cancel any pending work (e.g. if VM is deinit'd)
+    deinit {
+        debouncedSaveTask?.cancel()
+        debouncedSaveTask = nil
     }
     
     // MARK: - Add a tile to a specific category (non-throwing convenience)

@@ -16,7 +16,8 @@ public protocol Persistence: Sendable {
     func clear(_ key: String) async
 }
 
-//  All business logic (when to save, what to save) belongs in the VM
+/// All business logic (when to save, what to save) belongs in the VM
+/// VM decides when to persist; PersistenceActor decides how (encode/decode, storage)
 public actor PersistenceActor {
     public enum PersistenceActorError: Error {
         case encodingFailed(Error)

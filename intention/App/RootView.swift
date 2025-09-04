@@ -7,14 +7,27 @@
 
 import SwiftUI
 
+enum RootSheet: Identifiable, Equatable {
+    case legal, membership, terms, privacy
+    var id: String {
+        switch self {
+        case .legal: return "legal"
+        case .membership: return "membership"
+        case .terms: return "terms"
+        case .privacy: return "privacy"
+        }
+    }
+}
+
 /// RootView wires shared VMs, persistence, and the single paywall sheet.
 struct RootView: View {
     // NOTE: any change in docs, bump LegalConfig.currentVersion to force a re-accept (users see gate again)
     /// Legal gate
     @AppStorage(LegalKeys.acceptedVersion) private var acceptedVersion: Int = 0
     @AppStorage(LegalKeys.acceptedAtEpoch) private var acceptedAtEpoch: Double = 0
-    @State private var showTerms = false
-    @State private var showPrivacy = false
+    @State private var activeSheet: RootSheet? = nil
+    
+    private var needsLegalGate: Bool { acceptedVersion < LegalConfig.currentVersion }
     
     /// bootstraps creates and defines default Category exactly once ever, even across relaunches
     @AppStorage("hasInitializedGeneralCategory") private var hasInitializedGeneralCategory = false
@@ -29,7 +42,6 @@ struct RootView: View {
     @StateObject private var statsVM: StatsVM
     @StateObject private var prefs: AppPreferencesVM
     @StateObject private var haptics: HapticsService     /// One 'warmed' main-actor engine per UI scene, see .environmentObject()
-
     
     init() {
         /// Inject dependency - all @StateObject created in init only.
@@ -40,11 +52,11 @@ struct RootView: View {
         let theme           = ThemeManager()
         let membership    = MembershipVM()
         let prefs          = AppPreferencesVM()
-        let engine         = HapticsService()
+        let engine         = HapticsService()       // warmed generators
         let liveHaptics    = LiveHapticsClient(prefs: prefs, engine: engine)
         let history         = HistoryVM(persistence: persistence)
         let focus           = FocusSessionVM(previewMode: false, haptics: liveHaptics, config: config)
-        let recal           = RecalibrationVM(haptics: liveHaptics, config: config, persistence: persistence)
+        let recal           = RecalibrationVM(haptics: liveHaptics)
         let stats           = StatsVM(persistence: persistence)
         
         _theme = StateObject(wrappedValue: ThemeManager())
@@ -53,6 +65,26 @@ struct RootView: View {
         /// Wire (create) the same HistoryVM into the FocusSessionVM here in the init, then **assign the weak link once**; Locals only
         focus.historyVM = history                               /// ☑️ single wiring point
         stats.membershipVM = membership
+        
+        // Wire recalibration completion -> Stats
+        recal.onCompleted = { [weak stats, weak focus] mode in
+            // RecalibrationVM calls this on the MainActor - safe for UI VMs
+            guard let stats = stats else { return }
+               let texts = focus?.tiles.map(\.text) ?? []   // source-of-truth tile texts from FocusSessionVM
+
+               // Log a “completed session” with recalibration attached
+               stats.logSession(CompletedSession(
+                   date: .now,
+                   tileTexts: texts,
+                   recalibration: mode
+               ))
+
+               // Optional: reset the focus flow so the user is ready to add two new tiles
+               Task { @MainActor in
+                   try? await focus?.resetSessionStateForNewStart()
+               }
+            
+        }
         
         /// Assign to the wrappers
         _theme          = StateObject(wrappedValue: theme)
@@ -115,22 +147,24 @@ struct RootView: View {
                 .environmentObject(membershipVM)
                 .environmentObject(theme)
         }
-           // Inline doc presentation (reuses your LegalDocV/Markdown files)
-           .sheet(isPresented: $showTerms) {
-               NavigationStack {
-                   LegalDocV(title: "Terms of Use",
-                             markdown: MarkdownLoader.load(named: LegalConfig.termsFile))
-                   .accessibilityAddTraits(.isHeader)
-               }
-           }
-           .sheet(isPresented: $showPrivacy) {
-               NavigationStack {
-                   LegalDocV(title: "Privacy Policy",
-                             markdown: MarkdownLoader.load(named: LegalConfig.privacyFile))
-                   .accessibilityAddTraits(.isHeader)
-               }
-           }
+           // Legal gate sheet (reuses LegalDocV/Markdown files)
+//           .sheet(isPresented: $showLegalGate) {
+//               NavigationStack {
+//                   LegalDocV(title: "Terms of Use",
+//                             markdown: MarkdownLoader.load(named: LegalConfig.termsFile))
+//                   .accessibilityAddTraits(.isHeader)
+//               }
+//           }
+//           .sheet(isPresented: $showPrivacy) {
+//               NavigationStack {
+//                   LegalDocV(title: "Privacy Policy",
+//                             markdown: MarkdownLoader.load(named: LegalConfig.privacyFile))
+//                   .accessibilityAddTraits(.isHeader)
+//               }
+//           }
         .onAppear {
+            if needsLegalGate { activeSheet = .legal }
+            
             /// First-run categories
             if !hasInitializedGeneralCategory {
                 historyVM.ensureGeneralCategory()
@@ -141,6 +175,49 @@ struct RootView: View {
                 historyVM.ensureArchiveCategory()
                 hasInitializedArchiveCategory = true
                 debugPrint("Archive category initialized from RootView")
+            }
+        }
+        .onChange(of: membershipVM.shouldPrompt) { show in
+            // Queue membership only if nothing else (e.g., Legal) is showing.
+            if show, activeSheet == nil { activeSheet = .membership }
+        }
+        .onChange(of: activeSheet) { sheet in
+            // If Legal just dismissed and membership is pending, present it next.
+            if sheet == nil, membershipVM.shouldPrompt { activeSheet = .membership }
+        }
+        
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .legal:
+                LegalAgreementSheetV(
+                    onAccept: {
+                        acceptedVersion = LegalConfig.currentVersion
+                        acceptedAtEpoch = Date().timeIntervalSince1970
+                        activeSheet = nil
+                    },
+                    onShowTerms:   { activeSheet = .terms },
+                    onShowPrivacy: { activeSheet = .privacy }
+                )
+                //So users can't swipe it away
+                .interactiveDismissDisabled(true)
+
+            case .membership:
+                MembershipSheetV()
+                    .environmentObject(membershipVM)
+                    .environmentObject(theme)
+                    .onDisappear { membershipVM.shouldPrompt = false }
+
+            case .terms:
+                NavigationStack {
+                    LegalDocV(title: "Terms of Use",
+                              markdown: MarkdownLoader.load(named: LegalConfig.termsFile))
+                }
+
+            case .privacy:
+                NavigationStack {
+                    LegalDocV(title: "Privacy Policy",
+                              markdown: MarkdownLoader.load(named: LegalConfig.privacyFile))
+                }
             }
         }
         /// Provide shared environment objects once, from the root/ so SwiftUI views can call it easily if they want to.

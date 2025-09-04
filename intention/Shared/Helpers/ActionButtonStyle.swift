@@ -15,13 +15,13 @@ struct ActionButtonStyle: ButtonStyle {
     enum Role { case primary, secondary, destructive }
 
     func makeBody(configuration: Configuration) -> some View {
-        let palette = theme.palette(for: screen)
+        let p = theme.palette(for: screen)
         let disabled = !(Environment(\.isEnabled).wrappedValue)
 
         let bg: Color = switch role {
-        case .primary: palette.accent
-        case .secondary: palette.primary
-        case .destructive: palette.danger
+        case .primary: p.accent
+        case .secondary: p.primary
+        case .destructive: p.danger
         }
         let fg: Color = .white   // buttons should not rely on themed text colors
 

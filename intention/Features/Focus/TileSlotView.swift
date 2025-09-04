@@ -15,10 +15,10 @@ struct TileSlotView: View {
     // Shows a container, so a Session has 2 slots pre-outlined
     //  “empty” slot look (plus icon or nothing), and once filled, it gets populated.
     var body: some View {
-        let palette = theme.palette(for: .history)
+        let p = theme.palette(for: .history)
         let slotBg = (tileText != nil
-                      ? palette.background.opacity(0.8)
-                      : palette.background.opacity(0.2))
+                      ? p.background.opacity(0.8)
+                      : p.background.opacity(0.2))
         
         ZStack {
             /// Using .surface + border from palette
@@ -27,7 +27,7 @@ struct TileSlotView: View {
                 .fill(slotBg)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(palette.border, lineWidth: 1.0)         /// consistent border
+                        .stroke(p.border, lineWidth: 1.0)         /// consistent border
                 )
                 .frame(height: 50)
                 .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -36,13 +36,13 @@ struct TileSlotView: View {
                     if diffNoColor && tileText == nil {
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
-                            .foregroundStyle(palette.border)
+                            .foregroundStyle(p.border)
                     }
                 }
             if let text = tileText, !text.isEmpty {
                 Text(text)
                     .font(theme.fontTheme.toFont(.body))
-                    .foregroundStyle(palette.text)
+                    .foregroundStyle(p.text)
                     .lineLimit(1)
                     .minimumScaleFactor(0.9)
                     .padding(.horizontal, 8)
@@ -50,7 +50,7 @@ struct TileSlotView: View {
                 /// For the empty state
                 Image(systemName: "plus")
                     .font(.headline)
-                    .foregroundStyle(palette.accent.opacity(0.55))
+                    .foregroundStyle(p.accent.opacity(0.55))
                     .accessibilityHidden(true)          /// label provided on container below
             }
         }

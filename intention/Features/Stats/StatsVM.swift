@@ -80,11 +80,21 @@ final class StatsVM: ObservableObject {
     private func recalculateStats() {
         // Update intention count
         totalCompletedIntentions = completedSessions.flatMap(\.tileTexts).count
-        
-        let totalTiles = totalCompletedIntentions
         let intendedTiles = completedSessions.count * 2
         /// Update average completion rate
-        averageCompletionRate = intendedTiles == 0 ? 1.0 : Double(totalTiles) / Double(intendedTiles)
+        averageCompletionRate = intendedTiles == 0 ? 1.0 : Double(totalCompletedIntentions) / Double(intendedTiles)
+        
+        /// Update recalibration counts - counts and “last choice” are always correct after app relaunch
+        var newCounts: [RecalibrationMode: Int] = [:]
+        var last: RecalibrationMode? = nil
+        for sesh in completedSessions {
+            if let t = sesh.recalibration {
+                newCounts[t, default: 0] += 1
+                last = t
+            }
+        }
+        recalibrationCounts = newCounts
+        lastRecalibrationChoice = last
         
         updateRunStreak()
     }

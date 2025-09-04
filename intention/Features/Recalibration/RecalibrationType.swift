@@ -10,7 +10,7 @@ import SwiftUI
 // Authoritiative model - Operation + duration, View can request preset cleanly
 /// Role-only; Durations live in the VM's config
 
-enum RecalibrationMode: Hashable, Codable, CaseIterable {     //FIXME: String, CaseIterable?
+enum RecalibrationMode: String, Hashable, Codable, CaseIterable {
     case balancing
     case breathing
     
@@ -31,15 +31,17 @@ enum RecalibrationMode: Hashable, Codable, CaseIterable {     //FIXME: String, C
         var instructions: [String] {
             switch self {
             case .balancing:
+                /// 4 minutes, switch every minute
                 return [
                     "Stand on one foot.",
-                    "Switch every minute",
-                    "Close eyes for expert mode.",
+                    "Switch feet, every minute",
+                    "Level up: close eyes and repeat.",
                 ]
             case .breathing:
+                /// 6-3, 6-3
                 return [
-                    "Inhale 5 sec, hold 2 sec.",
-                    "Exhale 5 sec, hold 2 sec.",
+                    "Inhale 6 sec, hold 3 sec.",
+                    "Exhale 6 sec, hold 3 sec.",
                     "Repeat until timer ends."
                 ]
             }

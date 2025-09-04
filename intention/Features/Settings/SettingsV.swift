@@ -17,7 +17,7 @@ struct SettingsV: View {
     @State private var userID: String = ""      /// aka deviceID
     
     var body: some View {
-        let palette = theme.palette(for: .settings)
+        let p = theme.palette(for: .settings)
        
         ScrollView {
             Page {
@@ -30,9 +30,9 @@ struct SettingsV: View {
                         //                            .foregroundStyle(palette.textSecondary)
                         
                         theme.styledText("Device ID: ", as: .caption, in: .settings)
-                            .foregroundStyle(palette.textSecondary)
+                            .foregroundStyle(p.textSecondary)
                         theme.styledText("Your user id: \(userID)", as: .caption, in: .settings)
-                            .foregroundStyle(palette.textSecondary)
+                            .foregroundStyle(p.textSecondary)
                         HStack(spacing: 12){
                             Button ("Manage Subscription") {
                                 /// Instead of Link()
@@ -41,7 +41,7 @@ struct SettingsV: View {
                                 }
                             }
                             .primaryActionStyle(screen: .settings)
-                            .tint(palette.accent)
+                            .tint(p.accent)
                         }
                     }
                 }
@@ -53,15 +53,15 @@ struct SettingsV: View {
                             .friendlyHelper()
                         
                         HStack(spacing: 20) {
-                            StatBlock(icon: "list.bullet", value: "\(viewModel.totalCompletedIntentions)", caption: "Total Intentions", palette: palette  )
-                            StatBlock(icon: "rosette", value: "Longest Run: \(viewModel.maxRunStreakDays) Days", caption: "Brag Stat: Streak", palette: palette )
+                            StatBlock(icon: "list.bullet", value: "\(viewModel.totalCompletedIntentions)", caption: "Total Intentions", palette: p  )
+                            StatBlock(icon: "rosette", value: "Longest Run: \(viewModel.maxRunStreakDays) Days", caption: "Brag Stat: Streak", palette: p )
                         }
                         .friendlyAnimatedHelper("stats-\(viewModel.totalCompletedIntentions)-\(viewModel.maxRunStreakDays)")
                         
                         Divider()
                         HStack(spacing: 20){
-                            StatBlock(icon: "leaf.fill", value: "\(viewModel.recalibrationCounts[.breathing, default: 0])", caption: "Breathing Sessions Completed", palette: palette )
-                            StatBlock(icon: "figure.walk", value: "\(viewModel.recalibrationCounts[.balancing, default: 0])", caption: "Balancing Sessions Completed", palette: palette )
+                            StatBlock(icon: "leaf.fill", value: "\(viewModel.recalibrationCounts[.breathing, default: 0])", caption: "Breathing Sessions Completed", palette: p )
+                            StatBlock(icon: "figure.walk", value: "\(viewModel.recalibrationCounts[.balancing, default: 0])", caption: "Balancing Sessions Completed", palette: p )
                         }
                         .friendlyAnimatedHelper("recal-\(viewModel.recalibrationCounts[ .breathing, default: 0])-\(viewModel.recalibrationCounts[ .balancing, default: 0])")
                     }
@@ -79,10 +79,10 @@ struct SettingsV: View {
                     { theme.styledText("Sound Off", as: .caption, in: .settings) }
                     Toggle(isOn: $prefs.hapticsOnly)
                         { theme.styledText("Haptics Only: Vibration cues only", as: .caption, in: .settings)
-                                .foregroundStyle(palette.textSecondary)
+                                .foregroundStyle(p.textSecondary)
                         }
                         .controlSize(.small)        /// Toggle size
-                        .toggleStyle(SwitchToggleStyle(tint: palette.accent))
+                        .toggleStyle(SwitchToggleStyle(tint: p.accent))
                 }
                 .friendlyAnimatedHelper("hapticsOnly-\(prefs.hapticsOnly ? "on" : "off")")
             }
@@ -111,8 +111,8 @@ struct SettingsV: View {
                 }
             }
         }
-        .background(palette.background.ignoresSafeArea())
-        .tint(palette.accent)
+        .background(p.background.ignoresSafeArea())
+        .tint(p.accent)
         .task {
         /// Read it directly from your keychain on-demand - actor requires only await, not async here
             userID = await KeychainHelper.shared.getUserIdentifier()

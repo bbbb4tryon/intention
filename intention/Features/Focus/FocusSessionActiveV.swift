@@ -46,6 +46,7 @@ struct FocusSessionActiveV: View {
     @EnvironmentObject var statsVM: StatsVM
     @EnvironmentObject var membershipVM: MembershipVM
     @Environment(\.dismiss) var dismiss
+    @Environment(\.scenePhase) private var phase
     
     /// Session state and session logic container
     @ObservedObject var viewModel: FocusSessionVM
@@ -53,47 +54,43 @@ struct FocusSessionActiveV: View {
     /// Recalibration session VM (ObservedObject for ViewModel owned by parent)
     @ObservedObject var recalibrationVM: RecalibrationVM
     
-    /// Tracks active sheet for membership prompt
-    @State private var activeSheet: ActiveSheet = .none
-    
-    /// Tracks and records consent - inline
-    @State private var showTerms = false
-    @State private var showPrivacy = false
-    
-    /// Drive legal bar visibility via flag and clean animation
-    private var showLegalBar: Bool {
-        viewModel.tiles.count == 2 && viewModel.phase == .notStarted
-    }
+//    /// Tracks and records consent - inline
+//    @State private var showTerms = false
+//    @State private var showPrivacy = false
+//    
+//    /// Small computed property drives legal bar visibility via flag and clean animation
+//    private var showLegalBar: Bool {
+//        viewModel.tiles.count == 2 && viewModel.phase == .notStarted
+//    }
     
     var body: some View {
         /// Get current palette for the appropriate screen
-        let palette = theme.palette(for: .homeActiveIntentions)
-        let chunkSeconds = TimerConfig.current.chunkDuration
+        let p = theme.palette(for: .homeActiveIntentions)
         
         ScrollView {                            /// Allows content to breath on small screens
             Page {
-                StatsSummaryBar(palette: palette)
+                StatsSummaryBar(palette: p)
                     .padding(.top, 4)
                 
                 // MARK: - *mounted* Textfield for intention tile text input
                 let isInputActive = ( viewModel.phase != .running && viewModel.tiles.count < 2)
-                    TextField("Enter intention", text: $viewModel.tileText, axis: .vertical)
-                        .textFieldStyle(.roundedBorder)
-                        .padding(10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(isInputActive ? Color(UIColor.systemBackground) : Color(UIColor.secondarySystemFill))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(Color.secondary.opacity(isInputActive ? 0.25 : 0.15), lineWidth: 1)
-                        )
-                        .disabled(!isInputActive)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.sentences)
-                        .accessibilityLabel("Intention text")
-                        .accessibilityHint("Type your intended task. Add two to begin a session.")
-                        .zIndex(1)
+                TextField("Enter intention", text: $viewModel.tileText, axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(isInputActive ? Color(UIColor.systemBackground) : Color(UIColor.secondarySystemFill))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.secondary.opacity(isInputActive ? 0.25 : 0.15), lineWidth: 1)
+                    )
+                    .disabled(!isInputActive)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.sentences)
+                    .accessibilityLabel("Intention text")
+                    .accessibilityHint("Type your intended task. Add two to begin a session.")
+                    .zIndex(1)
                 
                 
                 // MARK: validation ONLY where there ARE messages
@@ -116,8 +113,8 @@ struct FocusSessionActiveV: View {
                                     try await viewModel.addTileAndPrepareForSession(viewModel.tileText)
                                     if viewModel.tiles.count == 2 { viewModel.validationMessages.removeAll() }
                                 } else if viewModel.tiles.count == 2 && viewModel.phase == .notStarted { /// Logic starting session
-                                    /// Inline consent: record once, then begin
-                                    if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }
+//                                    /// Inline consent: record once, then begin
+//                                    if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }
                                     try await viewModel.beginOverallSession()
                                 }
                             } catch {
@@ -133,27 +130,27 @@ struct FocusSessionActiveV: View {
                     }
                     .primaryActionStyle(screen: .homeActiveIntentions)
                     //                .environmentObject(theme)         //FIXME: What is this doing?
-                    /// Disable if empty, or 2 tiles already aadded
+                    /// Disable if empty, or 2 tiles already added
                     .disabled(viewModel.tiles.count < 2 && viewModel.tileText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
                 
                 /// Inline disclosure shown only when Begin is relevant
                 
-//                if viewModel.tiles.count == 2 && viewModel.phase == .notStarted {
-//                    LegalAffirmationBar(
-//                        onAgree: { if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }; Task { try? await viewModel.beginOverallSession() } },
-//                        onShowTerms: { showTerms = true },
-//                        onShowPrivacy: { showPrivacy = true }
-//                    )
-//                    //                .font(theme.fontTheme.toFont(.footnote))
-//                    //                .foregroundStyle(.secondary)
-//                    //                .padding(.horizontal)
-//                    //                .friendlyAnimatedHelper(viewModel.tiles.count == 2 && viewModel.phase == .notStarted)
-//                }
+                //                if viewModel.tiles.count == 2 && viewModel.phase == .notStarted {
+                //                    LegalAffirmationBar(
+                //                        onAgree: { if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }; Task { try? await viewModel.beginOverallSession() } },
+                //                        onShowTerms: { showTerms = true },
+                //                        onShowPrivacy: { showPrivacy = true }
+                //                    )
+                //                    //                .font(theme.fontTheme.toFont(.footnote))
+                //                    //                .foregroundStyle(.secondary)
+                //                    //                .padding(.horizontal)
+                //                    //                .friendlyAnimatedHelper(viewModel.tiles.count == 2 && viewModel.phase == .notStarted)
+                //                }
                 
                 
                 // MARK: - Countdown Display (user-facing)
-                DynamicCountdown(viewModel: viewModel, palette: palette,
+                DynamicCountdown(viewModel: viewModel, palette: p,
                                  progress: Double(viewModel.countdownRemaining) / Double(TimerConfig.current.chunkDuration))
                 
                 
@@ -175,46 +172,48 @@ struct FocusSessionActiveV: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 8)
-                .background(palette.background.opacity(0.8))
+                .background(p.background.opacity(0.8))
                 //            .debugBorder(.green)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .cornerRadius(10)               // FIXME: what is this impacting?
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .shadow(radius: 5)
             }
         }
-        .background(palette.background.ignoresSafeArea())       /// Paints edge to edge
+        .background(p.background.ignoresSafeArea())       /// Paints edge to edge
         .ignoresSafeArea(.keyboard, edges: .bottom)             /// prevent keyboard from shoving whole page up
         
-        .safeAreaInset(edge: .bottom, alignment: .center){
-            if viewModel.tiles.count == 2 && viewModel.phase == .notStarted {
-                LegalAffirmationBar(
-                    onAgree: { if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }; Task { try? await viewModel.beginOverallSession() } },
-                    onShowTerms: { showTerms = true },
-                    onShowPrivacy: { showPrivacy = true }
-                )
-                //                .font(theme.fontTheme.toFont(.footnote))
-                //                .foregroundStyle(.secondary)
-                //                .padding(.horizontal)
-                //                .friendlyAnimatedHelper(viewModel.tiles.count == 2 && viewModel.phase == .notStarted)
-            }
-
-        }
-        .safeAreaInset(edge: .bottom, alignment: .center) { Color.clear.frame(height: 12)  } // Content breathing room value above the tab bar
+//        .safeAreaInset(edge: .bottom, alignment: .center){
+//            VStack(spacing: 8) {
+//            if showLegalBar {
+//                LegalAffirmationBar(
+//                    onAgree: {
+//                        if LegalConsent.needsConsent() { LegalConsent.recordAcceptance() }
+//                        Task { try? await viewModel.beginOverallSession() }
+//                    },
+//                    onShowTerms: { showTerms = true },
+//                    onShowPrivacy: { showPrivacy = true }
+//                )
+//                .padding(.horizontal, 16)           /// Page owns margins; give the bar its own margins
+//                .transition(.move(edge: .bottom).combined(with: .opacity))
+//            }
+//            /// Breathing room above tab bar
+//            Color.clear.frame(height: 12)
+//        }
+//    }
+//        .animation(.easeIn(duration: 0.2), value: showLegalBar)
         
         /// Legal doc sheets (LegalDocV + MarkdownLoader)
-        .sheet(isPresented: $showTerms) {
-            NavigationStack {
-                LegalDocV(title: "Terms of Use",
-                          markdown: MarkdownLoader.load(named: LegalConfig.termsFile))
-            }
-        }
-        .sheet(isPresented: $showPrivacy) {
-            NavigationStack {
-                LegalDocV(title: "Privacy Policy",
-                          markdown: MarkdownLoader.load(named: LegalConfig.privacyFile))
-            }
-        }
+//        .sheet(isPresented: $showTerms) {
+//            NavigationStack {
+//                LegalDocV(title: "Terms of Use",
+//                          markdown: MarkdownLoader.load(named: LegalConfig.termsFile))
+//            }
+//        }
+//        .sheet(isPresented: $showPrivacy) {
+//            NavigationStack {
+//                LegalDocV(title: "Privacy Policy",
+//                          markdown: MarkdownLoader.load(named: LegalConfig.privacyFile))
+//            }
+//        }
         
         /// Auto-dismiss when MembershipVM flips shouldPrompt to false after successful purchase
         .sheet(isPresented: $membershipVM.shouldPrompt) {
@@ -225,10 +224,12 @@ struct FocusSessionActiveV: View {
         .sheet(isPresented: $viewModel.showRecalibrate){
             RecalibrationV(vm: recalibrationVM)
         }
+        
+//        .onChange(of: phase) { _, p in if p == .background { Task { await flushPendingSaves() } } }
     }
     
     // MARK: - slotData [String?, String?] ->
-    //  Extracted computed property, easier for compliler to parse
+    /// Extracted computed property, easier for compiler to parse
     /// Returns two tile texts or nil placeholders
     private var slotData: [String?] {
         var data = [String?]()
@@ -243,9 +244,9 @@ struct FocusSessionActiveV: View {
     }
     
     /// Returns whether or not the membership modal sheet is present, in that moment of time
-    private var isSheetPresented: Bool {
-        activeSheet != .none
-    }
+//    private var isSheetPresented: Bool {
+//        activeSheet != .none
+//    }
 }
 
 
@@ -253,8 +254,9 @@ struct FocusSessionActiveV: View {
     PreviewWrapper {
         FocusSessionActiveV(
             viewModel: PreviewMocks.focusSession,
-            recalibrationVM: RecalibrationVM()
+            recalibrationVM: RecalibrationVM(haptics: NoopHapticsClient())
         )
         .previewTheme()
     }
 }
+

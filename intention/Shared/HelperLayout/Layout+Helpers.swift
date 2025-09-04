@@ -12,7 +12,7 @@ struct Page<Content: View>: View {
     let content: () -> Content
     init(@ViewBuilder _ content: @escaping () -> Content) { self.content = content }
     var body: some View {
-        /// One horizonal margin to rule them all
+        /// One horizontal margin to rule them all
         VStack(alignment: .leading, spacing: 16, content: content)
             .padding(.horizontal, 16)
             .padding(.top, 8)                       /// Small top; adjust per screen

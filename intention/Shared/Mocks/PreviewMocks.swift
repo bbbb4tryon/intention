@@ -45,9 +45,8 @@ enum PreviewMocks {
     }()
     
     @MainActor static let recal: RecalibrationVM = {
-            RecalibrationVM(haptics: NoopHapticsClient(),             // ← ignore in previews
-                            config: .current,
-                            persistence: persistence)
+            RecalibrationVM(haptics: NoopHapticsClient())             // ← ignore in previews
+
         }()
 }
 

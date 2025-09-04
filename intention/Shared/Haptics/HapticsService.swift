@@ -24,8 +24,7 @@ final class HapticsService: ObservableObject {
     }
     
     func countdownTick() {
-        /// short
-        medium.impactOccurred()
+        medium.impactOccurred(); medium.impactOccurred();medium.impactOccurred();
         light.prepare()
     }
     

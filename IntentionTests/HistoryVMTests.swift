@@ -12,7 +12,7 @@
 //final class HistoryVMTests: XCTestCase {
 //    
 //    func testGeneralCategoryInsertion() {
-//        let vm = HistoryVM(persistence: TestPersistence())
+//        let vm = HistoryVM(persistence: InMemoryPersistence())
 //        vm.ensureGeneralCategory(named: "General")
 //        
 //        let found = vm.categories.contains { $0.id == vm.generalCategoryID }
@@ -21,7 +21,7 @@
 //    }
 //    
 //    func testArchiveCategoryInsertion() {
-//        let vm = HistoryVM(persistence: TestPersistence())
+//        let vm = HistoryVM(persistence: InMemoryPersistence())
 //        vm.ensureArchiveCategory(named: "Archive")
 //        
 //        let found = vm.categories.contains { $0.id == vm.archiveCategoryID }
@@ -30,7 +30,7 @@
 //    
 //    func testAddCateogryAndPersist() async throws {
 //        let savedExpectation = expectation(description: "Saved")
-//        let persistence = TestPersistence(didSave: savedExpectation)
+//        let persistence = InMemoryPersistence(didSave: savedExpectation)
 //        let vm = HistoryVM(persistence: persistence)
 //        
 //        // Creates a category

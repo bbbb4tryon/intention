@@ -12,7 +12,7 @@
 //final class StatsVMTests: XCTestCase {
 //    func testSessionLoggingUpdatesTotal_andPersists() async throws {
 //        let savedExpectation = expectation(description: "Saved")
-//        let persistence = TestPersistence(didSave: savedExpectation)
+//        let persistence = InMemoryPersistence(didSave: savedExpectation)
 //        let vm = StatsVM(persistence: persistence)
 //        
 //        vm.logSession(CompletedSession(date: .now, tileTexts: ["A", "B"], recalibration: .breathing))

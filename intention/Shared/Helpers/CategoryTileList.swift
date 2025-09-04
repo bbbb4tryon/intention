@@ -9,6 +9,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct CategoryTileList: View {
+//    @ObservedObject var viewModel: HistoryVM // and "(immediate: true)?
     @Binding var categoryItem: CategoriesModel
     let palette: ScreenStylePalette
     let fontTheme: AppFontTheme

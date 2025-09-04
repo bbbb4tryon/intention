@@ -7,10 +7,10 @@
 
 import SwiftUI
 
-
 struct RecalibrationV: View {
     @EnvironmentObject var theme: ThemeManager
     @ObservedObject var vm: RecalibrationVM
+    @State private var breathingChoice: Int = 2
     
     // Tunable presets users expect: quick, obvious, one tap.
     private let breathePreset = 60   // 1 min
@@ -20,10 +20,8 @@ struct RecalibrationV: View {
         
         let p = theme.palette(for: .recalibrate)
         ZStack {
-            LinearGradient(
-                colors: [p.background, p.background.opacity(0.85)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
+            LinearGradient(colors: [p.background, p.background.opacity(0.85)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
             .ignoresSafeArea()
             
             Page {
@@ -35,11 +33,30 @@ struct RecalibrationV: View {
                     Short resets help you start your next 20-minute focus chunk fresh.
                      **Choose one below:**
                     """)
-                    .font(theme.fontTheme.toFont(.footnote))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 4)
+                .font(theme.fontTheme.toFont(.footnote))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.top, 4)
                 
+                /// users tap a length first (2/3/4), then “Breathe.”
+                if vm.phase == .idle {
+                    HStack(spacing: 8) {
+                        Text("Breathing length")
+                            .font(theme.fontTheme.toFont(.caption2))
+                            .foregroundStyle(.secondary)
+                        Picker("", selection: $breathingChoice) {
+                            Text("2m").tag(2)
+                            Text("3m").tag(3)
+                            Text("4m").tag(4)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 220)
+                    }
+                    .onChange(of: breathingChoice) { new in
+                        do { try vm.setBreathingMinutes(new) }
+                        catch { vm.lastError = error }
+                    }
+                }
                 
                 /// When inactive, show simple, obvious choices
                 if vm.phase != .running {
@@ -50,35 +67,30 @@ struct RecalibrationV: View {
                                 Label {
                                     theme.styledText("Breathe", as: .tile, in: .recalibrate)
                                 } icon: {
-                                Image(systemName: RecalibrationMode.breathing.iconName)
+                                    Image(systemName: RecalibrationMode.breathing.iconName)
                                 }
                                 .frame(maxWidth: .infinity)
-                                .inactivePulsingEffect(isSelected: false)
                             }
                             .primaryActionStyle(screen: .recalibrate)
                             
                             Button { start(.balancing) } label: {
                                 HStack(spacing: 8){
-                                    Image(systemName: RecalibrationMode.breathing.iconName)
+                                    Image(systemName: RecalibrationMode.balancing.iconName)
                                     theme.styledText(activeTitle, as: .tile, in: .recalibrate)
                                 }
                                 .frame(maxWidth: .infinity)
-                                .inactivePulsingEffect(isSelected: false)
                             }
                             .primaryActionStyle(screen: .recalibrate)
                         }
                     }
                 } else {
-                    
                     /// Active countdown view: big, legible, tappable cancel
                     VStack(spacing: 16) {
                         Text(activeTitle)
                             .font(.headline)
-                        
-                        Text(formatted(vm.timeRemaining))
+                        Text(vm.formattedTime)
                             .font(.system(size: 56, weight: .semibold, design: .rounded))
                             .monospacedDigit()
-                        
                         Button(role: .destructive) { stop() } label: {
                             Label("Cancel", systemImage: "xmark.circle")
                                 .frame(maxWidth: .infinity)
@@ -87,7 +99,17 @@ struct RecalibrationV: View {
                     }
                     .padding(.top, 8)
                 }
+                // instructions for the selected mode:
+                if let m = vm.mode, vm.phase != .running {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(m.instructions, id: \.self) { Text("• \($0)") }
+                    }
+                    .font(theme.fontTheme.toFont(.footnote))
+                    .foregroundStyle(p.text)
+                    .padding(.top, 8)
+                }
             }
+            .task { breathingChoice = vm.currentBreathingMinutes }
             .presentationDetents([.height(320), .medium])
             .presentationDragIndicator(.visible)
             
@@ -107,11 +129,6 @@ struct RecalibrationV: View {
             case .balancing: return "Balancing"
             case .none: return "Recalibration"
             }
-        }
-        
-        private func formatted(_ seconds: Int) -> String {
-            let m = seconds / 60, s = seconds % 60
-            return String(format: "%02d:%02d", m, s)
         }
         
         private func start(_ mode: RecalibrationMode) {
@@ -225,7 +242,7 @@ struct RecalibrationV: View {
 //}
 #Preview("Recalibrate") {
     PreviewWrapper {
-        RecalibrationV(vm: RecalibrationVM(config: .current))
+        RecalibrationV(vm: RecalibrationVM(haptics:NoopHapticsClient()))
             .previewTheme()
     }
 }

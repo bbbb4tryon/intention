@@ -15,8 +15,9 @@ struct TimerConfig: Sendable {
     let chunkDuration: Int          /// 20-min chunks (1200)
     
     // MARK: Recalibration durations (per-mode)
-    let breathingDuration: Int      /// 2-min (120)
-    let balancingDuration: Int      /// 4-min (240)
+//    let balancingDuration: Int = 2      /// 2-min (120)
+//    let breathingDuration: Int = 4/// 4-min (240)
+    
     
     // MARK: Haptics policy
     struct Haptics: Sendable {
@@ -29,10 +30,15 @@ struct TimerConfig: Sendable {
     }
     let haptics: Haptics
 
-    static let prod = TimerConfig(chunkDuration: 1200, breathingDuration: 120, balancingDuration: 240,
-                                  haptics: .init(endCountdownStart: 3, halfwayTick: true, balanceSwapInterval: 60))
-    static let shortDebug = TimerConfig(chunkDuration: 10, breathingDuration: 10, balancingDuration: 20,
-                                        haptics: .init(endCountdownStart: 3, halfwayTick: true, balanceSwapInterval: 5))
+    static let prod = TimerConfig(
+        chunkDuration: 1200,
+        haptics: .init(endCountdownStart: 3, halfwayTick: true, balanceSwapInterval: 60)
+    )
+
+    static let shortDebug = TimerConfig(
+        chunkDuration: 10,
+        haptics: .init(endCountdownStart: 3, halfwayTick: true, balanceSwapInterval: 5)
+    )
 
     // Picks prod unless DEBUG+flag set
     static var current: TimerConfig {
