@@ -25,23 +25,26 @@ struct CategoryHeaderRow: View {
     }
     private var borderColor: Color { hasValidationIssues ? .red : .clear }
     
+    private var p: ThemePalette { theme.palette(for: .history) }
+    private var T: (String, TextRole) -> LocalizedStringKey {
+        { key, role in LocalizedStringKey(theme.styledText(key, as: role, in: .history))    }
+    }
+    
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: isArchive ? "lock.fill" : "folder.fill")
                 .foregroundStyle(isArchive ? .secondary : palette.accent)
             
             if isArchive {
-                Text("Archive")
-                    .font(fontTheme.toFont(.headline))
+                theme.styledText("Archive", as: .header, in: .history)
                     .foregroundStyle(.secondary)
                 Spacer()
             } else {
-                TextField("Name this category",
+                TextField(T("Name this category", .caption),
                           text: $categoryItem.persistedInput,
                           onCommit: saveHistory
                 )
                 .focused($nameFocused)
-                .font(fontTheme.toFont(.headline))
                 .disableAutocorrection(true)
                 .textInputAutocapitalization(.words)
                 .lineLimit(1)

@@ -6,18 +6,27 @@
 //
 
 import SwiftUI
+/*
+Make color vary by theme+screen, while typography/spacing/components stay identical
 
-// All components are colocated HERE
-/* NOTE: adjusting colors:
-    lighten: example of background property was deep blue
- - adjust `background` property within `ScreenStylePalette` for each `ScreenName` in the `.sea` case
- */
+The goal: one component system (Page, Card, fonts, paddings) + per-screen palette that swaps only colors when you change variant (“Default/Fire/Sea”)
+  */
 
-// MARK: - ThemeManager (Environmental Object)
-/// Use theme.styledText(_:as:in:) for static copy (headers, labels, captions, body).
-/// Use fontTheme.toFont only for dynamic/measured text (timer with .monospacedDigit(), user input previews).
-/// Let ActionButtonStyle own button colors/typography. Don’t override per-button.
-                                
+enum ThemeVariant: CaseIterable { case `default`, fire, sea }
+enum ScreenName: CaseIterable { case focus, history, settings }
+
+struct ThemePalette {
+    // Core semantic tokens used by Page/Card/Buttons/Text
+    let background: Color
+    let card: Color
+    let border: Color
+    let accent: Color
+    let danger: Color
+    let textPrimary: Color
+    let textSecondary: Color
+}
+
+//MARK: ThemeManager maps (variant, screen) → palette
 final class ThemeManager: ObservableObject {
     //  Keep @AppStorage for write-backs
     @AppStorage("selectedColorTheme") private var colorRaw: String = AppColorTheme.default.rawValue
@@ -130,7 +139,7 @@ enum AppColorTheme: String, CaseIterable {
                 
             case .history, .settings:
                 return .init(
-                    primary:   .intMint,
+                    primary:   .intGreen,
                     background: baseBackground,
                     surface:   .intTan.opacity(0.2),
                     accent:    accent,

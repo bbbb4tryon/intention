@@ -16,25 +16,28 @@ struct SettingsV: View {
     
     @State private var userID: String = ""      /// aka deviceID
     
+    private var p: ThemePalette { theme.palette(for: .settings) }
+    private var T: (String, TextRole) -> LocalizedStringKey {
+        { key, role in LocalizedStringKey(theme.styledText(key, as: role, in: .settings)) }
+    }
+    
     var body: some View {
-        let p = theme.palette(for: .settings)
+//        let p = theme.palette(for: .settings)
        
         ScrollView {
-            Page {
+            Page(top: 4, alignment: .center) {
                 Card {
                     VStack(alignment: .leading, spacing: 8){
-                        theme.styledText("Membership", as: .section, in: .settings)
-                        //                        .friendlyHelper()                   //FIXME: NEED THESE IN EACH?
-                        theme.styledText((membershipVM.isMember ? "Status: Active" : "Status: Not Active"), as: .secondary, in: .settings)
+                        T("Membership", .section)
+                        //                        .friendlyHelper()
+                        membershipVM.isMember ? T("Status: Active", .secondary) : T("Status: Not Active", .secondary)
                             .foregroundStyle(membershipVM.isMember ? .green : .secondary)
                         //                            .foregroundStyle(palette.textSecondary)
                         
-                        theme.styledText("Device ID: ", as: .caption, in: .settings)
-                            .foregroundStyle(p.textSecondary)
-                        theme.styledText("Your user id: \(userID)", as: .caption, in: .settings)
+                        T("Your user ID/device ID: \(userID)", .caption)
                             .foregroundStyle(p.textSecondary)
                         HStack(spacing: 12){
-                            Button ("Manage Subscription") {
+                            Button (T("Manage Subscription", .header)) {
                                 /// Instead of Link()
                                 if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
                                     UIApplication.shared.open(url)
@@ -49,21 +52,21 @@ struct SettingsV: View {
                 /// Stats
                 Card {
                     VStack(alignment: .leading,spacing: 8){
-                        theme.styledText("Your Progress", as: .section, in: .settings)
+                        T("Profile", .section)
                             .friendlyHelper()
                         
                         HStack(spacing: 20) {
-                            StatBlock(icon: "list.bullet", value: "\(viewModel.totalCompletedIntentions)", caption: "Total Intentions", palette: p  )
-                            StatBlock(icon: "rosette", value: "Longest Run: \(viewModel.maxRunStreakDays) Days", caption: "Brag Stat: Streak", palette: p )
+                            StatBlock(icon: "list.bullet", value: "\(viewModel.totalCompletedIntentions)", caption: T("Accomplished", .caption), palette: p  )
+                            StatBlock(icon: "rosette", value: "\(viewModel.maxRunStreakDays)", caption: T("Streak", .caption), palette: p )
                         }
                         .friendlyAnimatedHelper("stats-\(viewModel.totalCompletedIntentions)-\(viewModel.maxRunStreakDays)")
                         
                         Divider()
                         HStack(spacing: 20){
-                            StatBlock(icon: "leaf.fill", value: "\(viewModel.recalibrationCounts[.breathing, default: 0])", caption: "Breathing Sessions Completed", palette: p )
-                            StatBlock(icon: "figure.walk", value: "\(viewModel.recalibrationCounts[.balancing, default: 0])", caption: "Balancing Sessions Completed", palette: p )
+                            StatBlock(icon: "leaf.fill", value: "\(viewModel.recalibrationCounts[.breathing, default: 0])", caption: _, palette: p )
+                            StatBlock(icon: "figure.walk", value: "\(viewModel.recalibrationCounts[.balancing, default: 0])", caption: _, palette: p )
                         }
-                        .friendlyAnimatedHelper("recal-\(viewModel.recalibrationCounts[ .breathing, default: 0])-\(viewModel.recalibrationCounts[ .balancing, default: 0])")
+                        .friendlyAnimatedHelper("recal-\(viewModel.recalibrationCounts[.breathing, default: 0])-\(viewModel.recalibrationCounts[.balancing, default: 0])")
                     }
                 }
                 
@@ -72,15 +75,11 @@ struct SettingsV: View {
                 /// Preferences Section
                 Card {
                     VStack(alignment: .leading,spacing: 8){
-                    theme.styledText("Preferences", as: .section, in: .settings)
-                    Toggle(isOn: .constant(true))
-                    { theme.styledText("Enable Notification", as: .caption, in: .settings) }
-                    Toggle(isOn: .constant(false))
-                    { theme.styledText("Sound Off", as: .caption, in: .settings) }
-                    Toggle(isOn: $prefs.hapticsOnly)
-                        { theme.styledText("Haptics Only: Vibration cues only", as: .caption, in: .settings)
-                                .foregroundStyle(p.textSecondary)
-                        }
+                        T("Preferences", .section)
+                        Toggle(isOn: .constant(true)) { T("Enable Notification", .caption) }
+                        Toggle(isOn: $prefs.hapticsOnly) { T("Haptics Only: Vibration cues only", .caption)
+                                .foregroundStyle(p.textSecondary) }
+                        Toggle(isOn: .constant(false)) { T("Sound Off", .caption) }
                         .controlSize(.small)        /// Toggle size
                         .toggleStyle(SwitchToggleStyle(tint: p.accent))
                 }
@@ -90,16 +89,15 @@ struct SettingsV: View {
                 /// Color Theme Picker
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
-                        theme.styledText("Personalization", as: .section, in: .settings)
-                        theme.styledText("App Color Theme", as: .secondary, in: .settings)
-                        Picker("Color Theme", selection: $theme.colorTheme) {
+                        T("Personalization", .section)
+            
+                        Picker(T("Color", .section), selection: $theme.colorTheme) {
                             ForEach(AppColorTheme.allCases, id: \.self) { theme in Text(theme.displayName).tag(theme) }
                         }
                         .pickerStyle(SegmentedPickerStyle())
                         
                         /// Font Theme Picker
-                        theme.styledText("Font Style", as: .section, in: .settings)
-                        Picker("Font Choice", selection: $theme.fontTheme) {
+                        Picker(T("Font", .section), selection: $theme.fontTheme) {
                             ForEach(AppFontTheme.allCases, id: \.self) { theme in
                                 Text(theme.displayName).tag(theme)
                             }

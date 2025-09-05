@@ -40,6 +40,11 @@ struct MembershipSheetV: View {
     @State private var isFavorite = false
     @State var codeInput: String = ""
     
+    private var p: ThemePalette { theme.palette(for: .membership) }
+    private var T: (String, TextRole) -> LocalizedStringKey {
+        { key, role in LocalizedStringKey(theme.styledText(key, as: role, in: .history))    }
+    }
+    
     var body: some View {
         ZStack {
             ScrollView {
@@ -51,17 +56,17 @@ struct MembershipSheetV: View {
                     theme.styledText("You’ve completed your free sessions. For just 20–30¢ a day, unlock unlimited focus sessions, detailed stats, more categories, and full customization. Build momentum, track progress, and work with intention — while helping us keep the lights on, the mortgage paid, and the dog well-fed. Your focus fuels our future. Thank you.", as: .body, in: .membership)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(theme.palette(for: .membership).textSecondary)
-                    
-                    Text("“By continuing, you agree to our Terms and Privacy.")
-                        .font(theme.fontTheme.toFont(.footnote))
-                        .foregroundStyle(.secondary)
-                        .padding(.bottom, 8)
+//                    
+//                    theme.styledText("By continuing, you agree to our Terms and Privacy.", as: .caption, in: .membership))
+//                        .font(theme.fontTheme.toFont(.footnote))
+//                        .foregroundStyle(.secondary)
+//                        .padding(.bottom, 8)
                     
                     if viewModel.isMember {
-                        Label("Member! You're supporting us!", systemImage: "star")
+                        Label(T("Member! You're supporting us!", .label), systemImage: "star")
                             .symbolBounceIfAvailable()
                     } else {
-                        Button("Upgrade Membership") {
+                        Button(T("Upgrade Membership", .action)) {
                             Task {
                                 do {
                                     try await viewModel.purchaseMembershipOrPrompt()
@@ -73,7 +78,7 @@ struct MembershipSheetV: View {
                         }
                         .primaryActionStyle(screen: .membership)
                         
-                        Button("Restore Purchases") {
+                        Button(T("Restore Purchases", .label)) {
                             Task {
                                 do {
                                     try await viewModel.restoreMembershipOrPrompt()
@@ -90,7 +95,7 @@ struct MembershipSheetV: View {
                         
                         if !AppEnvironment.isAppStoreReviewing {
                             Divider()
-                            Button("Visit Website") {
+                            Button(T("Visit Website", .section)) {
                                 Task {
                                     if let url = URL(string: "https://www.argonnesoftware.com/cart/") {
                                         await UIApplication.shared.open(url)
@@ -105,19 +110,19 @@ struct MembershipSheetV: View {
                             .underline()
                         
                         VStack(spacing: 12) {
-                            Button("Enter Membership Code") {
+                            Button(T("Enter Membership Code", .label) {
                                 viewModel.showCodeEntry = true
                             }
                             .primaryActionStyle(screen: .membership)
                             
                             if viewModel.showCodeEntry {
                                 VStack(spacing: 8) {
-                                    TextField("Enter code", text: $codeInput)
+                                    TextField(T("Enter code", .section), text: $codeInput)
                                         .textFieldStyle(.roundedBorder)
                                         .autocapitalization(.allCharacters)
                                         .disableAutocorrection(true)
                                     
-                                    Button("Redeem") {
+                                    Button(T("Redeem", .label)) {
                                         Task {
                                             do {
                                                 try await viewModel.verifyCode(codeInput)
@@ -138,8 +143,8 @@ struct MembershipSheetV: View {
                 }
             }
             /// Signals if a product is loaded + VM bridge (sheet cannot create own PaymentService)
-            if let p = viewModel.primaryProduct {
-                Text("\(viewModel.perDayBlurb(for: p)) * \(p.displayPrice)")
+            if let prod = viewModel.primaryProduct {
+                Text("\(viewModel.perDayBlurb(for: prod)) * \(prod.displayPrice)")
                     .font(theme.fontTheme.toFont(.footnote))
                     .foregroundStyle(.secondary)
             }

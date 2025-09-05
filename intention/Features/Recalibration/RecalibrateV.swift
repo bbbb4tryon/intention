@@ -41,8 +41,7 @@ struct RecalibrationV: View {
                 /// users tap a length first (2/3/4), then “Breathe.”
                 if vm.phase == .idle {
                     HStack(spacing: 8) {
-                        Text("Breathing length")
-                            .font(theme.fontTheme.toFont(.caption2))
+                        theme.styledText("Breathing length", as: .caption, in: .recalibrate))
                             .foregroundStyle(.secondary)
                         Picker("", selection: $breathingChoice) {
                             Text("2m").tag(2)

@@ -9,11 +9,17 @@ import SwiftUI
 /// Only the Page applies horizontal padding. Children don’t.
 /// Add to any top-level screen container (ScrollView or VStack)
 struct Page<Content: View>: View {
+    let top: CGFloat
+    let alignment: HorizontalAlignment
     let content: () -> Content
-    init(@ViewBuilder _ content: @escaping () -> Content) { self.content = content }
+    init(top: CGFloat = 8,
+         alignment: HorizontalAlignment = .leading,
+         @ViewBuilder _ content: @escaping () -> Content) {
+        self.top = top; self.alignment = alignment; self.content = content
+    }
     var body: some View {
         /// One horizontal margin to rule them all
-        VStack(alignment: .leading, spacing: 16, content: content)
+        VStack(alignment: alignment, spacing: 16, content: content)
             .padding(.horizontal, 16)
             .padding(.top, 8)                       /// Small top; adjust per screen
             .frame(maxWidth: .infinity, alignment: .leading)

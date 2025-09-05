@@ -8,15 +8,19 @@
 import SwiftUI
 
 struct StatsSummaryBar: View {
+    @EnvironmentObject var theme: ThemeManager
     @EnvironmentObject var statsVM: StatsVM
-    let palette: ScreenStylePalette
+    let p: ScreenStylePalette
+    private var T: (String, TextRole) -> LocalizedStringKey {
+        { key, role in LocalizedStringKey(theme.styledText(key, as: role, in: .settings)) }
+    }
     
     var body: some View {
-        HStack(spacing: 16) {
-            StatBlock(icon: "flame.fill", value: "\(statsVM.runStreakDays) Days", caption: "Streak", palette: palette)
-            StatBlock(icon: "checkmark.circle.fill", value: String(format: "%.0f%%", statsVM.averageCompletionRate * 100), caption: "Completion Rate", palette: palette)
+        HStack(spacing: 8) {
+            StatBlock(icon: "flame.fill", value: "\(statsVM.runStreakDays)", caption: T("Streak" .caption), palette: p)
+            StatBlock(icon: "checkmark.circle.fill", value: String(format: "%.0f%%", statsVM.averageCompletionRate * 100), caption: T("Avg. completion", .caption), palette: p)
             if let last = statsVM.lastRecalibrationChoice {
-                StatBlock(icon: last.iconName, value: last.label, caption: "Last Reset", palette: palette)
+                StatBlock(icon: last.iconName, value: last.label, caption: T("", .caption), palette: p)
             }
         }
     }
@@ -26,19 +30,19 @@ struct StatsSummaryBar: View {
 private struct StatBlock: View {
     let icon: String
     let value: String
-    let caption: String
-    let palette: ScreenStylePalette
+    let p: ScreenStylePalette
+    private var T: (String, TextRole) -> LocalizedStringKey {
+        { key, role in LocalizedStringKey(theme.styledText(key, as: role, in: .settings)) }
+    }
     
     var body: some View {
         VStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.title2)
                 .foregroundStyle(palette.accent)
-            Text(value)
-                .font(.title3)
+            T("\(value)")
                 .bold()
                 .foregroundStyle(palette.text)
-            Text(caption)
+            T("\(key)")
                 .font(.caption)
                 .foregroundStyle(palette.textSecondary)
         }

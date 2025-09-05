@@ -20,10 +20,9 @@ struct CategoryTileList: View {
         if categoryItem.tiles.isEmpty {
             VStack {
                 /// Gives archive section subtle card treatment
-                Text("Tasks you intended to complete would display here")
-                    .font(.caption)
+                theme.styledText("Intentions Completed", as: .caption, in: .history))
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal)
+//                    .padding(.horizontal)
             }
             .background(isArchive ? Color.secondary.opacity(0.08) : .clear)
             .overlay(
@@ -45,7 +44,7 @@ struct CategoryTileList: View {
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: !isArchive) {
                         if !isArchive {
-                            Button(role: .destructive) {
+                            Button(T("Delete",.destructive)) {
                                 if let index = categoryItem.tiles.firstIndex(of: tile) {
                                     withAnimation {
                                         categoryItem.tiles.remove(at: index)

@@ -16,13 +16,17 @@ struct HistoryV: View {
     //    @State private var dropTargets: [UUID: Bool] = [:]  /// Drop highlight state per category
     @State private var isOrganizing = false
     @State private var createdCategoryID: UUID?
-    
+  
+    private var p: ThemePalette { theme.palette(for: .history) }
+    private var T: (String, TextRole) -> LocalizedStringKey {
+        { key, role in LocalizedStringKey(theme.styledText(key, as: role, in: .history))    }
+    }
     var body: some View {
-        let p = theme.palette(for:.history)
-        
+//        let p = theme.palette(for:.history)
+//        
         ZStack(alignment: .bottom) {
             ScrollView {
-                Page {
+                Page(top: 4, alignment: .center){
                     header
                     categoriesList(palette: p)
                     Spacer(minLength: 16)
@@ -36,18 +40,19 @@ struct HistoryV: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
-                    Button(isOrganizing ? "Done" : "Organize") {
-                        if isOrganizing {
-                            Task { await viewModel.flushPendingSaves() }    /// When "Done" tapped, force a final write
-                        }
+                    Button(T(isOrganizing ? "Done" : "Organize", .section)) {
+                        if isOrganizing { Task { await viewModel.flushPendingSaves() } }    /// When "Done" tapped, force a final write
                         isOrganizing.toggle()
                     }
-                    Button("Add Category") {
+                    .secondaryActionStyle(screen: .history)
+                    
+                    Button(T("Add Category", .section)) {
                         if let id = viewModel.addEmptyUserCategory() {
                             createdCategoryID = id
                         }
                     }
                     .disabled(!viewModel.canAddUserCategory())
+                    .secondaryActionStyle(screen: .history)
                 }
             }
         }
@@ -55,8 +60,7 @@ struct HistoryV: View {
     
     /// Splitting subviews
     @ViewBuilder private var header: some View {
-        Text("Group by category. Tap a category title to edit.")
-            .font(.footnote)
+        theme.styledText("Tap a category title to edit and group.", as: .body, in: .history)
             .foregroundStyle(.secondary)
             .accessibilityAddTraits(.isHeader)
     }
@@ -86,10 +90,12 @@ struct HistoryV: View {
         if let move = viewModel.lastUndoableMove {
             BottomToast {
                 HStack {
-                    Text("Moved: \(move.tile.text)").font(.footnote)
+                    theme.styledText("Moved: \(move.tile.text)", as: .caption, in: .history)
                     Spacer()
-                    Button("Undo") {    viewModel.undoLastMove()    }
-                        .buttonStyle(.bordered)                 //FIXME: own buttons
+                    Button(T("Undo", .action)) {
+                        viewModel.undoLastMove()
+                    }
+                    .secondaryActionStyle(screen: .history)
                 }
             }
             .padding(.horizontal, 16)
@@ -106,8 +112,7 @@ struct HistoryV: View {
                 let targetH = min(proxy.size.height * 0.75, 600)    // Use available height, avoid UIScreen.*
                 
                 VStack(spacing: 12) {
-                    Text("Organize Tiles")
-                        .font(.headline)
+                    theme.styledText("Organize Tiles", as: .section, in: .history)
                         .padding(.top, 12)
                     
                     TileOrganizerWrapper(
@@ -129,8 +134,8 @@ struct HistoryV: View {
                     .shadow(radius: 3, y: 1)
                     
                     //FIXME: use my buttons
-                    Button("Done") { isOrganizing = false }
-                        .buttonStyle(.borderedProminent)
+                    Button(T("Done", .section)) { isOrganizing = false }
+                        .secondaryActionStyle(screen: .history)
                         .padding(.bottom, 12)
                 }
                 //FIXME: use my button of this?
