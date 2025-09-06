@@ -26,12 +26,13 @@ struct RootView: View {
     @AppStorage(LegalKeys.acceptedVersion) private var acceptedVersion: Int = 0
     @AppStorage(LegalKeys.acceptedAtEpoch) private var acceptedAtEpoch: Double = 0
     @State private var activeSheet: RootSheet? = nil
+    @Environment(\.scenePhase) private var scenePhase
     
     private var needsLegalGate: Bool { acceptedVersion < LegalConfig.currentVersion }
-    
-    /// bootstraps creates and defines default Category exactly once ever, even across relaunches
-    @AppStorage("hasInitializedGeneralCategory") private var hasInitializedGeneralCategory = false
-    @AppStorage("hasInitializedArchiveCategory") private var hasInitializedArchiveCategory = false
+//    
+//    /// bootstraps creates and defines default Category exactly once ever, even across relaunches
+//    @AppStorage("hasInitializedGeneralCategory") private var hasInitializedGeneralCategory = false
+//    @AppStorage("hasInitializedArchiveCategory") private var hasInitializedArchiveCategory = false
     
     /// ViewModel as source of truth: Shared services / VMs owned here and injected downward
     @StateObject private var theme: ThemeManager
@@ -165,16 +166,21 @@ struct RootView: View {
         .onAppear {
             if needsLegalGate { activeSheet = .legal }
             
-            /// First-run categories
-            if !hasInitializedGeneralCategory {
-                historyVM.ensureGeneralCategory()
-                hasInitializedGeneralCategory = true
-                debugPrint("Default category initialized from RootView")
-            }
-            if !hasInitializedArchiveCategory {
-                historyVM.ensureArchiveCategory()
-                hasInitializedArchiveCategory = true
-                debugPrint("Archive category initialized from RootView")
+//            /// First-run categories
+//            if !hasInitializedGeneralCategory {
+//                historyVM.ensureGeneralCategory()
+//                hasInitializedGeneralCategory = true
+//                debugPrint("Default category initialized from RootView")
+//            }
+//            if !hasInitializedArchiveCategory {
+//                historyVM.ensureArchiveCategory()
+//                hasInitializedArchiveCategory = true
+//                debugPrint("Archive category initialized from RootView")
+//            }
+        }
+        .onChange(of: scenePhase ) { phase in
+            if phase == .inactive || phase == .background {
+                historyVM.flushPendingSaves()
             }
         }
         .onChange(of: membershipVM.shouldPrompt) { show in

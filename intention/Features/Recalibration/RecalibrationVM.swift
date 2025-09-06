@@ -32,7 +32,8 @@ final class RecalibrationVM: ObservableObject {
     @Published private(set) var mode: RecalibrationMode? = nil
     @Published var timeRemaining: Int = 0
     @Published var lastError: Error? = nil
-    @Published var promptText: String = ""  // “Switch feet”, “Inhale”, etc.
+    @Published var promptText: String = ""  // “Switch feet” pulses EMOM
+    @Published var breathingPhaseIndex: Int = 0 // 0:Inhale, 1:Hold, 2:Exhale, 3:Hold
     
     var formattedTime: String {
         let m = timeRemaining / 60, s = timeRemaining % 60
@@ -45,6 +46,10 @@ final class RecalibrationVM: ObservableObject {
     // VMs current default on present
     var currentBreathingMinutes: Int { breathingMinutes }
     var currentBalancingMinutes: Int { balancingMinutes }
+    
+    // Prompts
+    let breathingPhases = ["Inhale", "Hold", "Exhale", "Hold"]
+    var breathingPhaseLine: String { breathingPhases.joined(separator: " . ") }
 
     // Policy knobs (VM decides "when")
     private var breathingMinutes: Int
@@ -100,57 +105,68 @@ final class RecalibrationVM: ObservableObject {
     
     // MARK: Private helpers
     private func runBalancing() {
-        // Minute beeps: short-short; Done: long-long-short
-           let total = timeRemaining
-           task = Task { [weak self] in
-               guard let self else { return }
-               while self.timeRemaining > 0 && !Task.isCancelled {
-                   // Fire every full minute boundary (include t=total for first cue)
-                   if self.timeRemaining % 60 == 0 || self.timeRemaining == total {
-                       await MainActor.run { self.promptText = "Switch feet" }
-                       await self.haptics.notifySwitch()     // short–short
-                   }
-                   try? await Task.sleep(nanoseconds: 1_000_000_000)
-                   await MainActor.run { self.timeRemaining -= 1 }
-               }
-               guard !Task.isCancelled else { return }
-               await self.haptics.notifyDone()               // long–long–short
-               let finishedMode = await MainActor.run { () -> RecalibrationMode? in
-                   self.phase = .finished
-                   let m = self.mode
-                   self.mode = nil
-                   self.promptText = ""
-                   return m
-               }
-               if let m = finishedMode { await MainActor.run { self.onCompleted?(m)}}
-           }
-       }
+        // Minute beeps: short–short; Done: long–long–short; only show “Switch feet” briefly each minute
+        let total = timeRemaining
+        task = Task { [weak self] in
+            guard let self else { return }
+            while self.timeRemaining > 0 && !Task.isCancelled {
+                if self.timeRemaining == total || self.timeRemaining % 60 == 0 {
+                    await self.haptics.notifySwitch()      // short–short
+                    await MainActor.run {
+                        self.promptText = "Switch feet"
+                    }
+                    try? await Task.sleep(nanoseconds: 1_000_000_000) // show for ~1s
+                    await MainActor.run { self.promptText = "" }
+                }
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                await MainActor.run { self.timeRemaining -= 1 }
+            }
+            guard !Task.isCancelled else { return }
+            await self.haptics.notifyDone() // long–long–short
+            await MainActor.run {
+                self.phase = .finished
+                self.mode = nil
+                self.promptText = ""
+            }
+            await MainActor.run { self.onCompleted?(.balancing) }
+        }
+    }
 
-       private func runBreathing() {
-           // Loop: 6-3-6-3 until timeRemaining hits 0
-           task = Task { [weak self] in
-               guard let self else { return }
-               while self.timeRemaining > 0 && !Task.isCancelled {
-                   await self.phaseBlock(label: "Inhale", seconds: self.inhale)
-                   await self.phaseBlock(label: "Hold",   seconds: self.hold1)
-                   await self.phaseBlock(label: "Exhale", seconds: self.exhale)
-                   await self.phaseBlock(label: "Hold",   seconds: self.hold2)
-               }
-               guard !Task.isCancelled else { return }
-               await self.haptics.notifyDone()
-               let finishedMode = await MainActor.run { () -> RecalibrationMode? in
-                   self.phase = .finished
-                   let m = self.mode
-                   self.mode = nil
-                   self.promptText = ""
-                   return m
-               }
-               if let m = finishedMode { await MainActor.run { self.onCompleted?(m) } }
-           }
-       }
+    private func runBreathing() {
+        // Show one line “Inhale · Hold · Exhale · Hold” and move a subtle dot via breathingPhaseIndex
+        task = Task { [weak self] in
+            guard let self else { return }
+            let phases = [(0, inhale), (1, hold1), (2, exhale), (3, hold2)]
+            while self.timeRemaining > 0 && !Task.isCancelled {
+                for (idx, secs) in phases {
+                    await MainActor.run {
+                        self.breathingPhaseIndex = idx
+                        // NOTE: No big label per phase; UI uses breathingPhaseLine + index to draw the dot
+                    }
+                    for _ in 0..<secs {
+                        guard !Task.isCancelled else { return }
+                        try? await Task.sleep(nanoseconds: 1_000_000_000)
+                        await MainActor.run { self.timeRemaining = max(0, self.timeRemaining - 1) }
+                        if self.timeRemaining == 0 { break }
+                    }
+                    if self.timeRemaining == 0 { break }
+                    await self.haptics.added() // tiny cue at phase boundaries
+                }
+            }
+            guard !Task.isCancelled else { return }
+            await self.haptics.notifyDone() // long–long–short
+            await MainActor.run {
+                self.phase = .finished
+                let finished = self.mode
+                self.mode = nil
+                self.promptText = ""
+                if let m = finished { self.onCompleted?(m) }
+            }
+        }
+    }
+
 
        private func phaseBlock(label: String, seconds: Int) async {
-           await MainActor.run { self.promptText = label }
            await haptics.added()   // single short cue at each phase start
            for _ in 0..<seconds {
                guard !Task.isCancelled else { return }

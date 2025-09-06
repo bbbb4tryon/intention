@@ -41,9 +41,7 @@ struct HistoryV: View {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
                     Button(action: {
-                        if isOrganizing {
-                            Task { await viewModel.flushPendingSaves() }    /// When "Done" tapped, force a final write
-                        }
+                        if isOrganizing { viewModel.flushPendingSaves() }    /// When "Done" tapped, force a final write 
                         isOrganizing.toggle()
                     }) {
                         T(isOrganizing ? "Done" : "Organize", .section)

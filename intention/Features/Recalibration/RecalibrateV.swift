@@ -110,6 +110,24 @@ struct RecalibrationV: View {
                     .foregroundStyle(p.text)
                     .padding(.top, 8)
                 }
+
+                VStack(spacing: 8) {
+                    if vm.mode == .balancing {
+                        Text(vm.promptText) // shows “Switch feet” briefly each minute
+                            .font(.title3).fontWeight(.semibold)
+                    } else if vm.mode == .breathing {
+                        HStack(spacing: 6) {
+                            ForEach(Array(vm.breathingPhases.enumerated()), id: \.0) { idx, name in
+                                if idx == vm.breathingPhaseIndex { Text("• \(name)") } else { Text(name) }
+                                if idx != vm.breathingPhases.count - 1 { Text("·").opacity(0.6) }
+                            }
+                        }
+                        .font(.headline)
+                        .monospacedDigit()
+                    }
+                    Text(vm.formattedTime).font(.system(.largeTitle, design: .rounded)).monospacedDigit()
+                }
+
             }
             .task { breathingChoice = vm.currentBreathingMinutes }
             .presentationDetents([.height(320), .medium])

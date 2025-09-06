@@ -37,7 +37,7 @@ final class FocusSessionVM: ObservableObject {
     enum Phase {
         case notStarted, running, finished
     }
-
+    
     // MARK: - Published UI State
     @Published var tileText: String = ""  { didSet { validationMessages = tileText.taskValidationMessages }}         /// Input field for tiles' text;   Validate whenever tileText changes
     @Published var tiles: [TileM] = []              /// List of current session tiles (max 2)
@@ -73,16 +73,16 @@ final class FocusSessionVM: ObservableObject {
         self.countdownRemaining = config.chunkDuration
         self.tileAppendTrigger = FocusTimerActor(config: config)
         
-            if previewMode {
-                tiles = [TileM(text: "Tile 1"), TileM(text: "Tile 2")]
-                tileText = "Start another..."
-                canAdd = false
-                sessionActive = true
-                currentSessionChunk = 1
-                phase = .running
-                countdownRemaining = config.chunkDuration / 20
-            }
+        if previewMode {
+            tiles = [TileM(text: "Tile 1"), TileM(text: "Tile 2")]
+            tileText = "Start another..."
+            canAdd = false
+            sessionActive = true
+            currentSessionChunk = 1
+            phase = .running
+            countdownRemaining = config.chunkDuration / 20
         }
+    }
     
     // MARK: - Tile Submission Logic
     
@@ -101,41 +101,78 @@ final class FocusSessionVM: ObservableObject {
         tiles.append(newTile)
         tileText = ""
         canAdd = tiles.count < 2       /// Keeps flag in sync
-
+        
         debugPrint("[FocusSessionVM.addTileAndPrepareForSession.Haptic.added] did not occur")
         haptics.added()
     }
     
-    /// NOTE: - Swift Concurrency timer (Task + AsyncSequence) needed
     /// Starts the 20-min countdown for the current focus session.
-    /// - Throws: `FocusSessionError.tooManyTiles`
     func startCurrent20MinCountdown() throws {
-        guard tiles.count <= 2 else {    throw FocusSessionError.tooManyTiles()   }
-        
+        guard tiles.count == 2, phase != .running else {
+            throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
+        }
         stopCurrent20MinCountdown()         /// cancels any existing timers
-        phase = .running
-        countdownRemaining = chunkDuration  /// resets to 20 minutes
         
-        chunkCountdown = Task {
-            for await _ in Timer.publish(every: 1, on: .main, in: .common).autoconnect().values {
-                guard !Task.isCancelled else {  debugPrint("Countdown task cancelled"); return  }
-                if countdownRemaining > 0 { countdownRemaining -= 1; debugPrint("Session countdown: \(formattedTime)")
-                } else {    debugPrint("40 min session completed"); break   }
+        // ContinuousClock avoids wall-clock jumps from time/date changes
+        phase = .running
+        let seconds = chunkDuration
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(seconds))
+        
+        //        countdownRemaining = chunkDuration  /// resets to 20 minutes
+        chunkCountdown = Task { [weak self] in
+            guard let self else { return }
+            while !Task.isCancelled {
+                let remaining = max(0, Int(clock.now.duration(to: deadline).components.seconds))
+                await MainActor.run { self.countdownRemaining = remaining }
+                if remaining == 0 { break }
+                try? await clock.sleep(for: .seconds(1))
             }
+            //            try? await clock.sleep(for: .seconds(1))
+            //            await MainActor.run { self.countdownRemaining -= 1 }
             
-            /// Block executes when countdownRemaining reaches 0 or is cancelled
-            if self.countdownRemaining <= 0 && self.phase == .running {
-                await MainActor.run {
-                    self.phase = .finished
-                    self.haptics.notifyDone()
-                    debugPrint("`Haptic.notifyDone()` triggered? Current 20-min chunk completed")
-                }
-                self.chunkCountdown?.cancel()
-                self.chunkCountdown = nil
-                naturallyAdvanceSessionChunk()
+            
+            //        guard !Task.isCancelled else { return }     //FIXME: what's this?
+            /// >>> All post-finish work happens INSIDE the Task <<<
+            await MainActor.run {
+                guard self.phase == .running else { return }
+                self.phase = .finished
+                self.haptics.notifyDone()
+                self.naturallyAdvanceSessionChunk()
             }
+            //        await MainActor.run { self.naturallyAdvanceSessionChunk() }
+            // Clear the task
+            self.chunkCountdown = nil
         }
     }
+
+//            if self.countdownRemaining <= 0 && self.phase == .running {
+//                self.phase = .finished
+//                self.haptics.notifyDone()
+//            }
+//        }
+//        self.chunkCountdown = nil
+//        await MainActor.run { self.naturallyAdvanceSessionChunk() }
+//    }
+        
+//        chunkCountdown = Task {
+//            for await _ in Timer.publish(every: 1, on: .main, in: .common).autoconnect().values {
+//                guard !Task.isCancelled else {  debugPrint("Countdown task cancelled"); return  }
+//                if countdownRemaining > 0 { countdownRemaining -= 1; debugPrint("Session countdown: \(formattedTime)")
+//                } else {    debugPrint("40 min session completed"); break   }
+//            }
+//            
+//            /// Block executes when countdownRemaining reaches 0 or is cancelled
+//            if self.countdownRemaining <= 0 && self.phase == .running {
+//                await MainActor.run {
+//                    self.phase = .finished
+//                    self.haptics.notifyDone()
+//                    debugPrint("`Haptic.notifyDone()` triggered? Current 20-min chunk completed")
+//                }
+//                self.chunkCountdown?.cancel()
+//                self.chunkCountdown = nil
+//                naturallyAdvanceSessionChunk()
+//            }
     
     /// Advances chunk index and checks session completion
     func naturallyAdvanceSessionChunk(){

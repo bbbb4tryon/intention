@@ -21,6 +21,7 @@ enum HistoryError: Error, Equatable, LocalizedError {
 }
 
 /// Single source of truth for category IDs
+/// Deinit/cleanup: rely on the lifecycle flush you already added (scenePhase .inactive / .background) and your explicit UI boundaries (e.g., “Done” in organizing
 @MainActor
 final class HistoryVM: ObservableObject {   
     @Published var categoryValidationMessages: [UUID: [String]] = [:]           /// Validate category text changes
@@ -33,11 +34,10 @@ final class HistoryVM: ObservableObject {
     private let archiveActor = ArchiveActor()
     private let storageKey = "categoriesData"
     private let tileSoftCap = 200
+    private var pendingSnapshot: [CategoriesModel]? = nil
     private var debouncedSaveTask: Task<Void, Never>? = nil     ///Coalesced save task; only latest survives
     private var lastSavedSignature: Int = 0                     /// VM computes a lightweight signature and coalesces writes
     private let saveDebouncedDelayNanos: UInt64 = 300_000_000   /// 300 ms
-//    private(set) var generalCategoryID: UUID?
-//    private(set) var archiveCategoryID: UUID?
     
     
     /// HistoryVM owns IDs
@@ -68,27 +68,62 @@ final class HistoryVM: ObservableObject {
     
     private func loadHistory() async {
         do {
-            if let loaded: [CategoriesModel] = try await persistence.readIfExists([CategoriesModel].self, from: storageKey) {
-                self.categories = loaded
-            } else {
-                self.categories = []
-            }
-            
-            /// Ensure Archive category exists and hydrate it with persisted archived tiles
-            let archived = await archiveActor.loadArchivedTiles()
-            let archiveID = archiveCategoryID
-            
-            if let index = categories.firstIndex(where: { archivedItem in archivedItem.id == archiveID }) {       //FIXME: alternatively, use $0.id = archivedID
-                categories[index].tiles = archived
-            } else {
-                /// Add archive category if not found
-                let newArchive = CategoriesModel(id: archiveID, persistedInput: "Archive", tiles: archived)
-                categories.append(newArchive)
-            }
-        } catch {
-            debugPrint("[History(persistence's).loadHistory] error: ", error )
-            await MainActor.run { self.lastError = error }
+              // 1) Load categories from disk
+              if let loaded: [CategoriesModel] = try await persistence.readIfExists([CategoriesModel].self, from: storageKey) {
+                  self.categories = loaded
+              } else {
+                  self.categories = []
+              }
+
+              // 2) Reconcile built-in IDs by name (if present in loaded data)
+              if let g = categories.first(where: { $0.persistedInput == "General" }) {
+                  generalCategoryID = g.id
+              }
+              if let a = categories.first(where: { $0.persistedInput == "Archive" }) {
+                  archiveCategoryID = a.id
+              }
+
+              // 3) Ensure both built-ins exist using the reconciled IDs
+              if !categories.contains(where: { $0.id == generalCategoryID }) {
+                  categories.insert(CategoriesModel(id: generalCategoryID, persistedInput: "General"), at: 0)
+              }
+              if !categories.contains(where: { $0.id == archiveCategoryID }) {
+                  categories.append(CategoriesModel(id: archiveCategoryID, persistedInput: "Archive"))
+              }
+
+              // 4) Hydrate archive tiles (now that the archive ID is canonical)
+              let archived = await archiveActor.loadArchivedTiles()
+              if let idx = categories.firstIndex(where: { $0.id == archiveCategoryID }) {
+                  categories[idx].tiles = archived
+              }
+
+              // 5) Persist if anything changed during steps 2–4
+              saveHistory()
+
+          } catch {
+              debugPrint("[HistoryVM.loadHistory] error:", error)
+              await MainActor.run { self.lastError = error }
+          }
+    }
+    
+    func reconcileAndEnsureBuiltIns() {
+        // 1) If categories already contain built-ins, prefer those IDs and write them back to AppStorage.
+        if let g = categories.first(where: { $0.persistedInput == "General" }) {
+            generalCategoryID = g.id
         }
+        if let a = categories.first(where: { $0.persistedInput == "Archive" }) {
+            archiveCategoryID = a.id
+        }
+
+        // 2) Ensure both exist using the canonical IDs (lazily created if empty).
+        if !categories.contains(where: { $0.id == generalCategoryID }) {
+            categories.insert(CategoriesModel(id: generalCategoryID, persistedInput: "General"), at: 0)
+        }
+        if !categories.contains(where: { $0.id == archiveCategoryID }) {
+            categories.append(CategoriesModel(id: archiveCategoryID, persistedInput: "Archive"))
+        }
+        // the debounced/immediate server
+        saveHistory()
     }
     
     // Writes only if content changed since last success - if `snapshot` is nil, uses live `categories`
@@ -107,7 +142,7 @@ final class HistoryVM: ObservableObject {
     private func saveSignature(for categories: [CategoriesModel]) -> Int {
         var acc = categories.count
         for cat in categories {
-            acc = acc &* 31 &* cat.tiles.count
+            acc = acc &* 31 &+ cat.id.hashValue &+ cat.tiles.count  //// Mixes ID + tile count
         }
         return acc
     }
@@ -144,6 +179,7 @@ final class HistoryVM: ObservableObject {
         Task {
             do {
                 try await archiveActor.offloadOldTiles(from: categories, maxTiles: tileSoftCap)
+                saveHistory(immediate: true)
             } catch {
                 debugPrint("[HistoryVM.limitCheck] offload error: ", error)
                 await MainActor.run { self.lastError = HistoryError.saveHistoryFailed   }
@@ -154,48 +190,44 @@ final class HistoryVM: ObservableObject {
     // MARK: - Non-throwing convenience (fire-and-forget)
     /// Non-throwing wrapper, background with a UI signal; catch internally, debugPrints, sets VM lasterror; saveHistory() calls saveHistoryThrowing() inside a Task
     /// Save the current categories array -> wrapper of PersistenceActor.saveHistory
+    /// Public entry: schedule or force-save now.
+    /// Call with `immediate: true` when the user completes an explicit action (e.g., Done, drop ended).
     func saveHistory(immediate: Bool = false) { //wrapper
         if immediate {
+            let snapshot = categories               // Capture current state and write right away
+            pendingSnapshot = nil
             debouncedSaveTask?.cancel()
             debouncedSaveTask = nil
-            Task { await performSaveIfChanged() }
-            return
+            Task { await performSaveIfChanged(snapshot) }
+        } else {
+            scheduleDebouncedSave()
         }
-        
-        /// Debounced path
+    }
+    
+    private func scheduleDebouncedSave() {
+        let snapshot = categories       // Capture now; UI may keep mutating
+        pendingSnapshot = snapshot
+
         debouncedSaveTask?.cancel()
-        // Capture snapshot to avoid reading while UI is mid-mutation
-        let snapshot = categories
-        debouncedSaveTask = Task { [weak self] in
+        debouncedSaveTask = Task { [weak self, snapshot ] in
         // Coalesce bursts of calls into one
             guard let self else { return }
             try? await Task.sleep(nanoseconds: saveDebouncedDelayNanos)
             await self.performSaveIfChanged(snapshot)
-        }
-        
-        Task {
-            do { try await saveHistoryThrowing() }
-            catch {
-                debugPrint("[HistoryVM.saveHistory] failed:", error)
-                await MainActor.run { self.lastError = HistoryError.saveHistoryFailed }
-            }
+            await MainActor.run { self.pendingSnapshot = nil }
         }
     }
     
     // MARK: - Forces any pending debounced save to run now
-    func flushPendingSaves() async {
+    /// Cancels the debounce and forces the latest pending snapshot (or live state) to disk now
+    func flushPendingSaves() {
         // Runs any pending debounce, immediate save and cancel
-        if debouncedSaveTask != nil {
+        let snapshot = pendingSnapshot
+        pendingSnapshot = nil
+//        if debouncedSaveTask != nil {
             debouncedSaveTask?.cancel()
             debouncedSaveTask = nil
-            await performSaveIfChanged()
-        }
-    }
-    
-    // MARK: - cancel any pending work (e.g. if VM is deinit'd)
-    deinit {
-        debouncedSaveTask?.cancel()
-        debouncedSaveTask = nil
+        Task { [snapshot] in await performSaveIfChanged(snapshot) } // uses live categories if nil
     }
     
     // MARK: - Add a tile to a specific category (non-throwing convenience)
@@ -318,26 +350,6 @@ final class HistoryVM: ObservableObject {
         saveHistory()       // persists a cleared list
         
         Task {  await persistence.clear(storageKey) }   // clear storage safely: see PersistenceActor
-    }
-    
-    func ensureBaseCategories() {
-        // already set?
-        if generalCategoryID == nil || archiveCategoryID == nil || categories.isEmpty {
-            let general = CategoriesModel(persistedInput: "General")
-            let archive = CategoriesModel(persistedInput: "Archive")
-
-            generalCategoryID = general.id
-            archiveCategoryID = archive.id
-
-            // if you loaded from disk, merge instead of replacing
-            if categories.isEmpty {
-                categories = [general, archive]
-            } else {
-                if !categories.contains(where: { $0.id == general.id }) { categories.insert(general, at: 0) }
-                if !categories.contains(where: { $0.id == archive.id }) { categories.append(archive) }
-            }
-            saveHistory()
-        }
     }
 
     

@@ -75,14 +75,11 @@ struct FocusSessionActiveV: View {
                     StatsSummaryBar()
                         .padding(.top, 4)
                     
-                    T("Focus", .header)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
                     // Text input + validation
                     VStack(alignment: .leading, spacing: 6) {
                         ZStack(alignment: .leading) {
                             if viewModel.tileText.isEmpty {
-                                T("Enter intention", .caption)
+                                T("Add intention", .caption)
                                     .padding(.horizontal, 16)
                             }
                             TextField("", text: $viewModel.tileText, axis: .vertical)
