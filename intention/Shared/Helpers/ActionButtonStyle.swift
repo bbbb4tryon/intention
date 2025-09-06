@@ -6,52 +6,47 @@
 
 import SwiftUI
 
-struct ActionButtonStyle: ButtonStyle {
-    @EnvironmentObject var theme: ThemeManager
-    var screen: ScreenName
-    var role: Role = .primary
-    var isLoading = false
-
-    enum Role { case primary, secondary, destructive }
-
+struct PrimaryActionStyle: ButtonStyle {
+    let palette: ScreenStylePalette
     func makeBody(configuration: Configuration) -> some View {
-        let p = theme.palette(for: screen)
-        let disabled = !(Environment(\.isEnabled).wrappedValue)
-
-        let bg: Color = switch role {
-        case .primary: p.accent
-        case .secondary: p.primary
-        case .destructive: p.danger
-        }
-        let fg: Color = .white   // buttons should not rely on themed text colors
-
-        HStack(spacing: 8) {
-            if isLoading { ProgressView().progressViewStyle(.circular) }
-            configuration.label
-                .lineLimit(1)
-                .minimumScaleFactor(0.9)
-                .font(theme.fontTheme.toFont(.headline))
-        }
-        .frame(maxWidth: .infinity, minHeight: 44)
-        .padding(.vertical, 10)
-        .background(bg)
-        .foregroundStyle(fg)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .opacity(disabled ? 0.5 : (configuration.isPressed ? 0.85 : 1))
-        .scaleEffect(configuration.isPressed && !disabled ? 0.97 : 1)
-        .contentShape(Rectangle())
-        .accessibilityAddTraits(.isButton)
+        configuration.label
+            .font(.headline)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity)
+            .background(palette.accent.opacity(configuration.isPressed ? 0.85 : 1.0))
+            .foregroundStyle(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
-extension Button {
+struct SecondaryActionStyle: ButtonStyle {
+    let palette: ScreenStylePalette
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity)
+            .background(palette.surface)
+            .foregroundStyle(palette.text)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(palette.border, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+extension View {
     func primaryActionStyle(screen: ScreenName) -> some View {
-        self.buttonStyle(ActionButtonStyle(screen: screen, role: .primary))
+        modifier(_ButtonStyleWrapper(style: PrimaryActionStyle(palette: ThemeManager().palette(for: screen))))
     }
     func secondaryActionStyle(screen: ScreenName) -> some View {
-        self.buttonStyle(ActionButtonStyle(screen: screen, role: .secondary))
+        modifier(_ButtonStyleWrapper(style: SecondaryActionStyle(palette: ThemeManager().palette(for: screen))))
     }
-    func destructiveActionStyle(screen: ScreenName) -> some View {
-        self.buttonStyle(ActionButtonStyle(screen: screen, role: .destructive))
-    }
+}
+
+/// Helper to apply ButtonStyle inside a View modifier chain
+private struct _ButtonStyleWrapper<S: ButtonStyle>: ViewModifier {
+    let style: S
+    func body(content: Content) -> some View { content.buttonStyle(style) }
 }

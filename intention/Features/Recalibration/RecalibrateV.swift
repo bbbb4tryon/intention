@@ -16,16 +16,21 @@ struct RecalibrationV: View {
     private let breathePreset = 60   // 1 min
     private let balancePreset = 30   // 30 sec
     
+    private let screen: ScreenName = .recalibrate
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var T: (String, TextRole) -> Text {
+        { key, role in theme.styledText(key, as: role, in: screen) }
+    }
+    
     var body: some View {
-        
-        let p = theme.palette(for: .recalibrate)
+
         ZStack {
             LinearGradient(colors: [p.background, p.background.opacity(0.85)],
                            startPoint: .topLeading, endPoint: .bottomTrailing)
             .ignoresSafeArea()
             
             Page {
-                theme.styledText("Reset & Recalibrate", as: .largeTitle, in: .recalibrate).underline()
+                T("Reset & Recalibrate", .largeTitle).underline()
                     .foregroundStyle(p.text)
                     .friendlyHelper()
                 
@@ -41,7 +46,7 @@ struct RecalibrationV: View {
                 /// users tap a length first (2/3/4), then “Breathe.”
                 if vm.phase == .idle {
                     HStack(spacing: 8) {
-                        theme.styledText("Breathing length", as: .caption, in: .recalibrate))
+                        T("Breathing length", .caption)
                             .foregroundStyle(.secondary)
                         Picker("", selection: $breathingChoice) {
                             Text("2m").tag(2)
@@ -59,14 +64,12 @@ struct RecalibrationV: View {
                 
                 /// When inactive, show simple, obvious choices
                 if vm.phase != .running {
-                    
                     VStack(spacing: 12) {
                         if vm.mode == nil {
                             Button { start(.breathing) } label: {
-                                Label {
-                                    theme.styledText("Breathe", as: .tile, in: .recalibrate)
-                                } icon: {
+                                HStack(spacing: 8){
                                     Image(systemName: RecalibrationMode.breathing.iconName)
+                                    T(activeTitle, .largeTitle)
                                 }
                                 .frame(maxWidth: .infinity)
                             }
@@ -75,7 +78,7 @@ struct RecalibrationV: View {
                             Button { start(.balancing) } label: {
                                 HStack(spacing: 8){
                                     Image(systemName: RecalibrationMode.balancing.iconName)
-                                    theme.styledText(activeTitle, as: .tile, in: .recalibrate)
+                                    T(activeTitle, .largeTitle)
                                 }
                                 .frame(maxWidth: .infinity)
                             }

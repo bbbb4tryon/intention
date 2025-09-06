@@ -197,6 +197,11 @@ final class FocusSessionVM: ObservableObject {
         debugPrint("ViewModel state reset for a new session.")
     }
     
+    func handlePrimaryTap() async {
+        if tiles.count < 2 { try? await addTileAndPrepareForSession(tileText) }
+        else if tiles.count == 2 && phase == .notStarted { try? await beginOverallSession() }
+    }
+    
    /// Chunks session for completion, triggers recalibration **uses HistoryVM canonical IDs**
     private func checkSessionCompletion() {
         if currentSessionChunk >= 2 {                               /// both chunks done
@@ -254,8 +259,23 @@ final class FocusSessionVM: ObservableObject {
     
     
     // MARK: Helpers + Throwing Core
+    var canPrimary: Bool {
+        if tiles.count < 2 {
+            let trimmed = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !trimmed.isEmpty && tileText.taskValidationMessages.isEmpty && phase != .running
+        } else {
+            // Ready to begin when exactly 2 tiles and not already running
+            return phase == .notStarted
+        }
+    }
     
     ///Throwing core (async throws): use when the caller wants to decide how to handle the error
+}
+extension FocusSessionVM {
+    var inputValidationState: ValidationState {
+        let msgs = tileText.taskValidationMessages
+        return msgs.isEmpty ? .valid : .invalid(messages: msgs)
+    }
 }
 
 

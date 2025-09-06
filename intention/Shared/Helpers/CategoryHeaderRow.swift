@@ -16,18 +16,12 @@ struct CategoryHeaderRow: View {
     let saveHistory: () -> Void         // so onCommit can Save
     let isArchive: Bool
     var autoFocus: Bool = false
-    
     @FocusState private var nameFocused: Bool
     
-    // MARK: - Local helpers
-    private var hasValidationIssues: Bool {
-        !(viewModel.categoryValidationMessages[categoryItem.id]?.isEmpty ?? true)
-    }
-    private var borderColor: Color { hasValidationIssues ? .red : .clear }
-    
-    private var p: ThemePalette { theme.palette(for: .history) }
-    private var T: (String, TextRole) -> LocalizedStringKey {
-        { key, role in LocalizedStringKey(theme.styledText(key, as: role, in: .history))    }
+    // MARK: Validation from PM
+    private var vState: ValidationState {
+        let msgs = viewModel.categoryValidationMessages[categoryItem.id] ?? []
+        return msgs.isEmpty ? .valid : .invalid(messages: msgs)
     }
     
     var body: some View {
@@ -36,49 +30,45 @@ struct CategoryHeaderRow: View {
                 .foregroundStyle(isArchive ? .secondary : palette.accent)
             
             if isArchive {
-                theme.styledText("Archive", as: .header, in: .history)
-                    .foregroundStyle(.secondary)
+                Text("Archive")
+                    .font(fontTheme.toFont(.title3))
+                    .foregroundStyle(palette.textSecondary)
                 Spacer()
-            } else {
-                TextField(T("Name this category", .caption),
-                          text: $categoryItem.persistedInput,
-                          onCommit: saveHistory
-                )
-                .focused($nameFocused)
-                .disableAutocorrection(true)
-                .textInputAutocapitalization(.words)
-                .lineLimit(1)
-                .border(borderColor, width: 1)                                  
-                .background(hasValidationIssues ? Color.red.opacity(0.2) : Color.clear)
-                .onChange(of: categoryItem.persistedInput ) { newValue in
-                    viewModel.validateCategory(id: categoryItem.id, title: newValue)
-                }
-                
-                /// Display validation messages from the view model
-                if let messages = viewModel.categoryValidationMessages[categoryItem.id], !messages.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(messages, id: \.self) { message in
-                            Text(message)
-                                .foregroundColor(.red)
-                                .font(.caption)
-                        }
-                    }
-                }
-                
-                Spacer()
-                
                 CountBadge_Archive(fontTheme: fontTheme, count: categoryItem.tiles.count)
-                
-                Button {
-                    newTextTiles[categoryItem.id] = newTextTiles[categoryItem.id] ?? "" } label: {
-                        Image(systemName: "plus.circle.fill")
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    ZStack(alignment: .leading) {
+                        if categoryItem.persistedInput.isEmpty {
+                            Text("Name this category")
+                                .font(fontTheme.toFont(.caption))
+                                .foregroundStyle(palette.textSecondary)
+                                .padding(.horizontal, 12)
+                        }
+                        TextField("", text: $categoryItem.persistedInput, onCommit: saveHistory)
+                            .textInputAutocapitalization(.words)
+                            .disableAutocorrection(true)
+                            .focused($nameFocused)
+                            .validatingField(state: vState, palette: palette)
+                            .accessibilityLabel("Category name")
                     }
-                    .accessibilityLabel("Add tile")
+                    
+                    ValidationCaption(state: vState, palette: palette)
+                }
+                Spacer()
+                CountBadge_Archive(fontTheme: fontTheme, count: categoryItem.tiles.count)
+
+                Button {
+                    newTextTiles[categoryItem.id] = newTextTiles[categoryItem.id] ?? ""
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundStyle(palette.accent)
+                }
+                .accessibilityLabel("Add tile")
             }
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .onAppear { if autoFocus { nameFocused = true } }
+        .onAppear { if autoFocus && !isArchive { nameFocused = true } }
     }
 }
 

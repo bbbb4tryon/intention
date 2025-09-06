@@ -13,46 +13,50 @@ struct HistoryV: View {
     
     // UI State
     @State private var newTextTiles: [UUID: String] = [:]       /// Store new tile text per category using its `id` as key
-    //    @State private var dropTargets: [UUID: Bool] = [:]  /// Drop highlight state per category
     @State private var isOrganizing = false
     @State private var createdCategoryID: UUID?
   
-    private var p: ThemePalette { theme.palette(for: .history) }
-    private var T: (String, TextRole) -> LocalizedStringKey {
-        { key, role in LocalizedStringKey(theme.styledText(key, as: role, in: .history))    }
+    private let screen: ScreenName = .history
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var T: (String, TextRole) -> Text {
+        { key, role in theme.styledText(key, as: role, in: screen) }
     }
+
     var body: some View {
-//        let p = theme.palette(for:.history)
-//        
         ZStack(alignment: .bottom) {
             ScrollView {
                 Page(top: 4, alignment: .center){
                     header
-                    categoriesList(palette: p)
+                    categoriesList(p: p)
                     Spacer(minLength: 16)
                 }
             }
             
             /// Kept outside ScrollView - gives space to GeometryReader
+        organizerOverlay
         }
         .safeAreaInset(edge: .bottom) { undoToast }
         .animation(.easeInOut(duration: 0.2), value: viewModel.lastUndoableMove != nil)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
-                    Button(T(isOrganizing ? "Done" : "Organize", .section)) {
-                        if isOrganizing { Task { await viewModel.flushPendingSaves() } }    /// When "Done" tapped, force a final write
-                        isOrganizing.toggle()
-                    }
-                    .secondaryActionStyle(screen: .history)
-                    
-                    Button(T("Add Category", .section)) {
-                        if let id = viewModel.addEmptyUserCategory() {
-                            createdCategoryID = id
+                    Button(action: {
+                        if isOrganizing {
+                            Task { await viewModel.flushPendingSaves() }    /// When "Done" tapped, force a final write
                         }
+                        isOrganizing.toggle()
+                    }) {
+                        T(isOrganizing ? "Done" : "Organize", .section)
                     }
-                    .disabled(!viewModel.canAddUserCategory())
+                    .secondaryActionStyle(screen: screen)
+                    
+                    Button(action: {
+                        if let id = viewModel.addEmptyUserCategory() { createdCategoryID = id }
+                    }) {
+                        T("Add Category", .section)
+                    }
                     .secondaryActionStyle(screen: .history)
+                    .disabled(!viewModel.canAddUserCategory())
                 }
             }
         }
@@ -60,13 +64,13 @@ struct HistoryV: View {
     
     /// Splitting subviews
     @ViewBuilder private var header: some View {
-        theme.styledText("Tap a category title to edit and group.", as: .body, in: .history)
-            .foregroundStyle(.secondary)
+        T("Tap a category title to edit and group.", .body)
+            .foregroundStyle(p.textSecondary)
             .accessibilityAddTraits(.isHeader)
     }
     
     @ViewBuilder
-    private func categoriesList(palette: ScreenStylePalette) -> some View {
+    private func categoriesList(p: ScreenStylePalette) -> some View {
         LazyVStack(alignment: .leading, spacing: 16) {
             ForEach($viewModel.categories, id: \.id) { $categoryItem in   // mutate individual category fields
                 /// Disables inputs and editing/ Provides subtle "card" treatment
@@ -75,7 +79,7 @@ struct HistoryV: View {
                 
                 CategorySection(
                     categoryItem: $categoryItem,
-                    palette: palette,
+                    palette: p,
                     fontTheme: theme.fontTheme,
                     newTextTiles: $newTextTiles,
                     saveHistory: { viewModel.saveHistory()  },
@@ -90,10 +94,10 @@ struct HistoryV: View {
         if let move = viewModel.lastUndoableMove {
             BottomToast {
                 HStack {
-                    theme.styledText("Moved: \(move.tile.text)", as: .caption, in: .history)
+                    T("Moved: \(move.tile.text)", .caption)
                     Spacer()
-                    Button(T("Undo", .action)) {
-                        viewModel.undoLastMove()
+                    Button( action: { viewModel.undoLastMove() }) {
+                        T("Undo", .action)
                     }
                     .secondaryActionStyle(screen: .history)
                 }
@@ -112,7 +116,7 @@ struct HistoryV: View {
                 let targetH = min(proxy.size.height * 0.75, 600)    // Use available height, avoid UIScreen.*
                 
                 VStack(spacing: 12) {
-                    theme.styledText("Organize Tiles", as: .section, in: .history)
+                    T("Organize Tiles", .section)
                         .padding(.top, 12)
                     
                     TileOrganizerWrapper(
@@ -133,8 +137,10 @@ struct HistoryV: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .shadow(radius: 3, y: 1)
                     
-                    //FIXME: use my buttons
-                    Button(T("Done", .section)) { isOrganizing = false }
+                    
+                    Button(action: { isOrganizing = false }) {
+                        T("Done", .section)
+                    }
                         .secondaryActionStyle(screen: .history)
                         .padding(.bottom, 12)
                 }
@@ -155,36 +161,36 @@ struct HistoryV: View {
     
     // MARK: extracted CategorySectionRow
     /// Extracted row to simplify type-checking
-    private struct CategorySectionRow: View {
-        @Binding var categoryItem: CategoriesModel
-        let palette: ScreenStylePalette
-        let fontTheme: AppFontTheme
-        @Binding var newTextTiles: [UUID: String]
-        let saveHistory: () -> Void
-        let isArchive: Bool
-        let autoFocus: Bool
-        
-        var body: some View {
-            let background = isArchive ? Color.secondary.opacity(0.06) : .clear     /// 0.6 is too heavy 0.06 is better
-            let stroke = isArchive ? Color.secondary.opacity(0.25) : .clear
-            
-            CategorySection(
-                categoryItem: $categoryItem,
-                palette: palette,
-                fontTheme: fontTheme,
-                newTextTiles: $newTextTiles,
-                saveHistory: saveHistory,
-                isArchive: isArchive,
-                autoFocus: autoFocus
-            )
-            .background(background)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(stroke, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
+private struct CategorySectionRow: View {
+    @Binding var categoryItem: CategoriesModel
+    let palette: ScreenStylePalette
+    let fontTheme: AppFontTheme
+    @Binding var newTextTiles: [UUID: String]
+    let saveHistory: () -> Void
+    let isArchive: Bool
+    let autoFocus: Bool
+
+    var body: some View {
+        let background = isArchive ? palette.surface : .clear
+        let stroke     = isArchive ? palette.border  : .clear
+
+        CategorySection(
+            categoryItem: $categoryItem,
+            palette: palette,
+            fontTheme: fontTheme,
+            newTextTiles: $newTextTiles,
+            saveHistory: saveHistory,
+            isArchive: isArchive,
+            autoFocus: autoFocus
+        )
+        .background(background)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(stroke, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
+}
 
                             
 

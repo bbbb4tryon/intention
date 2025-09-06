@@ -36,6 +36,8 @@ final class HistoryVM: ObservableObject {
     private var debouncedSaveTask: Task<Void, Never>? = nil     ///Coalesced save task; only latest survives
     private var lastSavedSignature: Int = 0                     /// VM computes a lightweight signature and coalesces writes
     private let saveDebouncedDelayNanos: UInt64 = 300_000_000   /// 300 ms
+//    private(set) var generalCategoryID: UUID?
+//    private(set) var archiveCategoryID: UUID?
     
     
     /// HistoryVM owns IDs
@@ -317,6 +319,27 @@ final class HistoryVM: ObservableObject {
         
         Task {  await persistence.clear(storageKey) }   // clear storage safely: see PersistenceActor
     }
+    
+    func ensureBaseCategories() {
+        // already set?
+        if generalCategoryID == nil || archiveCategoryID == nil || categories.isEmpty {
+            let general = CategoriesModel(persistedInput: "General")
+            let archive = CategoriesModel(persistedInput: "Archive")
+
+            generalCategoryID = general.id
+            archiveCategoryID = archive.id
+
+            // if you loaded from disk, merge instead of replacing
+            if categories.isEmpty {
+                categories = [general, archive]
+            } else {
+                if !categories.contains(where: { $0.id == general.id }) { categories.insert(general, at: 0) }
+                if !categories.contains(where: { $0.id == archive.id }) { categories.append(archive) }
+            }
+            saveHistory()
+        }
+    }
+
     
     // MARK: Helpers + Throwing Core
     

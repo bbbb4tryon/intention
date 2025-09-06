@@ -14,11 +14,6 @@ struct TimerConfig: Sendable {
     // MARK: Focus/session
     let chunkDuration: Int          /// 20-min chunks (1200)
     
-    // MARK: Recalibration durations (per-mode)
-//    let balancingDuration: Int = 2      /// 2-min (120)
-//    let breathingDuration: Int = 4/// 4-min (240)
-    
-    
     // MARK: Haptics policy
     struct Haptics: Sendable {
         /// If > 0, fire a light haptic every second when `remaining <= endCountdownStart && remaining > 0`.
@@ -46,16 +41,12 @@ struct TimerConfig: Sendable {
         if ProcessInfo.processInfo.isSwiftUIPreview {   return .shortDebug    }
         
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("--SHORT_TIMERS") {
-            return .shortDebug
-        }
+        if ProcessInfo.processInfo.arguments.contains("--SHORT_TIMERS") { return .shortDebug }
         #endif
         return .prod
     }
 }
 
 extension ProcessInfo {
-    var isSwiftUIPreview: Bool {
-        environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
-    }
+    var isSwiftUIPreview: Bool { environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" }
 }

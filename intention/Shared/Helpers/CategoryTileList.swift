@@ -9,7 +9,6 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct CategoryTileList: View {
-//    @ObservedObject var viewModel: HistoryVM // and "(immediate: true)?
     @Binding var categoryItem: CategoriesModel
     let palette: ScreenStylePalette
     let fontTheme: AppFontTheme
@@ -19,33 +18,32 @@ struct CategoryTileList: View {
     var body: some View {
         if categoryItem.tiles.isEmpty {
             VStack {
-                /// Gives archive section subtle card treatment
-                theme.styledText("Intentions Completed", as: .caption, in: .history))
-                    .foregroundStyle(.secondary)
-//                    .padding(.horizontal)
+                Text("Intentions Completed")
+                    .font(fontTheme.toFont(.caption))
+                    .foregroundStyle(palette.textSecondary)
             }
             .background(isArchive ? Color.secondary.opacity(0.08) : .clear)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isArchive ? Color.secondary.opacity(0.03) : .clear, lineWidth: 1)
+                    .stroke(isArchive ? Color.secondary.opacity(0.12) : .clear, lineWidth: 1)
             )
-            .cornerRadius(12)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         } else {
             LazyVStack(spacing: 8) {
-                ForEach(categoryItem.tiles) { tile in
+                ForEach(categoryItem.tiles, id: \.id) { tile in
                     HStack {
                         Text(tile.text)
                             .font(fontTheme.toFont(.body))
                             .foregroundStyle(palette.text)
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(palette.primary.opacity(0.1))
-                            .cornerRadius(8)
+                            .background(palette.surface.opacity(0.6))
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: !isArchive) {
                         if !isArchive {
-                            Button(T("Delete",.destructive)) {
-                                if let index = categoryItem.tiles.firstIndex(of: tile) {
+                            Button(role: .destructive) {
+                                if let index = categoryItem.tiles.firstIndex(where: { $0.id == tile.id }) {
                                     withAnimation {
                                         categoryItem.tiles.remove(at: index)
                                         saveHistory()
@@ -59,6 +57,8 @@ struct CategoryTileList: View {
                 }
             }
             .padding(.horizontal)
+            .allowsHitTesting(!isArchive)   // Archive is read-only
+            .opacity(isArchive ? 0.9 : 1.0)
         }
     }
 }
