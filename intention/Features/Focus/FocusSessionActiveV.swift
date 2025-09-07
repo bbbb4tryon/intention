@@ -201,6 +201,7 @@ struct FocusSessionActiveV: View {
    }
 
    // MARK: - Preview
+#if DEBUG
    #Preview("Focus") {
        PreviewWrapper {
            FocusSessionActiveV(
@@ -210,3 +211,4 @@ struct FocusSessionActiveV: View {
            .previewTheme()
        }
    }
+#endif

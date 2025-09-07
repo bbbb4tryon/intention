@@ -236,7 +236,9 @@ struct RootView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     RootView()
         .previewTheme()
 }
+#endif

@@ -72,6 +72,7 @@ struct CategoryHeaderRow: View {
     }
 }
 
+#if DEBUG
 #Preview("CategoryHeaderRow (direct)") {
     MainActor.assumeIsolated {
         let theme = ThemeManager()
@@ -90,3 +91,4 @@ struct CategoryHeaderRow: View {
         .previewTheme()
     }
 }
+#endif

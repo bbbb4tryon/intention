@@ -13,7 +13,6 @@ import Foundation
 protocol HapticsClient {
     func added()
     func countdownTick()
-    func halfway()
     func notifySwitch()
     func notifyDone()
 }
@@ -22,7 +21,6 @@ protocol HapticsClient {
 struct NoopHapticsClient: HapticsClient {
     func added() {}
     func countdownTick() {}
-    func halfway() {}
     func notifySwitch() {}
     func notifyDone() {}
 }
@@ -36,9 +34,24 @@ struct LiveHapticsClient: HapticsClient {
 
     func added()         { guard enabled else { return }; engine.added() }
     func countdownTick() { guard enabled else { return }; engine.countdownTick() }
-    func halfway()       { guard enabled else { return }; engine.halfway() }
     func notifySwitch()  { guard enabled else { return }; engine.notifySwitch() }
     func notifyDone()    { guard enabled else { return }; engine.notifyDone() }
 }
 
 /// for background tasks, just hop to main when calling: await MainActor.run { haptics.notifyDone() }
+/// if the compiler complains/nags:
+/// // Live client (wrap engine safely on main)
+/// struct LiveHapticsClient: HapticsClient {
+///    let prefs: AppPreferencesVM
+///    let engine: HapticsService
+///    private var enabled: Bool { prefs.hapticsOnly }
+///
+///    func added() async       { guard enabled else { return }
+///        await MainActor.run { engine.tapLight() } }
+///
+///    func notifySwitch() async{ guard enabled else { return }
+///        await MainActor.run { engine.doubleLight() } }
+///
+///    func notifyDone() async  { guard enabled else { return }
+///        await MainActor.run { engine.longLongShort() } }
+///}

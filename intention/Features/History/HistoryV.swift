@@ -222,6 +222,7 @@ private struct CategorySectionRow: View {
 //}
 
 // Mock/ test data prepopulated
+#if DEBUG
 #Preview("Populated Preview History") {
     MainActor.assumeIsolated {
         let historyVM = HistoryVM(persistence: PersistenceActor())
@@ -238,3 +239,4 @@ private struct CategorySectionRow: View {
         }
     }
 }
+#endif

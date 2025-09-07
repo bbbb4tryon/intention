@@ -61,7 +61,8 @@ struct Pie: View {
     }
 }
 
-
+#if DEBUG
 #Preview {
     Pie()
 }
+#endif

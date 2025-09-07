@@ -260,11 +260,11 @@ struct RecalibrationV: View {
 //        .padding()
 //    }
 //}
+#if DEBUG
 #Preview("Recalibrate") {
     PreviewWrapper {
         RecalibrationV(vm: RecalibrationVM(haptics:NoopHapticsClient()))
             .previewTheme()
     }
 }
-
-
+#endif

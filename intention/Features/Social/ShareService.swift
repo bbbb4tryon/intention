@@ -13,6 +13,8 @@ struct ShareService: View {
     }
 }
 
+#if DEBUG
 #Preview {
     ShareService()
 }
+#endif

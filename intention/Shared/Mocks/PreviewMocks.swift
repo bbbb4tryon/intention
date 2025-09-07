@@ -5,7 +5,9 @@
 //  Created by Benjamin Tryon on 8/6/25.
 //
 
+#if DEBUG
 import SwiftUI
+
 
 enum PreviewMocks {
     // One persistence for everything in previews
@@ -49,6 +51,7 @@ enum PreviewMocks {
 
         }()
 }
+#endif
 
 //@StateObject private var focusVM: FocusSessionVM
 //@StateObject private var recalibrationVM: RecalibrationVM

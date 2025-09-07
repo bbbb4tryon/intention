@@ -250,9 +250,7 @@ final class HistoryVM: ObservableObject {
         
         // saveHistory() is inside addToHistory() to persist automatically
         saveHistory()
-        
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
+        /// If you do want a click here later, trigger it from the view after a successful action using your HapticsService env object, not from the VM
     }
     
     
@@ -261,9 +259,6 @@ final class HistoryVM: ObservableObject {
         let newCategory = CategoriesModel(persistedInput: persistedInput)
         categories.append(newCategory)
         saveHistory()
-        
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
     }
     
     // MARK: Category logic rules where the data lives

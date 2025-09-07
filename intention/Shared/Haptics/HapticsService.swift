@@ -27,14 +27,6 @@ final class HapticsService: ObservableObject {
         medium.impactOccurred(); medium.impactOccurred();medium.impactOccurred();
         light.prepare()
     }
-    
-    func halfway() {
-        /// short, longer
-        medium.impactOccurred()
-        Task {
-            try? await Task.sleep(nanoseconds: 200_000_000); light.impactOccurred()
-        }
-    }
 
      func notifyDone() {
         /// long, long, short

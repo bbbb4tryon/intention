@@ -5,6 +5,7 @@
 //  Created by Benjamin Tryon on 8/6/25.
 //
 
+#if DEBUG
 import SwiftUI
 
 @MainActor
@@ -20,3 +21,4 @@ struct PreviewWrapper<Content: View>: View {
             .environmentObject(PreviewMocks.stats)
     }
 }
+#endif

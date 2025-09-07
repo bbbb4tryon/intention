@@ -139,6 +139,7 @@ struct SettingsV: View {
     }
 }
 
+#if DEBUG
 #Preview("Stats & Settings") {
     MainActor.assumeIsolated {
         let stats = PreviewMocks.stats
@@ -150,3 +151,4 @@ struct SettingsV: View {
         }
     }
 }
+#endif
