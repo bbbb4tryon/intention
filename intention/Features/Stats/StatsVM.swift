@@ -24,14 +24,14 @@ final class StatsVM: ObservableObject {
     @Published var shouldPromptForMembership: Bool = false  // is good flag
     @Published var lastError: Error?
     
-    private let persistence: PersistenceActor
+    private let persistence: any Persistence
     private let storageKey = "completedSessions"
     private let membershipThreshold = 2
     private var completedSessions: [CompletedSession] = []
     
     weak var membershipVM: MembershipVM?
     
-    init(persistence: PersistenceActor){
+    init(persistence: any Persistence){
         self.persistence = persistence
         Task {  await loadSessions()    }
     }

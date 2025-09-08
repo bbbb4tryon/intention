@@ -45,6 +45,7 @@ struct RootView: View {
     @StateObject private var haptics: HapticsService     /// One 'warmed' main-actor engine per UI scene, see .environmentObject()
     
     init() {
+        
         /// Inject dependency - all @StateObject created in init only.
         /// Make plain local instances (no self involved) as in let live = LiveHapticsClients( prefs:  _pref...
         let persistence     = PersistenceActor()
@@ -135,7 +136,7 @@ struct RootView: View {
             }
             .tabItem {  Image(systemName: "gearshape.fill").accessibilityAddTraits(.isHeader) }
         }
-        
+
         /// consistent color schemes for app tab bar
         .toolbarBackground(tabBG, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)

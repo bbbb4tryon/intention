@@ -104,8 +104,8 @@ final class PaymentService: ObservableObject {
         isMember = UserDefaults.standard.bool(forKey: "isMember")
     }
 }
-#if DEBUG
+//#if DEBUG
 //#Preview {
 //    PaymentService()
 //}
-#if DEBUG
+//#endIf

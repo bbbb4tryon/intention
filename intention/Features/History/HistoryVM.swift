@@ -30,7 +30,7 @@ final class HistoryVM: ObservableObject {
     @Published var lastUndoableMove: (tile: TileM, from: UUID, to: UUID)? = nil
     @Published var lastError: Error?
     
-    private let persistence: PersistenceActor
+    private let persistence: any Persistence
     private let archiveActor = ArchiveActor()
     private let storageKey = "categoriesData"
     private let tileSoftCap = 200
@@ -61,7 +61,8 @@ final class HistoryVM: ObservableObject {
 
     /// `saveHistory` calls keep storage synced, the program will rehydrate using `loadHistory()` on launch only, don't watch `categoryData`
     // Don't use any `onChange`
-    init(persistence: PersistenceActor) {
+    // `InMemoryPersistence conforms `Persistence` protocol - the VM depends on *protocol*, not the concrete actor
+    init(persistence: any Persistence) {
         self.persistence = persistence
         Task {  await loadHistory() }
     }

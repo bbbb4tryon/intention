@@ -11,6 +11,7 @@ import Foundation
 /// Single source of truth for all durations
 /// In UI tests, pass a launch argument to flip to short timers
 struct TimerConfig: Sendable {
+    
     // MARK: Focus/session
     let chunkDuration: Int          /// 20-min chunks (1200)
     
@@ -24,22 +25,21 @@ struct TimerConfig: Sendable {
         let balanceSwapInterval: Int     // 60s
     }
     let haptics: Haptics
-
+    
     static let prod = TimerConfig(
         chunkDuration: 1200,
         haptics: .init(endCountdownStart: 3, halfwayTick: true, balanceSwapInterval: 60)
     )
-
+    
     static let shortDebug = TimerConfig(
         chunkDuration: 10,
         haptics: .init(endCountdownStart: 3, halfwayTick: true, balanceSwapInterval: 5)
     )
-
+    
     // Picks prod unless DEBUG+flag set
     static var current: TimerConfig {
-        /// Always short in SwiftUI previews
-        if ProcessInfo.processInfo.isSwiftUIPreview {   return .shortDebug    }
-        
+        if ProcessInfo.processInfo.arguments.contains("-UITEST_FAST_TIMERS") { return .fastUITest }
+        if ProcessInfo.processInfo.isSwiftUIPreview { return .shortDebug }
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--SHORT_TIMERS") { return .shortDebug }
         #endif

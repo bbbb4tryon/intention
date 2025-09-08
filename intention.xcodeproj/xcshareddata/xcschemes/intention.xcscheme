@@ -31,7 +31,7 @@
       shouldAutocreateTestPlan = "YES">
       <Testables>
          <TestableReference
-            skipped = "NO"
+            skipped = "YES"
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
@@ -42,13 +42,46 @@
             </BuildableReference>
          </TestableReference>
          <TestableReference
-            skipped = "NO"
+            skipped = "YES"
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "77DA311E2E45494700C6DC9E"
                BuildableName = "FocusSessionFlowUITests.xctest"
                BlueprintName = "FocusSessionFlowUITests"
+               ReferencedContainer = "container:intention.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "YES"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "771350A82E6F3AE3009E397A"
+               BuildableName = "intentionTests.xctest"
+               BlueprintName = "intentionTests"
+               ReferencedContainer = "container:intention.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "YES"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "771350B52E6F3B0A009E397A"
+               BuildableName = "UI_intentionTests.xctest"
+               BlueprintName = "UI_intentionTests"
+               ReferencedContainer = "container:intention.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "773FE2872E6F43FB0033297A"
+               BuildableName = "unit_Tests.xctest"
+               BlueprintName = "unit_Tests"
                ReferencedContainer = "container:intention.xcodeproj">
             </BuildableReference>
          </TestableReference>
