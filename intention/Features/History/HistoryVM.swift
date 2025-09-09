@@ -96,6 +96,7 @@ final class HistoryVM: ObservableObject {
               let archived = await archiveActor.loadArchivedTiles()
               if let idx = categories.firstIndex(where: { $0.id == archiveCategoryID }) {
                   categories[idx].tiles = archived
+                  applyCaps(afterInsertingIn: idx)
               }
 
               // 5) Persist if anything changed during steps 2–4
@@ -148,7 +149,6 @@ final class HistoryVM: ObservableObject {
         return acc
     }
     
-    
     // MARK: - Sets automatic "General" category aka "bootstrapping"
     func ensureGeneralCategory(named name: String = "General") {
         let generalID = generalCategoryID
@@ -172,33 +172,64 @@ final class HistoryVM: ObservableObject {
     }
     
     
-    func limitCheck() {
-        let total = categories.reduce(0) { $0 + $1.tiles.count }        //FIXME: alternatively, use reduce(0) { $0 + $1.tiles.count }
-        tileLimitWarning = total > tileSoftCap
-        guard tileLimitWarning else { return }
-        
-        Task {
-            do {
-                try await archiveActor.offloadOldTiles(from: categories, maxTiles: tileSoftCap)
-                // Remove oldest overflow locally, too
-                var total = categories.reduce(0) { $0 + $1.tiles.count }
-                if total > tileSoftCap {
-                    // pruning from tail of each category until total is less or equal <= to soft cap
-                    for index in categories.indices {
-                        while total > tileSoftCap && !categories[index].tiles.isEmpty {
-                            _ = categories[index].tiles.popLast()
-                            total -= 1
-                        }
-                        if total <= tileSoftCap { break }
-                    }
-                }
-                saveHistory(immediate: true)
-            } catch {
-                debugPrint("[HistoryVM.limitCheck] offload error: ", error)
-                await MainActor.run { self.lastError = HistoryError.saveHistoryFailed   }
-            }
-        }
-    }
+    /// Count only *live* tiles (exclude Archive)
+//    private func liveTotalCount() -> Int {
+//        categories
+//            .filter { $0.id != archiveCategoryID }
+//            .reduce(0) { $0 + $1.tiles.count }
+//    }
+    
+    // HistoryVM.limitCheck() computes the overflowTiles up front from a snapshot, sends that snapshot to the actor,
+    // and then removes those exact IDs locally and appends them to the Archive category.
+    /// Compute the **same set** of tiles to remove (by ID) before calling the actor
+//    func limitCheck(){
+//        let liveTotal = liveTotalCount()
+//        tileLimitWarning = liveTotal > tileSoftCap
+//        guard tileLimitWarning else { return }
+//        
+//        Task { @MainActor in
+//            // Snapshot live categories now; local removal matches what the actor sees
+//            let liveSnapshot = categories.filter { $0.id != archiveCategoryID }
+//
+//            // Oldest-first across live tiles
+//            let flat = liveSnapshot.flatMap(\.tiles).sorted { $0.timeStamp < $1.timeStamp }
+//            let overflowCount = max(0, flat.count - tileSoftCap)
+//            guard overflowCount > 0 else {
+//                saveHistory(immediate: true)
+//                return
+//            }
+//
+//            // The exact tiles to offload/remove
+//            let overflowTiles = Array(flat.prefix(overflowCount))
+//            let overflowIDs = Set(overflowTiles.map(\.id))
+//
+//            do {
+//                try await archiveActor.offloadOldTiles(from: liveSnapshot, maxTiles: tileSoftCap)
+//
+//                // Remove EXACT tiles by id from live categories
+//                for cIdx in categories.indices where categories[cIdx].id != archiveCategoryID {
+//                    categories[cIdx].tiles.removeAll { overflowIDs.contains($0.id) }
+//                }
+//            #if DEBUG
+//            debugPrint("[HistoryVM.limitCheck] offloaded ids:", overflowTiles.map(\.id))
+//            #endif
+//
+//
+//                // Append to Archive so UI reflects immediately
+//                if let aIdx = categories.firstIndex(where: { $0.id == archiveCategoryID }) {
+//                    // Oldest should end up at the bottom; appended in actor as newest-first,
+//                    // but these overflowTiles are oldest-first, so append to the end here.
+//                    categories[aIdx].tiles.append(contentsOf: overflowTiles)
+//                }
+//
+//                /// Persist the new state immediately
+//                saveHistory(immediate: true)
+//            } catch {
+//                debugPrint("[HistoryVM.limitCheck] offload error: ", error)
+//                self.lastError = HistoryError.saveHistoryFailed
+//            }
+//        }
+//    }
     
     // MARK: - Non-throwing convenience (fire-and-forget)
     /// Non-throwing wrapper, background with a UI signal; catch internally, debugPrints, sets VM lasterror; saveHistory() calls saveHistoryThrowing() inside a Task
@@ -252,14 +283,17 @@ final class HistoryVM: ObservableObject {
             self.lastError = HistoryError.categoryNotFound
             return
         }
-        /// "capped FIFO" newest-first for UI display
+        /// Newest-first for UI display
         categories[index].tiles.insert(newTile, at: 0)
         
-        /// Once all tiles equal 200, offload oldest
-        let totalTileCount = categories.reduce(0) { $0 + $1.tiles.count }
-        if totalTileCount > tileSoftCap {
-            limitCheck()
-        }
+        /// Enforcing Archive=200 cap or General/selected=10
+        applyCaps(afterInsertingIn: index)
+        
+        /// Once *only* tiles equal 200, offload oldest tile added, from the bottom
+//        let totalTileCount = categories.reduce(0) { $0 + $1.tiles.count }
+//        if totalTileCount > tileSoftCap {
+//            limitCheck()
+//        }
         
         // saveHistory() is inside addToHistory() to persist automatically
         saveHistory()
@@ -304,8 +338,8 @@ final class HistoryVM: ObservableObject {
     }
     
     
-    // MARK: Throwing core (UI path)
     // MARK: valid target to call to move tiles within categories
+    // Caps enforced
     func moveTile(_ tile: TileM, from fromID: UUID, to toID: UUID) async throws {
         guard
             let fromIndex = categories.firstIndex(where: { $0.id == fromID }),
@@ -317,7 +351,11 @@ final class HistoryVM: ObservableObject {
         }
         
         let movingTile = categories[fromIndex].tiles.remove(at: tileIndex)
+        // Insert at top - consistent newest-first UI
         categories[toIndex].tiles.insert(movingTile, at: 0)
+        
+        // Enforce per-category cap (Archive = 200, General/selected = 10
+        applyCaps(afterInsertingIn: toIndex)
         
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
@@ -344,11 +382,43 @@ final class HistoryVM: ObservableObject {
             }
         }
     }
-    
+    // Category title change, enforce caps when replacing a category’s tiles (organizer reorder)
     func updateTiles(in categoryID: UUID, to newTiles: [TileM]) {
         if let index = categories.firstIndex(where: { $0.id == categoryID }) {
             categories[index].tiles = newTiles
+            // If Archive list, trim from bottom if list exceeds cap of 200
+            if categoryID == archiveCategoryID, categories[index].tiles.count > tileSoftCap {
+                categories[index].tiles.removeLast(categories[index].tiles.count - tileSoftCap)
+            }
+            applyCaps(afterInsertingIn: index)
             saveHistory()       /// Persist change
+        }
+    }
+    
+    /// Cap rules for all categories
+    private func applyCaps(afterInsertingIn idx: Int){
+        let catID = categories[idx].id
+        
+        // 1) Archive cap: 200 (drop bottom)
+        if catID == archiveCategoryID {
+            let overflow = categories[idx].tiles.count - tileSoftCap // tileSoftCap == 200
+            if overflow > 0 { categories[idx].tiles.removeLast(overflow) }
+            return
+        }
+
+        // 2) Build the dynamic "capped@10" set: General + first two user-defined categories
+        //    (user-defined = not General, not Archive). Uses current array order.
+        let userIDs = categories
+            .map(\.id)
+            .filter { $0 != generalCategoryID && $0 != archiveCategoryID }
+
+        var capped10 = Set<UUID>()
+        capped10.insert(generalCategoryID)
+        for id in userIDs.prefix(2) { capped10.insert(id) }
+
+        if capped10.contains(catID) {
+            let overflow = categories[idx].tiles.count - 10
+            if overflow > 0 { categories[idx].tiles.removeLast(overflow) }
         }
     }
     
@@ -388,10 +458,18 @@ final class HistoryVM: ObservableObject {
         else {
             debugPrint("HistoryVM.moveTileThrowing //core] Category ID not found. Tile not added.")
             throw HistoryError.moveFailed
-               }
-               let moving = categories[fromIndex].tiles.remove(at: tileIndex)
-               categories[toIndex].tiles.insert(moving, at: 0)
-               try await saveHistoryThrowing()
+        }
+        let moving = categories[fromIndex].tiles.remove(at: tileIndex)
+        
+        // Keep newest at the top for UI when moving *into* the Archive
+        categories[toIndex].tiles.insert(moving, at: 0)
+        
+        // If Archive, trim from bottom if exceeding the soft cap
+        if toID == archiveCategoryID, categories[toIndex].tiles.count > tileSoftCap {
+            categories[toIndex].tiles.removeLast(categories[toIndex].tiles.count - tileSoftCap)
+        }
+        
+        try await saveHistoryThrowing()
     }
     
     func autoSaveIfNeeded() {
