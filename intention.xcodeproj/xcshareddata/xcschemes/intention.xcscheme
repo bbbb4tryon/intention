@@ -31,59 +31,23 @@
       shouldAutocreateTestPlan = "YES">
       <Testables>
          <TestableReference
-            skipped = "YES"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "7792906E2DFB449C00F93B23"
-               BuildableName = "IntentionTests.xctest"
-               BlueprintName = "IntentionTests"
-               ReferencedContainer = "container:intention.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "YES"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "77DA311E2E45494700C6DC9E"
-               BuildableName = "FocusSessionFlowUITests.xctest"
-               BlueprintName = "FocusSessionFlowUITests"
-               ReferencedContainer = "container:intention.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "YES"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "771350A82E6F3AE3009E397A"
-               BuildableName = "intentionTests.xctest"
-               BlueprintName = "intentionTests"
-               ReferencedContainer = "container:intention.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "YES"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "771350B52E6F3B0A009E397A"
-               BuildableName = "UI_intentionTests.xctest"
-               BlueprintName = "UI_intentionTests"
-               ReferencedContainer = "container:intention.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
             skipped = "NO"
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "773FE2872E6F43FB0033297A"
-               BuildableName = "unit_Tests.xctest"
-               BlueprintName = "unit_Tests"
+               BlueprintIdentifier = "778F542C2E6F60C2002FA9AF"
+               BuildableName = "intendlyTests.xctest"
+               BlueprintName = "intendlyTests"
                ReferencedContainer = "container:intention.xcodeproj">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "intendlyTests/testExample()">
+               </Test>
+               <Test
+                  Identifier = "intendlyTests/testPerformanceExample()">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>
@@ -91,7 +55,6 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      enableThreadSanitizer = "YES"
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"
@@ -108,6 +71,13 @@
             ReferencedContainer = "container:intention.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "RESET_LEGAL_ON_LAUNCH = 1"
+            value = ""
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

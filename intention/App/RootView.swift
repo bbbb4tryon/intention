@@ -8,16 +8,28 @@
 import SwiftUI
 
 enum RootSheet: Identifiable, Equatable {
-    case legal, membership, terms, privacy
+    case legal, membership, terms, privacy, medical
     var id: String {
         switch self {
         case .legal: return "legal"
         case .membership: return "membership"
         case .terms: return "terms"
         case .privacy: return "privacy"
+        case .medical: return "medical"
         }
     }
 }
+
+#if DEBUG
+extension RootView {
+    func _resetLegalGate() {
+        UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedVersion)
+        UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedAtEpoch)
+        activeSheet = .legal
+    }
+}
+#endif
+
 
 /// RootView wires shared VMs, persistence, and the single paywall sheet.
 struct RootView: View {
@@ -28,8 +40,8 @@ struct RootView: View {
     @State private var activeSheet: RootSheet? = nil
     @Environment(\.scenePhase) private var scenePhase
     
-    private var needsLegalGate: Bool { acceptedVersion < LegalConfig.currentVersion }
-//    
+    private var ifLegalGateNeeded: Bool { LegalConsent.needsConsent() }
+//
 //    /// bootstraps creates and defines default Category exactly once ever, even across relaunches
 //    @AppStorage("hasInitializedGeneralCategory") private var hasInitializedGeneralCategory = false
 //    @AppStorage("hasInitializedArchiveCategory") private var hasInitializedArchiveCategory = false
@@ -121,6 +133,13 @@ struct RootView: View {
                     .friendlyHelper()
             }
             .tabItem { Image(systemName: "house.fill") }
+            #if DEBUG
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Reset Legal") { _resetLegalGate() }
+                }
+            }
+            #endif
             
             NavigationStack {
                 HistoryV(viewModel: historyVM)
@@ -128,6 +147,13 @@ struct RootView: View {
                     .accessibilityAddTraits(.isHeader)
             }
             .tabItem {  Image(systemName: "book.fill").accessibilityAddTraits(.isHeader)  }
+            #if DEBUG
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Reset Legal") { _resetLegalGate() }
+                }
+            }
+            #endif
             
             NavigationStack {
                 SettingsV(viewModel: statsVM)
@@ -135,7 +161,21 @@ struct RootView: View {
                     .accessibilityAddTraits(.isHeader)
             }
             .tabItem {  Image(systemName: "gearshape.fill").accessibilityAddTraits(.isHeader) }
+            #if DEBUG
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Reset Legal") { _resetLegalGate() }
+                }
+            }
+            #endif
         }
+        #if DEBUG
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Reset Legal") { _resetLegalGate() }
+            }
+        }
+        #endif
 
         /// consistent color schemes for app tab bar
         .toolbarBackground(tabBG, for: .tabBar)
@@ -143,12 +183,12 @@ struct RootView: View {
         /// consistent color schemes for nav bars
         .toolbarBackground(tabBG, for: .navigationBar)
         
-        
-        .sheet(isPresented: $membershipVM.shouldPrompt) {
-            MembershipSheetV()
-                .environmentObject(membershipVM)
-                .environmentObject(theme)
-        }
+//        
+//        .sheet(isPresented: $membershipVM.shouldPrompt) {
+//            MembershipSheetV()
+//                .environmentObject(membershipVM)
+//                .environmentObject(theme)
+//        }
            // Legal gate sheet (reuses LegalDocV/Markdown files)
 //           .sheet(isPresented: $showLegalGate) {
 //               NavigationStack {
@@ -165,7 +205,12 @@ struct RootView: View {
 //               }
 //           }
         .onAppear {
-            if needsLegalGate { activeSheet = .legal }
+            if ifLegalGateNeeded { activeSheet = .legal }
+            if ProcessInfo.processInfo.environment["RESET_LEGAL_ON_LAUNCH"] == "1" {
+                UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedVersion)
+                UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedAtEpoch)
+                activeSheet = .legal
+            }
             
 //            /// First-run categories
 //            if !hasInitializedGeneralCategory {
@@ -198,32 +243,40 @@ struct RootView: View {
             case .legal:
                 LegalAgreementSheetV(
                     onAccept: {
+                        LegalConsent.recordAcceptance()
                         acceptedVersion = LegalConfig.currentVersion
                         acceptedAtEpoch = Date().timeIntervalSince1970
                         activeSheet = nil
                     },
                     onShowTerms:   { activeSheet = .terms },
-                    onShowPrivacy: { activeSheet = .privacy }
+                    onShowPrivacy: { activeSheet = .privacy },
+                    onShowMedical: { activeSheet = .medical }
                 )
-                //So users can't swipe it away
-                .interactiveDismissDisabled(true)
-
+                
             case .membership:
-                MembershipSheetV()
-                    .environmentObject(membershipVM)
-                    .environmentObject(theme)
+                NavigationStack {
+                    MembershipSheetV()
+                        .environmentObject(membershipVM)
+                        .environmentObject(theme)
+                }
                     .onDisappear { membershipVM.shouldPrompt = false }
-
+                
             case .terms:
                 NavigationStack {
                     LegalDocV(title: "Terms of Use",
                               markdown: MarkdownLoader.load(named: LegalConfig.termsFile))
                 }
-
+                
             case .privacy:
                 NavigationStack {
                     LegalDocV(title: "Privacy Policy",
                               markdown: MarkdownLoader.load(named: LegalConfig.privacyFile))
+                }
+                
+            case .medical:
+                NavigationStack {
+                    LegalDocV(title: "Wellness Disclaimer",
+                              markdown: MarkdownLoader.load(named: LegalConfig.medicalFile))
                 }
             }
         }

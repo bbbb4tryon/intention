@@ -29,4 +29,8 @@ We may update these Terms. Continued use means acceptance of changes.
 ## 8. Contact
 questions@argonnesoftware.com
 
+### 9. License
+This app is licensed under Apple’s [Standard EULA](https://www.apple.com/legal/internet-services/itunes/dev/stdeula/).
+
+
 

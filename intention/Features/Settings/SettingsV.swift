@@ -15,6 +15,9 @@ struct SettingsV: View {
     @ObservedObject var viewModel: StatsVM
     
     @State private var userID: String = ""      /// aka deviceID
+    @State private var showTerms = false
+    @State private var showPrivacy = false
+    @State private var showMedical = false
     
     private let screen: ScreenName = .settings
     private var p: ScreenStylePalette { theme.palette(for: screen) }
@@ -25,6 +28,15 @@ struct SettingsV: View {
     var body: some View {     
         ScrollView {
             Page(top: 4, alignment: .center) {
+            #if DEBUG
+            Button("Debug: Reset Legal Gate") {
+                UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedVersion)
+                UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedAtEpoch)
+            }
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            #endif
+
                 Card {
                     VStack(alignment: .leading, spacing: 8){
                         T("Membership", .section)
@@ -119,6 +131,31 @@ struct SettingsV: View {
                         .friendlyAnimatedHelper(theme.fontTheme.rawValue)
                     }
                 }
+                
+                /// Legal (reprise)
+                Card {
+                    VStack(alignment: .leading, spacing: 8){
+                        
+                        SettingsLegalSection(
+                          onShowTerms:   { showTerms = true },
+                          onShowPrivacy: { showPrivacy = true },
+                          onShowMedical: { showMedical = true }
+                        )
+                        .sheet(isPresented: $showTerms) {
+                          NavigationStack { LegalDocV(title: "Terms of Use",
+                            markdown: MarkdownLoader.load(named: LegalConfig.termsFile)) }
+                        }
+                        .sheet(isPresented: $showPrivacy) {
+                          NavigationStack { LegalDocV(title: "Privacy Policy",
+                            markdown: MarkdownLoader.load(named: LegalConfig.privacyFile)) }
+                        }
+                        .sheet(isPresented: $showMedical) {
+                          NavigationStack { LegalDocV(title: "Wellness Disclaimer",
+                            markdown: MarkdownLoader.load(named: LegalConfig.medicalFile)) }
+                        }
+                    }
+                }
+                
             }
         }
         .background(p.background.ignoresSafeArea())
