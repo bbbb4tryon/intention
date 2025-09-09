@@ -180,6 +180,18 @@ final class HistoryVM: ObservableObject {
         Task {
             do {
                 try await archiveActor.offloadOldTiles(from: categories, maxTiles: tileSoftCap)
+                // Remove oldest overflow locally, too
+                var total = categories.reduce(0) { $0 + $1.tiles.count }
+                if total > tileSoftCap {
+                    // pruning from tail of each category until total is less or equal <= to soft cap
+                    for index in categories.indices {
+                        while total > tileSoftCap && !categories[index].tiles.isEmpty {
+                            _ = categories[index].tiles.popLast()
+                            total -= 1
+                        }
+                        if total <= tileSoftCap { break }
+                    }
+                }
                 saveHistory(immediate: true)
             } catch {
                 debugPrint("[HistoryVM.limitCheck] offload error: ", error)

@@ -93,7 +93,7 @@ struct RootView: View {
                    recalibration: mode
                ))
 
-               // Optional: reset the focus flow so the user is ready to add two new tiles
+               // Reset the focus flow so the user is ready to add two new tiles
                Task { @MainActor in
                    try? await focus?.resetSessionStateForNewStart()
                }
@@ -182,35 +182,18 @@ struct RootView: View {
         .toolbarBackground(.visible, for: .tabBar)
         /// consistent color schemes for nav bars
         .toolbarBackground(tabBG, for: .navigationBar)
-        
-//        
-//        .sheet(isPresented: $membershipVM.shouldPrompt) {
-//            MembershipSheetV()
-//                .environmentObject(membershipVM)
-//                .environmentObject(theme)
-//        }
-           // Legal gate sheet (reuses LegalDocV/Markdown files)
-//           .sheet(isPresented: $showLegalGate) {
-//               NavigationStack {
-//                   LegalDocV(title: "Terms of Use",
-//                             markdown: MarkdownLoader.load(named: LegalConfig.termsFile))
-//                   .accessibilityAddTraits(.isHeader)
-//               }
-//           }
-//           .sheet(isPresented: $showPrivacy) {
-//               NavigationStack {
-//                   LegalDocV(title: "Privacy Policy",
-//                             markdown: MarkdownLoader.load(named: LegalConfig.privacyFile))
-//                   .accessibilityAddTraits(.isHeader)
-//               }
-//           }
+
         .onAppear {
             if ifLegalGateNeeded { activeSheet = .legal }
+            
+            // Wrapped in #if debug to not affect release
+//            #if DEBUG
             if ProcessInfo.processInfo.environment["RESET_LEGAL_ON_LAUNCH"] == "1" {
                 UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedVersion)
                 UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedAtEpoch)
                 activeSheet = .legal
             }
+//            #endif
             
 //            /// First-run categories
 //            if !hasInitializedGeneralCategory {

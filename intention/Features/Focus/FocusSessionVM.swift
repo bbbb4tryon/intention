@@ -101,9 +101,11 @@ final class FocusSessionVM: ObservableObject {
         tiles.append(newTile)
         tileText = ""
         canAdd = tiles.count < 2       /// Keeps flag in sync
-        
-        debugPrint("[FocusSessionVM.addTileAndPrepareForSession.Haptic.added] did not occur")
+        // Wrap noisy debug prints in if debug
         haptics.added()
+        #if DEBUG
+        debugPrint("[FocusSessionVM.addTileAndPrepareForSession] did not occur")
+        #endif
     }
     
     /// Starts the 20-min countdown for the current focus session.
@@ -186,7 +188,9 @@ final class FocusSessionVM: ObservableObject {
         chunkCountdown = nil
         phase = .notStarted
         countdownRemaining = chunkDuration
+        #if DEBUG
         debugPrint("Current 20-min countdown stoppped and reset")
+        #endif
     }
     
     // MARK: - Session Lifecycle/Flow
@@ -196,7 +200,7 @@ final class FocusSessionVM: ObservableObject {
         /// Use the *current* phase for the error payload
         guard tiles.count == 2, phase == .notStarted else {
             debugPrint("Begin pressed and [FocusSessionVM.beginOverallSession] triggered.")
-            throw FocusSessionError.invalidBegin(phase: .notStarted, tilesCount: tiles.count)
+            throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
         }
         await tileAppendTrigger.startSessionTracking()
         sessionActive = true                                /// Overall session activated

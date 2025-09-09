@@ -27,7 +27,9 @@ actor KeychainHelper {
         } else {
             let newID = UUID().uuidString
             saveUUID(newID)
+            #if DEBUG
             debugPrint("KeychainHelper: newID - \(newID)")
+            #endif
             return newID
         }
     }
