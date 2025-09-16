@@ -239,6 +239,25 @@ struct FocusSessionActiveV: View {
         .animation(.easeInOut(duration: 0.2), value: focusVM.tiles)
     }
  
+    @ViewBuilder
+    private func tileCell(for slot: Int) -> some View {
+        if let t = tile(at: slot){              // FIXME: rename t to cellContents
+            TileCell(tile: t)
+                .opacity(focusVM.isCompleted(t) ? 0.55 : 1.0)
+                .overlay(alignment: .topLeading) {
+                    if focusVM.isCompleted(t) {
+                        Image(systemName: "checkmark.circle")
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, .green)
+                            .imageScale(.large)
+                            .padding(6)
+                    }
+                }
+        } else {
+            
+        }
+    }
+    
     private var ctaTitle: String {
         focusVM.tiles.count < 2 ? "Add" : "Begin"
     }
@@ -248,6 +267,12 @@ struct FocusSessionActiveV: View {
            let second = focusVM.tiles.indices.contains(1) ? focusVM.tiles[1].text : nil
            return [second, first]
        }
+    
+    private func tile(at slot: Int) -> TileM? {
+        let tileInto = focusVM.tiles
+        guard (0..<tileInto.count).contains(slot) else { return nil }
+        return tileInto[slot]
+    }
    }
 
    // MARK: - Preview

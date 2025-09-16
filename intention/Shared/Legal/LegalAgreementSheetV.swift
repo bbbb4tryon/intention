@@ -15,18 +15,18 @@ struct LegalAgreementSheetV: View {
 
     var body: some View {
         NavigationStack {
-            Page(top: 20, alignment: .center) {
-
-                    Text("""
-                    Please review the policies below. 
-                    By tapping **Agree & Continue**, 
-                    you accept them.
-                    """
-                    )
+            Page(alignment: .center) {
+Spacer()
+                    Text("Please review the policies below.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    Text("By tapping **Agree & Continue**, you accept them.")
+//                    Text("you accept them.")
 //                    .multilineTextAlignment(.center)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineSpacing(2)
+                
                     // Links row
                 HStack(alignment: .center) {
                         Button("Terms") { onShowTerms() }
@@ -46,13 +46,16 @@ struct LegalAgreementSheetV: View {
                 }
                 
                 // spacer before CTA (larger gap)
-                Spacer().frame(height: 12)
-                Button("Agree & Continue") { onAccept() }
-                .frame(maxWidth: .infinity)
-                .buttonStyle(.borderedProminent)                    // makes it filled
-                .buttonBorderShape(.roundedRectangle(radius: 14))   // FIXME: remove and only need .controlSize(.large
-                .tint(.blue)                                        // fill color
-                .controlSize(.large)
+                Spacer().frame(height: 100)
+                Button("Agree & Continue", action: onAccept)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .controlSize(.large)
+//                .frame(maxWidth: .infinity)
+//                .buttonStyle(.borderedProminent)                    // makes it filled
+//                .buttonBorderShape(.roundedRectangle(radius: 14))   // FIXME: remove and only need .controlSize(.large
+//                .tint(.blue)                                        // fill color
+//                .controlSize(.large)
                 
                 // Footnote hint
                 Text("You can review these anytime in **Settings › Legal**.")

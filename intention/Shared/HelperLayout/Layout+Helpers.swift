@@ -50,3 +50,15 @@ struct BottomToast<Content: View>: View {
             .shadow(radius: 2, y: 1)
     }
 }
+
+struct TileCell: View {
+    let tile: TileM
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(tile.text).font(.callout)
+        }
+        .padding(12)
+//        .background(RoundedRectangle(cornerRadius: 12).fill(.ultraThinMaterial))
+    }
+}
