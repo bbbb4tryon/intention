@@ -5,7 +5,6 @@
 //  Created by Benjamin Tryon on 6/11/25.
 //
 
-
 import Foundation
 
 // Representative of a single user-created "intention" tile

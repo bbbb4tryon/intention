@@ -10,7 +10,6 @@ import UIKit
 struct AppIconProvider {
     // Returns runtime display of icon
     static var icon: UIImage? {
-        return UIImage(named: "RuntimeAppIcon") // From AppDisplayIcon.imageset
+        UIImage(named: "RuntimeAppIcon") // From AppDisplayIcon.imageset
     }
 }
-

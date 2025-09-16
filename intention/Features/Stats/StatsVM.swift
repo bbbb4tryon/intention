@@ -8,9 +8,14 @@
 import Foundation
 import SwiftUI
 
-enum StatsError: Error, LocalizedError {
+enum StatsError: Error, Equatable, LocalizedError {
     case calculationFailed
-    var errorDescription: String? { "Statistics could not be calculated." }
+    
+    var errorDescription: String? {
+        switch self {
+        case .calculationFailed: return "Calculation failed."
+        }
+    }
 }
 
 @MainActor
@@ -18,7 +23,7 @@ final class StatsVM: ObservableObject {
     @Published private(set) var averageCompletionRate: Double = 1.0
     @Published private(set) var totalCompletedIntentions: Int = 0
     @Published private(set) var recalibrationCounts: [RecalibrationMode: Int] = [:] // what?
-    @Published private(set) var lastRecalibrationChoice: RecalibrationMode? = nil
+    @Published private(set) var lastRecalibrationChoice: RecalibrationMode?
     @Published private(set) var streak: Int = 0
     @Published private(set) var longestStreak: Int = 0
     @Published var shouldPromptForMembership: Bool = false  // is good flag
@@ -31,7 +36,7 @@ final class StatsVM: ObservableObject {
     
     weak var memVM: MembershipVM?
     
-    init(persistence: any Persistence){
+    init(persistence: any Persistence) {
         self.persistence = persistence
         Task {  await loadSessions()    }
     }
@@ -86,7 +91,7 @@ final class StatsVM: ObservableObject {
         
         /// Update recalibration counts - counts and “last choice” are always correct after app relaunch
         var newCounts: [RecalibrationMode: Int] = [:]
-        var last: RecalibrationMode? = nil
+        var last: RecalibrationMode?
         for sesh in completedSessions {
             if let t = sesh.recalibration {
                 newCounts[t, default: 0] += 1
@@ -134,10 +139,9 @@ final class StatsVM: ObservableObject {
         longestStreak = maxStreak
     }
     
-    
     // MARK: Helpers + Throwing Core
     
-    ///Throwing core (async throws): use when the caller wants to decide how to handle the error
+    /// Throwing core (async throws): use when the caller wants to decide how to handle the error
     
     func logSessionThrowing( _ s: CompletedSession) async throws {
         completedSessions.append(s)
@@ -163,4 +167,3 @@ struct CompletedSession: Codable {
     let tileTexts: [String]
     let recalibration: RecalibrationMode?
 }
-

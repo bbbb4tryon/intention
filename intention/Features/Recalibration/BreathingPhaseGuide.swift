@@ -15,7 +15,7 @@ struct BreathingPhaseGuide: View {
     let p: ScreenStylePalette
     
     var body: some View {
-        HStack(spacing: 10){
+        HStack(spacing: 10) {
             ForEach(phases.indices, id: \.self) { i in
                 Text(phases[i])
                     .font(.footnote.weight(i == activeIndex ? .semibold : .regular))

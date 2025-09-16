@@ -32,7 +32,7 @@ struct HistoryV: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
-                Page(top: 4, alignment: .center){
+                Page(top: 4, alignment: .center) {
                     header
                     categoriesList(p: p)
                     Spacer(minLength: 16)
@@ -81,7 +81,7 @@ struct HistoryV: View {
             /// Kept outside ScrollView - gives space to GeometryReader
             organizerOverlay
         }
-        .safeAreaInset(edge: .bottom, spacing: 10) { VStack(spacing: 10){ undoToast; capToast } }
+        .safeAreaInset(edge: .bottom, spacing: 10) { VStack(spacing: 10) { undoToast; capToast } }
         .animation(.easeInOut(duration: 0.2), value: viewModel.lastUndoableMove != nil)
         .toolbar { historyToolbar }
         .navigationBarTitleDisplayMode(.inline) // optional, for a tighter header
@@ -154,7 +154,6 @@ struct HistoryV: View {
         }
     }
     
-    
     /// Organizer show as an overlay so it doesn't fight ScrollView dimensions
     @ViewBuilder private var organizerOverlay: some View {
         if isOrganizing {
@@ -169,8 +168,7 @@ struct HistoryV: View {
                         categories: $viewModel.categories,
                         onMoveTile: { tile, fromID, toID in
                             Task { @MainActor in                /// Using the throwing async core
-                                do { try await viewModel.moveTileThrowing(tile, from: fromID, to: toID) }
-                                catch { viewModel.lastError = error }
+                                do { try await viewModel.moveTileThrowing(tile, from: fromID, to: toID) } catch { viewModel.lastError = error }
                             }
                         },
                         onReorder: { newTiles, categoryID in
@@ -183,14 +181,13 @@ struct HistoryV: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .shadow(radius: 3, y: 1)
                     
-                    
                     Button { viewModel.flushPendingSaves(); withAnimation { isOrganizing = false }} label: {
                         T("Done", .section)
                     }
                     .secondaryActionStyle(screen: .history)
                     .padding(.bottom, 12)
                 }
-                //FIXME: use my button of this?
+                // FIXME: use my button of this?
                 .padding(12)
                 .background(.ultraThinMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -231,7 +228,6 @@ struct HistoryV: View {
                         showRenamePicker = true
                     }
                 } label: { T("Rename Category", .section) }
-                
                 
                 Button {
                     // If only one user cat, confirm delete directly; else choose which
@@ -333,9 +329,6 @@ private struct CategorySectionRow: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
-
-                            
-
                         
 //                        Spacer(minLength: 16)
 //                    }       //FIXME: IS LazyVStack screwing up the look?
@@ -363,7 +356,7 @@ private struct CategorySectionRow: View {
 //        }
 ////        .friendlyAnimatedHelper(viewModel.lastUndoableMove != nil)
 //    }
-//}
+// }
 
 // Mock/ test data prepopulated
 #if DEBUG

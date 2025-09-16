@@ -60,12 +60,10 @@ actor ArchiveActor {
 //        #endif
 //    }
     
-    
     // Write/load archived tiles for testing or restoration.
     func loadArchivedTiles() async -> [TileM] {
         guard let data = UserDefaults.standard.data(forKey: archiveKey) else { return [] }
-        do { return try decoder.decode([TileM].self, from: data) }
-        catch { debugPrint("ArchiveActor: decode archived tiles failed:", error); return [] }
+        do { return try decoder.decode([TileM].self, from: data) } catch { debugPrint("ArchiveActor: decode archived tiles failed:", error); return [] }
     }
     
     // Update on every Archive mutation

@@ -21,8 +21,7 @@ struct ErrorOverlay: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
             
-            Button("dismiss", action: dismissAction)
-                .secondaryActionStyle(screen: .recalibrate)
+            Button("Dismiss", action: dismissAction)
         }
         .padding()
         .background(.ultraThinMaterial)

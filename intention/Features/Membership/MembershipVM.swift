@@ -45,12 +45,12 @@ final class MembershipVM: ObservableObject {
             .assign(to: &$isMember)
         
         paymentService.$products
-            .map { $0.first }   //FIXME: not $0, what is 0 made of?
+            .map { $0.first }   // FIXME: not $0, what is 0 made of?
             .receive(on: RunLoop.main)
             .assign(to: &$primaryProduct)
     }
     
-    func triggerPromptifNeeded(afterSessions sessionCount: Int, threshold: Int = 2){
+    func triggerPromptifNeeded(afterSessions sessionCount: Int, threshold: Int = 2) {
         if !isMember && sessionCount >= threshold { shouldPrompt = true }
     }
     

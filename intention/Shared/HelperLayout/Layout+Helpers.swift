@@ -50,4 +50,3 @@ struct BottomToast<Content: View>: View {
             .shadow(radius: 2, y: 1)
     }
 }
-

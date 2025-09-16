@@ -32,7 +32,6 @@ public actor PersistenceActor {
     public init() {}
 }
 
-
 /// Actor conforms
 extension PersistenceActor: Persistence {
     

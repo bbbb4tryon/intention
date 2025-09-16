@@ -46,7 +46,6 @@ enum RootSheet: Identifiable, Equatable {
     }
 }
 
-
 #if DEBUG
 extension RootView {
     func _resetLegalGate() {
@@ -56,7 +55,6 @@ extension RootView {
     }
 }
 #endif
-
 
 /// App entry content. Owns all VMs and injects them downward; owns the single paywall sheet
 /// - Keeps VMs in the parent (single source of truth)
@@ -71,7 +69,7 @@ struct RootView: View {
     @AppStorage(LegalKeys.acceptedAtEpoch) private var acceptedAtEpoch: Double = 0
     
     // MARK: presentation
-    @State private var activeSheet: RootSheet? = nil
+    @State private var activeSheet: RootSheet?
 
     // MARK: scene
     @Environment(\.scenePhase) private var scenePhase
@@ -107,10 +105,10 @@ struct RootView: View {
         
         // "Single point" of wiring (create) across VMs
         focus.historyVM     = history                               // Focus writes completions into History
-        stats.memVM         = membership                         // Stats can query membership state
+        stats.memVM         = membership                            // Stats can query membership state
         
-        _theme = StateObject(wrappedValue: ThemeManager())
-        _memVM = StateObject(wrappedValue: MembershipVM())
+//        _theme = StateObject(wrappedValue: ThemeManager())        // FIXME: remove because this is a second init (first is _theme)
+        _memVM = StateObject(wrappedValue: MembershipVM())          // FIXME: remove because this is a second init (first is _memVM)
         
         // recalibration completion → Stats + reset focus flow
         recal.onCompleted = { [weak stats, weak focus] mode in
@@ -145,7 +143,7 @@ struct RootView: View {
         let _palSettings = theme.palette(for: .settings)
         let tabBG       = palFocus.background.opacity(0.88)          // Makes tab bar match app theme (iOS 16+)
         
-        //FIXME: MAY NEED TO REMOVE?
+        // FIXME: MAY NEED TO REMOVE?
         let _palRecal    = theme.palette(for: .recalibrate)
         let _palMem      = theme.palette(for: .membership)
         
@@ -165,7 +163,6 @@ struct RootView: View {
                 .navigationBarTitleDisplayMode(.inline)
         }
         .tabItem { Image(systemName: "timer") }
-
         
         // History tab
         let historyContent  = HistoryV(viewModel: historyVM)
@@ -216,10 +213,7 @@ struct RootView: View {
                 switch phase {
                 case .inactive, .background:
                     historyVM.flushPendingSaves()
-                    // If you want auto-pause on background:
-                    // if focusVM.phase == .running {
-                    //     focusVM.performAsyncAction { await focusVM.pauseCurrent20MinCountdown() }
-                    // }
+                    
                 case .active: break
                 @unknown default: break
                 }
@@ -269,7 +263,7 @@ struct RootView: View {
                                    acceptedAtEpoch = Date().timeIntervalSince1970
                                    activeSheet = nil
                                },
-                               onShowTerms:   { activeSheet = .terms },
+                               onShowTerms: { activeSheet = .terms },
                                onShowPrivacy: { activeSheet = .privacy },
                                onShowMedical: { activeSheet = .medical }
                            )
@@ -440,7 +434,7 @@ struct RootView: View {
 //        .environmentObject(prefs)
 //        .environmentObject(haptics)
 //    }
-//}
+// }
 
 #if DEBUG
 #Preview {

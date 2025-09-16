@@ -10,7 +10,7 @@ import SwiftUI
 // MARK: - AppIconView
 struct Helper_AppIconV: View {
     var body: some View {
-        //safely unwraps uiimage from bundle extension
+        // safely unwraps uiimage from bundle extension
         if let uiImage = AppIconProvider.icon {
             // Good: have a non-optional UIImage to create a SwiftUI Image
             Image(uiImage: uiImage)

@@ -41,7 +41,6 @@ struct RecalibrationV: View {
                     
                     T("Choose one below:", .caption)
                         .foregroundStyle(p.textSecondary)
-
                     
                     actionArea                          // the ONLY CTA/timer block
                     
@@ -82,7 +81,7 @@ struct RecalibrationV: View {
         
         // MARK: Helpers
         private var PresetPicker: some View {
-            HStack(spacing: 8){
+            HStack(spacing: 8) {
                 T("Breathing length", .caption).foregroundStyle(.secondary)
                 Picker("", selection: $breathingChoice) {
                     Text("2m").tag(2); Text("3m").tag(3); Text("4m").tag(4)
@@ -95,8 +94,8 @@ struct RecalibrationV: View {
             }
         }
     private var PresetPickerBal: some View {
-        HStack(spacing: 8){
-            Toggle (isOn: $vm.eyesClosedMode) {
+        HStack(spacing: 8) {
+            Toggle(isOn: $vm.eyesClosedMode) {
                 T("Eyes-closed expert mode", .caption).foregroundStyle(.secondary)
             }
                 .toggleStyle(.switch)
@@ -129,7 +128,6 @@ struct RecalibrationV: View {
                        } label: { T("Balancing", .action) }
                            .recalibrationActionStyle()
                    }
-                   
 
                case .running, .pause:
                    VStack(spacing: 8) {
@@ -164,9 +162,6 @@ struct RecalibrationV: View {
             .foregroundStyle(p.text)
         }
     }
-
-    
-    
     
 //
 //                    
@@ -275,9 +270,7 @@ struct RecalibrationV: View {
 //        }
 //    }
 
-
-
-//struct RecalibrateV: View {
+// struct RecalibrateV: View {
 //    @EnvironmentObject var theme: ThemeManager
 //    @ObservedObject var viewModel: RecalibrationVM
 //    @State private var recalibrationChoice: RecalibrationMode = .breathing
@@ -355,11 +348,11 @@ struct RecalibrationV: View {
 //        )
 //        .padding()
 //    }
-//}
+// }
 #if DEBUG
 #Preview("Recalibrate") {
     PreviewWrapper {
-        RecalibrationV(vm: RecalibrationVM(haptics:NoopHapticsClient()))
+        RecalibrationV(vm: RecalibrationVM(haptics: NoopHapticsClient()))
             .previewTheme()
     }
 }

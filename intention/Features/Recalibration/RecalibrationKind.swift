@@ -5,7 +5,6 @@
 //  Created by Benjamin Tryon on 9/3/25.
 //
 
-
 import Foundation
 
 enum RecalibrationKind: String, Codable, Hashable {

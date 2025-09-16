@@ -26,16 +26,16 @@ struct NoopHapticsClient: HapticsClient {
 }
 
 /// Live client that checks prefs.hapticsOnly and calls the engine
-//@MainActor
+// @MainActor
 struct LiveHapticsClient: HapticsClient {
     let prefs: AppPreferencesVM
     let engine: HapticsService
     private var enabled: Bool { prefs.hapticsOnly }
 
-    func added()         { guard enabled else { return }; engine.added() }
+    func added() { guard enabled else { return }; engine.added() }
     func countdownTick() { guard enabled else { return }; engine.countdownTick() }
-    func notifySwitch()  { guard enabled else { return }; engine.notifySwitch() }
-    func notifyDone()    { guard enabled else { return }; engine.notifyDone() }
+    func notifySwitch() { guard enabled else { return }; engine.notifySwitch() }
+    func notifyDone() { guard enabled else { return }; engine.notifyDone() }
 }
 
 /// for background tasks, just hop to main when calling: await MainActor.run { haptics.notifyDone() }
@@ -54,4 +54,4 @@ struct LiveHapticsClient: HapticsClient {
 ///
 ///    func notifyDone() async  { guard enabled else { return }
 ///        await MainActor.run { engine.longLongShort() } }
-///}
+/// }

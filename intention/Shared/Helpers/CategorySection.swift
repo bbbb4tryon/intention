@@ -43,5 +43,3 @@ struct CategorySection: View {
         .padding(.bottom, 12)
     }
 }
-
-

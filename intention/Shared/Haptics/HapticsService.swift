@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 
-//Option A for the delivery mechanism: inject a HapticsService from RootView (no singletons), @MainActor, warmed generators, safe everywhere
+// Option A for the delivery mechanism: inject a HapticsService from RootView (no singletons), @MainActor, warmed generators, safe everywhere
 @MainActor
 final class HapticsService: ObservableObject {
     private let light = UIImpactFeedbackGenerator(style: .light)
@@ -24,7 +24,7 @@ final class HapticsService: ObservableObject {
     }
     
     func countdownTick() {
-        medium.impactOccurred(); medium.impactOccurred();medium.impactOccurred();
+        medium.impactOccurred(); medium.impactOccurred();medium.impactOccurred()
         light.prepare()
     }
 

@@ -38,9 +38,8 @@ struct SettingsV: View {
         }
         #endif
 
-
                 Card {
-                    VStack(alignment: .leading, spacing: 8){
+                    VStack(alignment: .leading, spacing: 8) {
                         T("Membership", .section)
                         //                        .friendlyHelper()
                         (memVM.isMember
@@ -50,8 +49,8 @@ struct SettingsV: View {
                         
                         T("Your user ID/device ID: \(userID)", .caption)
                             .foregroundStyle(p.textSecondary)
-                        HStack(spacing: 12){
-                            Button (action: {
+                        HStack(spacing: 12) {
+                            Button(action: {
                                 /// Instead of Link()
                                 if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
                                     UIApplication.shared.open(url)
@@ -81,11 +80,11 @@ struct SettingsV: View {
                     Divider()
                     HStack(spacing: 20) {
                         StatPill(icon: "leaf.fill",
-                                  value: "\(statsVM.recalibrationCounts[.breathing,  default: 0])",
+                                  value: "\(statsVM.recalibrationCounts[.breathing, default: 0])",
                                   caption: "Breathing",
                                   screen: .settings)
                         StatPill(icon: "figure.walk",
-                                  value: "\(statsVM.recalibrationCounts[.balancing,  default: 0])",
+                                  value: "\(statsVM.recalibrationCounts[.balancing, default: 0])",
                                   caption: "Balancing",
                                   screen: .settings)
                     }
@@ -96,7 +95,7 @@ struct SettingsV: View {
                 
                 /// Preferences Section
                 Card {
-                    VStack(alignment: .leading,spacing: 8){
+                    VStack(alignment: .leading, spacing: 8) {
                         T("Preferences", .section)
                         Toggle(isOn: .constant(true)) { T("Enable Notification", .caption) }
                         Toggle(isOn: $prefs.hapticsOnly) { T("Haptics Only: Vibration cues only", .caption)
@@ -136,10 +135,10 @@ struct SettingsV: View {
                 
                 /// Legal (reprise)
                 Card {
-                    VStack(alignment: .leading, spacing: 8){
+                    VStack(alignment: .leading, spacing: 8) {
                         
                         SettingsLegalSection(
-                          onShowTerms:   { showTerms = true },
+                          onShowTerms: { showTerms = true },
                           onShowPrivacy: { showPrivacy = true },
                           onShowMedical: { showMedical = true }
                         )

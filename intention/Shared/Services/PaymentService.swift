@@ -47,13 +47,11 @@ final class PaymentService: ObservableObject {
 //                    UserDefaults.standard.set(true, forKey: "isMember")
 //                }
             case .userCancelled, .pending:
-                //FIXME: overlay
+                // FIXME: overlay
                 debugPrint("[PaymentService] user cancelled")
-                break
-            @unknown default:
-                //FIXME: overlay
+                @unknown default:
+                // FIXME: overlay
                 debugPrint("[PaymentService] Purchase failed")
-                break
         }
     }
     
@@ -104,8 +102,8 @@ final class PaymentService: ObservableObject {
         isMember = UserDefaults.standard.bool(forKey: "isMember")
     }
 }
-//#if DEBUG
-//#Preview {
+// #if DEBUG
+// #Preview {
 //    PaymentService()
-//}
-//#endIf
+// }
+// #endIf

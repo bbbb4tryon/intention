@@ -28,7 +28,6 @@ extension View {
         }
     }
     
-    
     @ViewBuilder
     func safeAreaTopPadding() -> some View {
         if #available(iOS 17.0, *) {

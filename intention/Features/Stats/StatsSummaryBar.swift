@@ -10,7 +10,6 @@ import SwiftUI
 struct StatsSummaryBar: View {
     @EnvironmentObject var theme: ThemeManager
     @EnvironmentObject var vm: StatsVM
-   
 
     var body: some View {
         HStack(spacing: 12) {
@@ -20,7 +19,7 @@ struct StatsSummaryBar: View {
                       screen: .settings)
 
             StatPill(icon: "checkmark",
-                      value: String(format: "%.0f%%", vm.averageCompletionRate * 100), //FIXME: value: vm.avgCompletionString, label: "Avg.")
+                      value: String(format: "%.0f%%", vm.averageCompletionRate * 100), // FIXME: value: vm.avgCompletionString, label: "Avg.")
                       caption: "Avg. completion",
                       screen: .settings)
 

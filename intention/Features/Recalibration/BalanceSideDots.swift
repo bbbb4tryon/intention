@@ -13,7 +13,7 @@ struct BalanceSideDots: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            dot(label: "Left",  isActive: activeIndex == 0)
+            dot(label: "Left", isActive: activeIndex == 0)
             dot(label: "Right", isActive: activeIndex == 1)
         }
         .frame(maxWidth: .infinity)

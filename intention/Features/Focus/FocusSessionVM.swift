@@ -9,7 +9,7 @@ import SwiftUI
 import Foundation
 
 /// Error cases for focus session flow
-enum FocusSessionError: Error, Equatable {
+enum FocusSessionError: Error, Equatable, LocalizedError {
     case emptyInput
     case tooManyTiles(limit: Int = 2)
     case invalidBegin(phase: FocusSessionVM.Phase, tilesCount: Int)
@@ -39,7 +39,7 @@ final class FocusSessionVM: ObservableObject {
     }
     
     // MARK: - Published UI State
-    @Published var tileText: String = ""  { didSet { validationMessages = tileText.taskValidationMessages }}         /// Input field for tiles' text;   Validate whenever tileText changes
+    @Published var tileText: String = "" { didSet { validationMessages = tileText.taskValidationMessages }}         /// Input field for tiles' text;   Validate whenever tileText changes
     @Published var tiles: [TileM] = []              /// List of current session tiles (max 2)
     @Published var canAdd: Bool = true              /// Flag if user can add more tiles at that point
     @Published var sessionActive: Bool = false      /// Overall session state (two 20-min chunks)
@@ -55,8 +55,8 @@ final class FocusSessionVM: ObservableObject {
     private let haptics: HapticsClient
     private let config: TimerConfig
     private let tileAppendTrigger: FocusTimerActor
-    private var chunkCountdown: Task<Void, Never>? = nil        /// background live time keeper/ticker
-    private var sessionCompletionTask: Task<Void, Never>? = nil /// background timer for the entire session (2x 20-min chunks)
+    private var chunkCountdown: Task<Void, Never>?        /// background live time keeper/ticker
+    private var sessionCompletionTask: Task<Void, Never>? /// background timer for the entire session (2x 20-min chunks)
     weak var historyVM: HistoryVM?                      /// Link to history view model for/to save completed sessions
     var chunkDuration: Int { config.chunkDuration }     /// Default 20 min chunk duration constant
     
@@ -94,18 +94,16 @@ final class FocusSessionVM: ObservableObject {
         
         let newTile = TileM(text: trimmed)
         
-        /// Cross-actor hop; no 'try' becuase the actor method doesn't throw
+        /// Cross-actor hop; no 'try' because the actor method doesn't throw
         let accepted = await tileAppendTrigger.addTile(newTile)
-        guard accepted else { throw FocusSessionError.tooManyTiles(limit: 2) }
+        guard accepted else { debugPrint("[FocusSessionVM.addTileAndPrepareForSession] did not occur"); throw FocusSessionError.tooManyTiles(limit: 2)
+ }
         
         tiles.append(newTile)
         tileText = ""
         canAdd = tiles.count < 2       /// Keeps flag in sync
         // Wrap noisy debug prints in if debug
         haptics.added()
-        #if DEBUG
-        debugPrint("[FocusSessionVM.addTileAndPrepareForSession] did not occur")
-        #endif
     }
     
     /// Starts the 20-min countdown for the current focus session.
@@ -132,7 +130,6 @@ final class FocusSessionVM: ObservableObject {
             }
             //            try? await clock.sleep(for: .seconds(1))
             //            await MainActor.run { self.countdownRemaining -= 1 }
-            
             
             //        guard !Task.isCancelled else { return }     //FIXME: what's this?
             /// >>> All post-finish work happens INSIDE the Task <<<
@@ -177,7 +174,7 @@ final class FocusSessionVM: ObservableObject {
 //            }
     
     /// Advances chunk index and checks session completion
-    func naturallyAdvanceSessionChunk(){
+    func naturallyAdvanceSessionChunk() {
         currentSessionChunk += 1
         self.checkSessionCompletion()   /// check if chunks session is completed
     }
@@ -240,8 +237,7 @@ final class FocusSessionVM: ObservableObject {
     func beginOverallSession() async throws {
         /// Use the *current* phase for the error payload
         guard tiles.count == 2, phase == .notStarted else {
-            debugPrint("Begin pressed and [FocusSessionVM.beginOverallSession] triggered.")
-            throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
+            debugPrint("[FocusSessionVM.beginOverallSession] not triggered; no session created."); throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
         }
         await tileAppendTrigger.startSessionTracking()
         sessionActive = true                                /// Overall session activated
@@ -280,8 +276,7 @@ final class FocusSessionVM: ObservableObject {
     }
     
     func handlePrimaryTap() async {
-        if tiles.count < 2 { try? await addTileAndPrepareForSession(tileText) }
-        else if tiles.count == 2 && phase == .notStarted { try? await beginOverallSession() }
+        if tiles.count < 2 { try? await addTileAndPrepareForSession(tileText) } else if tiles.count == 2 && phase == .notStarted { try? await beginOverallSession() }
     }
     
    /// Chunks session for completion, triggers recalibration **uses HistoryVM canonical IDs**
@@ -294,7 +289,7 @@ final class FocusSessionVM: ObservableObject {
             guard let targetCategoryID = historyVM?.generalCategoryID else {
                 debugPrint("[FocusSessionVM.checkSessionCompletion] missing historyVM.generalCategoryID"); return
             }
-            for tile in tiles.prefix(2){
+            for tile in tiles.prefix(2) {
                 historyVM?.addToHistory(tile, to: targetCategoryID)
             }
             /// NOTE: - Don't reset actor for new session here - user will on modal
@@ -307,8 +302,6 @@ final class FocusSessionVM: ObservableObject {
             /// If currentSessionChunk is 1 and phase==finished, the UI will show "Start Next 20 Minutes"
         }
     }
-
-    
     
     // MARK: - Helpers
     
@@ -316,7 +309,7 @@ final class FocusSessionVM: ObservableObject {
     var formattedTime: String {
         let minutes = countdownRemaining / 60
         let seconds = countdownRemaining % 60
-        return String(format: "%02d:%02d", minutes,seconds)
+        return String(format: "%02d:%02d", minutes, seconds)
     }
     
     /// Sets flag to trigger recalibration modal
@@ -325,7 +318,6 @@ final class FocusSessionVM: ObservableObject {
             showRecalibrate = true
         }
     }
-    
 
     //  NOTE: Do not set as a global function - needs to modify `lastError`
     func performAsyncAction(_ action: @escaping () async throws -> Void) {
@@ -350,7 +342,7 @@ final class FocusSessionVM: ObservableObject {
         }
     }
     
-    ///Throwing core (async throws): use when the caller wants to decide how to handle the error
+    /// Throwing core (async throws): use when the caller wants to decide how to handle the error
 }
 extension FocusSessionVM {
     var inputValidationState: ValidationState {

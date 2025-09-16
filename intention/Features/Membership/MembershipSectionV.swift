@@ -6,10 +6,10 @@
 //
 //
 /// DON'T NEED THIS - it is an extra purchase entry point
-//import SwiftUI
-//import StoreKit
+// import SwiftUI
+// import StoreKit
 //
-//private extension Product.SubscriptionPeriod.Unit {
+// private extension Product.SubscriptionPeriod.Unit {
 //    var displayText: String {
 //        switch self {
 //        case .day: "day"
@@ -19,9 +19,9 @@
 //        @unknown default: "period"
 //        }
 //    }
-//}
+// }
 //
-//struct MembershipSectionV: View {
+// struct MembershipSectionV: View {
 //    @StateObject private var pay = PaymentService()
 //
 //    private var priceLine: String {
@@ -58,4 +58,4 @@
 //            }
 //        }
 //    }
-//}
+// }

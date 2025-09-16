@@ -50,4 +50,3 @@ extension View {
         self.modifier(PulsingBorderModifier(isSelected: isSelected))
     }
 }
-

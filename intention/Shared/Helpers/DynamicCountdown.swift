@@ -120,5 +120,4 @@ struct DynamicCountdown: View {
 //    private var shouldShowCompactCheckmark: Bool {
 //        viewModel.phase == .finished && viewModel.currentSessionChunk == 1
 //    }
-//}
-
+// }

@@ -11,7 +11,7 @@ struct LegalAgreementSheetV: View {
     let onAccept: () -> Void
     let onShowTerms: () -> Void
     let onShowPrivacy: () -> Void
-    var onShowMedical: (() -> Void)? = nil   // optional extra link
+    var onShowMedical: (() -> Void)?   // optional extra link
 
     var body: some View {
         NavigationStack {
@@ -28,7 +28,7 @@ struct LegalAgreementSheetV: View {
                         .foregroundStyle(.secondary)
                         .lineSpacing(2)
                     // Links row
-                HStack(alignment: .center){
+                HStack(alignment: .center) {
                         Button("Terms") { onShowTerms() }
                             .buttonStyle(.plain).underline()
                     Text("•").foregroundStyle(.tertiary)
@@ -49,9 +49,9 @@ struct LegalAgreementSheetV: View {
                 Spacer().frame(height: 12)
                 Button("Agree & Continue") { onAccept() }
                 .frame(maxWidth: .infinity)
-                .buttonStyle(.borderedProminent)     // makes it filled
-                .buttonBorderShape(.roundedRectangle(radius: 14))
-                .tint(.blue)                          // fill color
+                .buttonStyle(.borderedProminent)                    // makes it filled
+                .buttonBorderShape(.roundedRectangle(radius: 14))   // FIXME: remove and only need .controlSize(.large
+                .tint(.blue)                                        // fill color
                 .controlSize(.large)
                 
                 // Footnote hint
@@ -69,7 +69,6 @@ struct LegalAgreementSheetV: View {
         .presentationDetents([.medium, .large])
     }
 }
-
 
 #if DEBUG
 #Preview {

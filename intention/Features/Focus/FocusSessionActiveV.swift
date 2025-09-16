@@ -28,8 +28,15 @@
 import SwiftUI
 
 /// Error types specific to the active session/chunk
-enum ActiveSessionError: Error, Equatable {
+enum ActiveSessionError: Error, Equatable, LocalizedError {
     case submitFailed, sessionAlreadyRunning
+    
+    var errorDescription: String? {
+        switch self {
+        case .submitFailed: return "Submit failed"
+        case .sessionAlreadyRunning: return "A session is already running."
+        }
+    }
 }
 
 /// MembershipSheetV modal sheet presentation handling enum
@@ -96,8 +103,7 @@ struct FocusSessionActiveV: View {
                                 .submitLabel(.done)
                                 .onSubmit {
                                     Task {
-                                        do { try await focusVM.addTileAndPrepareForSession(focusVM.tileText); showValidation = false }
-                                        catch { showValidation = true }
+                                        do { try await focusVM.addTileAndPrepareForSession(focusVM.tileText); showValidation = false } catch { showValidation = true }
                                     }
                                 }
                                 .validatingField(state: vState, palette: p)
@@ -138,23 +144,21 @@ struct FocusSessionActiveV: View {
             .background(p.background.ignoresSafeArea())
             .ignoresSafeArea(.keyboard, edges: .bottom)
             
-            
             // Sheets
-            .sheet(isPresented: $focusVM.showRecalibrate) {
-                RecalibrationV(vm: recalibrationVM)
-                // FIXME: which looks better:
-                    .presentationDetents([.large])  // avoids "medium" overlap
-                    .presentationDragIndicator(.visible)
-                    .ignoresSafeArea()              // if the sheet edges are tight
-                // FIXME: or this at line 150, replacing current:
-                // Bottom inset: only when sheet is NOT showing
-//                    .safeAreaInset(edge: .bottom) {
-//                        if !focusVM.showRecalibrate { BottomComposer }
-//                    }
-            }
+//            .sheet(isPresented: $focusVM.showRecalibrate) {
+//                RecalibrationV(vm: recalibrationVM)
+//                // FIXME: which looks better:
+//                    .presentationDetents([.large])  // avoids "medium" overlap
+//                    .presentationDragIndicator(.visible)
+//                    .ignoresSafeArea()              // if the sheet edges are tight
+//                // FIXME: or this at line 150, replacing current:
+//                // Bottom inset: only when sheet is NOT showing
+////                    .safeAreaInset(edge: .bottom) {
+////                        if !focusVM.showRecalibrate { BottomComposer }
+////                    }
+//            }
             // FIXME: or this option is a "no overlap at all" look
-//            .fullScreenCover(isPresented: $focusVM.showRecalibrate) { RecalibrationV(vm: recalibrationVM) }
-
+            .fullScreenCover(isPresented: $focusVM.showRecalibrate) { RecalibrationV(vm: recalibrationVM) }
             
             // Bottom inset: slots + single CTA
             .safeAreaInset(edge: .bottom, spacing: 10) { BottomComposer }

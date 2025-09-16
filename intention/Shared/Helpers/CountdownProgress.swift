@@ -5,10 +5,10 @@
 //  Created by Benjamin Tryon on 7/10/25.
 //
 
-//import SwiftUI
+// import SwiftUI
 //
 //// Extracted for less noise; fontTheme and palette used directly
-//struct CountdownProgress: View {
+// struct CountdownProgress: View {
 //    let progressFraction: CGFloat
 //    let palette: ScreenStylePalette
 //    
@@ -28,5 +28,5 @@
 //                .animation(.linear(duration: 0.5), value: progressFraction)
 //        }
 //    }
-//}
+// }
 ///// See the computed property `progressFraction` in `FocusSessionActiveV`

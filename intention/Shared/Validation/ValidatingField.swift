@@ -5,7 +5,6 @@
 //  Created by Benjamin Tryon on 9/5/25.
 //
 
-
 import SwiftUI
 
 /// Visual treatment for validated fields using your ScreenStylePalette tokens

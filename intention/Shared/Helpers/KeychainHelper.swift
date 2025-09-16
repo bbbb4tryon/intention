@@ -38,10 +38,10 @@ actor KeychainHelper {
     private func saveUUID(_ uuid: String) {
             let data = Data(uuid.utf8)
             let query: [String: Any] = [
-                kSecClass as String       : kSecClassGenericPassword,
-                kSecAttrService as String : service,
-                kSecAttrAccount as String : account,
-                kSecValueData as String   : data
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: service,
+                kSecAttrAccount as String: account,
+                kSecValueData as String: data
             ]
             // Remove any old and add new
             SecItemDelete(query as CFDictionary)
@@ -50,11 +50,11 @@ actor KeychainHelper {
     
     private func readUUID() -> String? {
             let query: [String: Any] = [
-                kSecClass as String       : kSecClassGenericPassword,
-                kSecAttrService as String : service,
-                kSecAttrAccount as String : account,
-                kSecReturnData as String  : true,
-                kSecMatchLimit as String  : kSecMatchLimitOne
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: service,
+                kSecAttrAccount as String: account,
+                kSecReturnData as String: true,
+                kSecMatchLimit as String: kSecMatchLimitOne
             ]
             var result: AnyObject?
             let status = SecItemCopyMatching(query as CFDictionary, &result)

@@ -15,7 +15,7 @@ The goal: one component system (Page, Card, fonts, paddings) + per-screen palett
 // Shim: keep code compiling that expects ThemePalette, if any still refer to it!
 typealias ThemePalette = ScreenStylePalette
 // MARK: - Screens
-enum ScreenName { case homeActiveIntentions, history, settings, recalibrate, membership } //FIXME: rename homeActiveIntentions to focus
+enum ScreenName { case homeActiveIntentions, history, settings, recalibrate, membership } // FIXME: rename homeActiveIntentions to focus
 // MARK: - Text roles
 enum TextRole {
     case largeTitle, header, section, title3, label, body, tile, secondary, caption, action, placeholder
@@ -66,7 +66,7 @@ enum AppColorTheme: String, CaseIterable {
         switch self {
         case .default: .intSeaGreen
         case .sea:     Color(red: 0.35, green: 0.75, blue: 1.0)
-        case .fire:    Color(red: 1.0,  green: 0.5,  blue: 0.0)
+        case .fire:    Color(red: 1.0, green: 0.5, blue: 0.0)
         }
     }
 
@@ -82,32 +82,32 @@ enum AppColorTheme: String, CaseIterable {
                 switch screen {
                 case .homeActiveIntentions, .history, .settings:
                     return .init(
-                        primary:   .intGreen,
+                        primary: .intGreen,
                         background: baseBackground,
-                        surface:   .intTan.opacity(0.2),
-                        accent:    accent,
-                        text:      textPrimary,
+                        surface: .intTan.opacity(0.2),
+                        accent: accent,
+                        text: textPrimary,
                         textSecondary: textSecondary,
-                        success:   .green,
-                        warning:   .yellow,
-                        danger:    .red,
-                        border:    .black.opacity(0.12),
+                        success: .green,
+                        warning: .yellow,
+                        danger: .red,
+                        border: .black.opacity(0.12),
                         gradientBackground: nil
                     )
 
                 case .recalibrate:
                     // unchanged – this one was fine
                     return .init(
-                        primary:   .intSeaGreen,
+                        primary: .intSeaGreen,
                         background: Color.blue.opacity(0.20),
-                        surface:   .intTan.opacity(0.2),
-                        accent:    accent,
-                        text:      .black,
+                        surface: .intTan.opacity(0.2),
+                        accent: accent,
+                        text: .black,
                         textSecondary: .black.opacity(0.70),
-                        success:   .green,
-                        warning:   .yellow,
-                        danger:    .red,
-                        border:    .black.opacity(0.10),
+                        success: .green,
+                        warning: .yellow,
+                        danger: .red,
+                        border: .black.opacity(0.10),
                         gradientBackground: .init(
                             colors: [Color.blue.opacity(0.20), Color.blue.opacity(0.85)],
                             start: .topLeading,
@@ -117,16 +117,16 @@ enum AppColorTheme: String, CaseIterable {
 
                 case .membership:
                     return .init(
-                        primary:   .intMint,
+                        primary: .intMint,
                         background: Color(.systemGroupedBackground),
-                        surface:   .white.opacity(0.96),
-                        accent:    accent,
-                        text:      .intCharcoal,
+                        surface: .white.opacity(0.96),
+                        accent: accent,
+                        text: .intCharcoal,
                         textSecondary: .intCharcoal.opacity(0.72),
-                        success:   .green,
-                        warning:   .yellow,
-                        danger:    .red,
-                        border:    .black.opacity(0.10),
+                        success: .green,
+                        warning: .yellow,
+                        danger: .red,
+                        border: .black.opacity(0.10),
                         gradientBackground: nil
                     )
                 }
@@ -138,72 +138,72 @@ enum AppColorTheme: String, CaseIterable {
                 switch screen {
                 case .homeActiveIntentions:
                     return .init(
-                        primary:   Color(red: 0.00, green: 0.30, blue: 0.70),
+                        primary: Color(red: 0.00, green: 0.30, blue: 0.70),
                         background: bg,
-                        surface:   .white.opacity(0.08),
-                        accent:    accent,
-                        text:      tx,
+                        surface: .white.opacity(0.08),
+                        accent: accent,
+                        text: tx,
                         textSecondary: tx.opacity(0.78),
-                        success:   .green,
-                        warning:   .yellow,
-                        danger:    .red,
-                        border:    .white.opacity(0.15),
+                        success: .green,
+                        warning: .yellow,
+                        danger: .red,
+                        border: .white.opacity(0.15),
                         gradientBackground: nil
                     )
                 case .history:
                     return .init(
-                        primary:   Color(red: 0.12, green: 0.45, blue: 0.75),
+                        primary: Color(red: 0.12, green: 0.45, blue: 0.75),
                         background: bg.opacity(0.96),
-                        surface:   .white.opacity(0.06),
-                        accent:    accent,
-                        text:      tx,
+                        surface: .white.opacity(0.06),
+                        accent: accent,
+                        text: tx,
                         textSecondary: tx.opacity(0.78),
-                        success:   .green,
-                        warning:   .yellow,
-                        danger:    .red,
-                        border:    .white.opacity(0.15),
+                        success: .green,
+                        warning: .yellow,
+                        danger: .red,
+                        border: .white.opacity(0.15),
                         gradientBackground: nil
                     )
                 case .settings:
                     return .init(
-                        primary:   Color(red: 0.00, green: 0.28, blue: 0.62),
+                        primary: Color(red: 0.00, green: 0.28, blue: 0.62),
                         background: bg,
-                        surface:   .white.opacity(0.08),
-                        accent:    accent,
-                        text:      tx,
+                        surface: .white.opacity(0.08),
+                        accent: accent,
+                        text: tx,
                         textSecondary: tx.opacity(0.78),
-                        success:   .green,
-                        warning:   .yellow,
-                        danger:    .red,
-                        border:    .white.opacity(0.15),
+                        success: .green,
+                        warning: .yellow,
+                        danger: .red,
+                        border: .white.opacity(0.15),
                         gradientBackground: nil
                     )
                 case .recalibrate:
                     return .init(
-                        primary:   Color(red: 0.00, green: 0.12, blue: 0.22),
+                        primary: Color(red: 0.00, green: 0.12, blue: 0.22),
                         background: Color(red: 0.00, green: 0.30, blue: 0.60).opacity(0.80),
-                        surface:   .white.opacity(0.10),
-                        accent:    accent,
-                        text:      .white,
+                        surface: .white.opacity(0.10),
+                        accent: accent,
+                        text: .white,
                         textSecondary: .white.opacity(0.85),
-                        success:   .green,
-                        warning:   .yellow,
-                        danger:    .red,
-                        border:    .white.opacity(0.18),
+                        success: .green,
+                        warning: .yellow,
+                        danger: .red,
+                        border: .white.opacity(0.18),
                         gradientBackground: nil
                     )
                 case .membership:
                     return .init(
-                        primary:   Color(red: 0.00, green: 0.28, blue: 0.62), // match settings
+                        primary: Color(red: 0.00, green: 0.28, blue: 0.62), // match settings
                         background: bg,                                      // dark theme background
-                        surface:   .white.opacity(0.12),                     // slightly higher for readability
-                        accent:    accent,
-                        text:      tx,
+                        surface: .white.opacity(0.12),                     // slightly higher for readability
+                        accent: accent,
+                        text: tx,
                         textSecondary: tx.opacity(0.85),
-                        success:   .green,
-                        warning:   .yellow,
-                        danger:    .red,
-                        border:    .white.opacity(0.18),
+                        success: .green,
+                        warning: .yellow,
+                        danger: .red,
+                        border: .white.opacity(0.18),
                         gradientBackground: nil
                     )
                 }
@@ -214,72 +214,72 @@ enum AppColorTheme: String, CaseIterable {
             switch screen {
             case .homeActiveIntentions:
                 return .init(
-                    primary:   Color(red: 0.80, green: 0.22, blue: 0.02),
+                    primary: Color(red: 0.80, green: 0.22, blue: 0.02),
                                     background: bg,
-                                    surface:   .white.opacity(0.07),
-                                    accent:    accent,
-                                    text:      tx,
+                                    surface: .white.opacity(0.07),
+                                    accent: accent,
+                                    text: tx,
                                     textSecondary: tx.opacity(0.78),
-                                    success:   .green,
-                                    warning:   .yellow,
-                                    danger:    .red,
-                                    border:    .white.opacity(0.14),
+                                    success: .green,
+                                    warning: .yellow,
+                                    danger: .red,
+                                    border: .white.opacity(0.14),
                     gradientBackground: nil
                                 )
             case .history:
                 return .init(
-                    primary:   Color(red: 0.72, green: 0.32, blue: 0.06),
+                    primary: Color(red: 0.72, green: 0.32, blue: 0.06),
                     background: bg.opacity(0.96),
-                    surface:   .white.opacity(0.06),
-                    accent:    accent,
-                    text:      tx,
+                    surface: .white.opacity(0.06),
+                    accent: accent,
+                    text: tx,
                     textSecondary: tx.opacity(0.78),
-                    success:   .green,
-                    warning:   .yellow,
-                    danger:    .red,
-                    border:    .white.opacity(0.14),
+                    success: .green,
+                    warning: .yellow,
+                    danger: .red,
+                    border: .white.opacity(0.14),
                     gradientBackground: nil
                 )
             case .settings:
                 return .init(
-                    primary:   Color(red: 0.88, green: 0.12, blue: 0.02),
+                    primary: Color(red: 0.88, green: 0.12, blue: 0.02),
                                     background: bg,
-                                    surface:   .white.opacity(0.07),
-                                    accent:    accent,
-                                    text:      tx,
+                                    surface: .white.opacity(0.07),
+                                    accent: accent,
+                                    text: tx,
                                     textSecondary: tx.opacity(0.78),
-                                    success:   .green,
-                                    warning:   .yellow,
-                                    danger:    .red,
-                                    border:    .white.opacity(0.14),
+                                    success: .green,
+                                    warning: .yellow,
+                                    danger: .red,
+                                    border: .white.opacity(0.14),
                     gradientBackground: nil
                                 )
             case .recalibrate:
                 return .init(
-                    primary:   .black,
+                    primary: .black,
                     background: Color(red: 0.55, green: 0.02, blue: 0.02),
-                    surface:   .white.opacity(0.08),
-                    accent:    accent,
-                    text:      .white,
+                    surface: .white.opacity(0.08),
+                    accent: accent,
+                    text: .white,
                     textSecondary: .white.opacity(0.85),
-                    success:   .green,
-                    warning:   .yellow,
-                    danger:    .red,
-                    border:    .white.opacity(0.16),
+                    success: .green,
+                    warning: .yellow,
+                    danger: .red,
+                    border: .white.opacity(0.16),
                     gradientBackground: nil
                 )
             case .membership:
                 return .init(
-                    primary:   Color(red: 0.88, green: 0.12, blue: 0.02), // match settings
+                    primary: Color(red: 0.88, green: 0.12, blue: 0.02), // match settings
                     background: bg,
-                    surface:   .white.opacity(0.12),                      // slightly higher for readability
-                    accent:    accent,
-                    text:      tx,
+                    surface: .white.opacity(0.12),                      // slightly higher for readability
+                    accent: accent,
+                    text: tx,
                     textSecondary: tx.opacity(0.85),
-                    success:   .green,
-                    warning:   .yellow,
-                    danger:    .red,
-                    border:    .white.opacity(0.16),
+                    success: .green,
+                    warning: .yellow,
+                    danger: .red,
+                    border: .white.opacity(0.16),
                     gradientBackground: nil
                 )
             }
@@ -291,10 +291,10 @@ enum AppColorTheme: String, CaseIterable {
 @MainActor
 final class ThemeManager: ObservableObject {
     @AppStorage("selectedColorTheme") private var colorRaw: String = AppColorTheme.default.rawValue
-    @AppStorage("selectedFontTheme")  private var fontRaw:   String = AppFontTheme.serif.rawValue
+    @AppStorage("selectedFontTheme")  private var fontRaw: String = AppFontTheme.serif.rawValue
 
     @Published var colorTheme: AppColorTheme { didSet { colorRaw = colorTheme.rawValue } }
-    @Published var fontTheme:  AppFontTheme  { didSet { fontRaw  = fontTheme.rawValue  } }
+    @Published var fontTheme: AppFontTheme { didSet { fontRaw  = fontTheme.rawValue  } }
 
     init() {
         let storedColor = UserDefaults.standard.string(forKey: "selectedColorTheme") ?? AppColorTheme.default.rawValue

@@ -10,7 +10,7 @@ import UIKit
 
 final class TileOrganizerVC: UICollectionViewController {
     var onMoveTile: (TileM, UUID, UUID) -> Void = { _, _, _ in }
-    var onReorder: (([TileM], UUID) -> Void)? = nil
+    var onReorder: (([TileM], UUID) -> Void)?
 
     private var categories: [CategoriesModel] = []
     private var dragSourceIndexPath: IndexPath?

@@ -62,4 +62,3 @@ struct CategoryTileList: View {
         }
     }
 }
-

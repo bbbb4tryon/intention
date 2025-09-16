@@ -44,7 +44,7 @@ struct Pie: View {
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     var body: some View {
-        let palette = theme.palette(for:.homeActiveIntentions)
+        let palette = theme.palette(for: .homeActiveIntentions)
         ZStack {
             Circle()
                 .fill(palette.background.opacity(0.2))

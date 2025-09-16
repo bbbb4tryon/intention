@@ -5,7 +5,7 @@
 //  Created by Benjamin Tryon on 6/11/25.
 //
 //
-//import Foundation
+// import Foundation
 import SwiftUI
 
 struct MembershipSheetV: View {
@@ -83,7 +83,6 @@ struct MembershipSheetV: View {
                         }
                         .secondaryActionStyle(screen: .membership)
                         
-                        
                         if !AppEnvironment.isAppStoreReviewing {
                             Divider()
                             Button(action: {
@@ -95,7 +94,7 @@ struct MembershipSheetV: View {
                                         viewModel.setError(MembershipError.appEnvironmentFail)   /// Shows ErrorOverlay
                                     }
                                 }
-                            }){
+                            }) {
                                 T("Visit Website", .section)
                             }
                             .primaryActionStyle(screen: .membership)
@@ -135,8 +134,7 @@ struct MembershipSheetV: View {
                                         
                                         Button {
                                             Task {
-                                                do { try await viewModel.verifyCode(codeInput) }
-                                                catch {
+                                                do { try await viewModel.verifyCode(codeInput) } catch {
                                                     debugPrint("[MembershipSheetV.showCodeEntry] error: ", error )
                                                     viewModel.setError(error)                /// Shows ErrorOverlay
                                                 }

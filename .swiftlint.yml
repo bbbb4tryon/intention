@@ -1,9 +1,9 @@
 #
-//  .swiftlint.yml
-//  intention
-//
-//  Created by Benjamin Tryon on 8/7/25.
-//
+#  .swiftlint.yml
+#  intention
+#
+#  Created by Benjamin Tryon on 8/7/25.
+#
 
 #Tip: run --fix in a separate **commit** so reviewers can skim formatting diffs easily
 # Safe local run:   % swiftlint --fix --config .swiftlint.yml
@@ -18,7 +18,6 @@ disabled_rules:
 
 # low-noise useful, catch real issues
 opt_in_rules:
-  - unused_import                # trims dead imports
   - redundant_type_annotation    # let type inference work
   - missing_docs
   - todo
@@ -41,11 +40,22 @@ missing_docs:
 # Treat NOTE like TODO and FIXME
 todo:
   severity: warning
-  keywords: ["TODO", "FIXME", "NOTE"]
 
 # Enforce structured MARKs for sections
 mark:
   severity: warning
+
+analyzer_rules:
+  - unused_import   # only runs with `swiftlint analyze`, trims dead imports
+
+custom_rules:
+  note_comment:
+    name: "NOTE"
+    regex: "(?i)//\\s*NOTE\\b"
+    match_kinds:
+      - comment
+    message: "NOTE found"
+    severity: warning
 
 # If you ever see name nags in SwiftUI helpers, you can keep extending this list:
 identifier_name:
@@ -55,8 +65,8 @@ identifier_name:
   
 # (Optional) If SwiftUI bodies still trip these, keep your thresholds—or loosen 10–20% more:
 function_body_length:
-  warning: 120
-  error: 200
+  warning: 200
+  error: 250
 type_body_length:
   warning: 400
   error: 800

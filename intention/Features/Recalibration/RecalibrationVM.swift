@@ -30,9 +30,9 @@ final class RecalibrationVM: ObservableObject {
     enum Phase { case idle, running, finished, pause }
     
     @Published private(set) var phase: Phase = .idle
-    @Published private(set) var mode: RecalibrationMode? = nil
+    @Published private(set) var mode: RecalibrationMode?
     @Published var timeRemaining: Int = 0
-    @Published var lastError: Error? = nil
+    @Published var lastError: Error?
     @Published var breathingPhaseIndex: Int = 0     // 0:Inhale, 1:Hold, 2:Exhale, 3:Hold
     @Published var promptText: String = ""          // “Switch feet” pulses EMOM
     @Published var eyesClosedMode: Bool = false     // UI toggles this before start()
@@ -62,15 +62,13 @@ final class RecalibrationVM: ObservableObject {
     private let haptics: HapticsClient
     private var task: Task<Void, Never>?
 
-    init(haptics: HapticsClient, breathingMinutes: Int = 2, balancingMinutes: Int = 4)
-    {
+    init(haptics: HapticsClient, breathingMinutes: Int = 2, balancingMinutes: Int = 4) {
         self.haptics = haptics
         self.breathingMinutes = min(4, max(2, breathingMinutes))
         self.balancingMinutes = min(4, max(4, balancingMinutes))
     }
 
     deinit { task?.cancel() }
-
     
     // MARK: Core API (async throws; View calls these)
     

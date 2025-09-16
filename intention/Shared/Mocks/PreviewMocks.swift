@@ -8,7 +8,6 @@
 #if DEBUG
 import SwiftUI
 
-
 enum PreviewMocks {
     // One persistence for everything in previews
     @MainActor static let persistence = PersistenceActor()
@@ -53,7 +52,7 @@ enum PreviewMocks {
 }
 #endif
 
-//@StateObject private var focusVM: FocusSessionVM
-//@StateObject private var recalibrationVM: RecalibrationVM
-//@StateObject private var prefs: AppPreferencesVM
-//@StateObject private var haptics: HapticsService
+// @StateObject private var focusVM: FocusSessionVM
+// @StateObject private var recalibrationVM: RecalibrationVM
+// @StateObject private var prefs: AppPreferencesVM
+// @StateObject private var haptics: HapticsService

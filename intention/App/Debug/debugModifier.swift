@@ -15,6 +15,7 @@ extension View {
         self
         #endif
     }
+    
     //  append a call at the end of view { }.here declaration, just like any other modifier
     //      only actually prints a value within debug builds if used as `.debugPrint()`
     @discardableResult
@@ -66,6 +67,3 @@ extension View {
     }
     .debugBorder()
  */
-
-
-

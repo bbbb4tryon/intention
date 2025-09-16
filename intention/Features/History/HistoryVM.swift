@@ -29,18 +29,17 @@ final class HistoryVM: ObservableObject {
     @Published var categoryValidationMessages: [UUID: [String]] = [:]           /// Validate category text changes
     @Published var categories: [CategoriesModel] = []
     @Published var tileLimitWarning: Bool = false
-    @Published var lastUndoableMove: (tile: TileM, from: UUID, to: UUID)? = nil
+    @Published var lastUndoableMove: (tile: TileM, from: UUID, to: UUID)?
     @Published var lastError: Error?
     
     private let persistence: any Persistence
     private let archiveActor = ArchiveActor()
     private let storageKey = "categoriesData"
     private let tileSoftCap = 200
-    private var pendingSnapshot: [CategoriesModel]? = nil
-    private var debouncedSaveTask: Task<Void, Never>? = nil     ///Coalesced save task; only latest survives
+    private var pendingSnapshot: [CategoriesModel]?
+    private var debouncedSaveTask: Task<Void, Never>?     /// Coalesced save task; only latest survives
     private var lastSavedSignature: Int = 0                     /// VM computes a lightweight signature and coalesces writes
     private let saveDebouncedDelayNanos: UInt64 = 300_000_000   /// 300 ms
-    
     
     /// HistoryVM owns IDs
     @AppStorage("generalCategoryID") private var generalCategoryIDString: String = ""
@@ -54,7 +53,6 @@ final class HistoryVM: ObservableObject {
         get { UUID(uuidString: archiveCategoryIDString) ?? { let u = UUID(); archiveCategoryIDString = u.uuidString; return u }() }
         set { archiveCategoryIDString = newValue.uuidString }
     }
-    
     
     // AppStorage wrapper (private, not accessed directly from the view)
     // since `historyVM` is injected into `FocusSessionVM` at startup via `RootView`
@@ -183,14 +181,13 @@ final class HistoryVM: ObservableObject {
             saveHistory()
         }
     }
-
     
     // MARK: - Non-throwing convenience (fire-and-forget)
     /// Non-throwing wrapper, background with a UI signal; catch internally, debugPrints, sets VM lasterror; saveHistory() calls saveHistoryThrowing() inside a Task
     /// Save the current categories array -> wrapper of PersistenceActor.saveHistory
     /// Public entry: schedule or force-save now.
     /// Call with `immediate: true` when the user completes an explicit action (e.g., Done, drop ended).
-    func saveHistory(immediate: Bool = false) { //wrapper
+    func saveHistory(immediate: Bool = false) { // wrapper
         if immediate {
             let snapshot = categories               // Capture current state and write right away
             pendingSnapshot = nil
@@ -254,9 +251,8 @@ final class HistoryVM: ObservableObject {
         /// If you do want a click here later, trigger it from the view after a successful action using your HapticsService env object, not from the VM
     }
     
-    
     // MARK: - Add a new category
-    func addCategory(persistedInput: String){
+    func addCategory(persistedInput: String) {
         let newCategory = CategoriesModel(persistedInput: persistedInput)
         categories.append(newCategory)
         saveHistory()
@@ -339,7 +335,6 @@ final class HistoryVM: ObservableObject {
         }
     }
     
-    
     // MARK: valid target to call to move tiles within categories
     // Caps enforced
     func moveTile(_ tile: TileM, from fromID: UUID, to toID: UUID) async throws {
@@ -395,7 +390,7 @@ final class HistoryVM: ObservableObject {
     }
     
     /// Cap rules for all categories
-    private func applyCaps(afterInsertingIn idx: Int){
+    private func applyCaps(afterInsertingIn idx: Int) {
         let catID = categories[idx].id
         
         // 1) Archive cap: 200 (drop bottom)
@@ -433,12 +428,11 @@ final class HistoryVM: ObservableObject {
         saveHistory()       // persists a cleared list
         Task {  await persistence.clear(storageKey); await archiveActor.clearArchive() }   // clear storage safely: see PersistenceActor
     }
-
     
     // MARK: Helpers + Throwing Core
     
     /// Throwing immediate save - also persist sanitized data
-    func saveHistoryThrowing() async throws { //core
+    func saveHistoryThrowing() async throws { // core
         try await persistence.write(sanitizedForSave( categories ), to: storageKey)
     }
     
@@ -478,8 +472,7 @@ final class HistoryVM: ObservableObject {
     
     func autoSaveIfNeeded() {
         Task {
-            do { try await saveHistoryThrowing()    }
-            catch {
+            do { try await saveHistoryThrowing()    } catch {
                 debugPrint("[HistoryVM.autoSaveIfNeeded] error: ", error)
                 self.lastError = error
             }

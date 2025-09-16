@@ -35,7 +35,7 @@ enum RecalibrationMode: String, Hashable, Codable, CaseIterable {
                 return [
                     "Stand on one foot.",
                     "Switch feet, every minute",
-                    "Level up: close eyes and repeat.",
+                    "Level up: close eyes and repeat."
                 ]
             case .breathing:
                 /// 6-3, 6-3
@@ -48,6 +48,4 @@ enum RecalibrationMode: String, Hashable, Codable, CaseIterable {
         }
 }
 
-
-//enum RecalibrationMode: String, CaseIterable, Hashable, Codable {
-
+// enum RecalibrationMode: String, CaseIterable, Hashable, Codable {
