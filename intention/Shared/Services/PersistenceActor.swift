@@ -18,6 +18,7 @@ public protocol Persistence: Sendable {
 
 /// All business logic (when to save, what to save) belongs in the VM
 /// VM decides when to persist; PersistenceActor decides how (encode/decode, storage)
+///     PersistenceActor continues to store the **categories list**
 public actor PersistenceActor {
     public enum PersistenceActorError: Error {
         case encodingFailed(Error)

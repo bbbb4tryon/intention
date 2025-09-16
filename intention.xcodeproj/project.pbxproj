@@ -56,10 +56,10 @@
 		7787864E2DF220C5004EDBEF = {
 			isa = PBXGroup;
 			children = (
+				770F222E2E02EF2E00F9CEB3 /* intention.app */,
 				77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */,
 				7787866D2DF236D4004EDBEF /* Documentation.docc */,
 				778786592DF220C5004EDBEF /* intention */,
-				770F222E2E02EF2E00F9CEB3 /* intention.app */,
 				77DA31332E45872300C6DC9E /* Frameworks */,
 			);
 			sourceTree = "<group>";
@@ -163,7 +163,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif which swiftlint > /dev/null; then\n  swiftlint\nelse\n  echo \"warning: SwiftLint not installed\"\nfi\n";
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif command -v swiftlint >/dev/null 2>&1; then\n  CHANGED=\"$(git diff --name-only --diff-filter=ACMRTUXB origin/main...HEAD 2>/dev/null | grep -E '\\.swift$' || true)\"\n  if [ \"$CI\" = \"true\" ] || [ -z \"$CHANGED\" ]; then\n    swiftlint --config \"${SRCROOT}/.swiftlint.yml\"\n  else\n    echo \"$CHANGED\" | xargs -I {} swiftlint lint --config \"${SRCROOT}/.swiftlint.yml\" --path \"{}\"\n  fi\nelse\n  echo \"warning: SwiftLint not installed – skipping\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

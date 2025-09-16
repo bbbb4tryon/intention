@@ -1,5 +1,5 @@
 //
-//  StatBlock.swift
+//  StatPill.swift
 //  intention
 //
 //  Created by Benjamin Tryon on 9/5/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct StatBlock: View {
+struct StatPill: View {
     @EnvironmentObject var theme: ThemeManager
     let icon: String
     let value: String
@@ -22,7 +22,7 @@ struct StatBlock: View {
     var body: some View {
         VStack(spacing: 4) {
             Image(systemName: icon).font(.title2).foregroundStyle(p.accent)
-            T(value, .title3).bold().foregroundStyle(p.text)
+            T(value, .section).bold().foregroundStyle(p.text)
             T(caption, .caption).foregroundStyle(p.textSecondary)
         }
     }

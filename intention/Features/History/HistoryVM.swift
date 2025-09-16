@@ -20,8 +20,10 @@ enum HistoryError: Error, Equatable, LocalizedError {
     }
 }
 
+/// VM decides *when*, Persistence decides *how*
+///         HistoryVM stays the **orchestrator** (decides *when* to persist
 /// Single source of truth for category IDs
-/// Deinit/cleanup: rely on the lifecycle flush you already added (scenePhase .inactive / .background) and your explicit UI boundaries (e.g., “Done” in organizing
+/// Deinit/cleanup: rely on the lifecycle flush you already added (scenePhase .inactive / .background) and your explicit UI boundaries (e.g., “Done” in organizing)
 @MainActor
 final class HistoryVM: ObservableObject {   
     @Published var categoryValidationMessages: [UUID: [String]] = [:]           /// Validate category text changes
@@ -100,6 +102,7 @@ final class HistoryVM: ObservableObject {
               }
 
               // 5) Persist if anything changed during steps 2–4
+            // save the sanitized (Archive-empty) snapshot
               saveHistory()
 
           } catch {
@@ -128,10 +131,20 @@ final class HistoryVM: ObservableObject {
         saveHistory()
     }
     
+    // sanitizedForSave() and performSaveIfChanged - Persist categories without the Archive tiles. Hydrate Archive tiles on load from ArchiveActor
+    private func sanitizedForSave(_ cats: [CategoriesModel]) -> [CategoriesModel] {
+        cats.map { category in
+            var copy = category
+            if category.id == archiveCategoryID { copy.tiles = [] }     // keep Archive empty in categoriesData
+            return copy
+            
+        }
+    }
     // Writes only if content changed since last success - if `snapshot` is nil, uses live `categories`
     private func performSaveIfChanged(_ snapshot: [CategoriesModel]? = nil) async {
-        let toWrite = snapshot ?? categories
-        let signature = saveSignature(for: toWrite)
+        let raw = snapshot ?? categories
+        let toWrite = sanitizedForSave(raw)
+        let signature = saveSignature(for: toWrite)               // compare sanitized - not raw
         guard signature != lastSavedSignature else { return }
         do {
             try await persistence.write(toWrite, to: storageKey)
@@ -170,66 +183,7 @@ final class HistoryVM: ObservableObject {
             saveHistory()
         }
     }
-    
-    
-    /// Count only *live* tiles (exclude Archive)
-//    private func liveTotalCount() -> Int {
-//        categories
-//            .filter { $0.id != archiveCategoryID }
-//            .reduce(0) { $0 + $1.tiles.count }
-//    }
-    
-    // HistoryVM.limitCheck() computes the overflowTiles up front from a snapshot, sends that snapshot to the actor,
-    // and then removes those exact IDs locally and appends them to the Archive category.
-    /// Compute the **same set** of tiles to remove (by ID) before calling the actor
-//    func limitCheck(){
-//        let liveTotal = liveTotalCount()
-//        tileLimitWarning = liveTotal > tileSoftCap
-//        guard tileLimitWarning else { return }
-//        
-//        Task { @MainActor in
-//            // Snapshot live categories now; local removal matches what the actor sees
-//            let liveSnapshot = categories.filter { $0.id != archiveCategoryID }
-//
-//            // Oldest-first across live tiles
-//            let flat = liveSnapshot.flatMap(\.tiles).sorted { $0.timeStamp < $1.timeStamp }
-//            let overflowCount = max(0, flat.count - tileSoftCap)
-//            guard overflowCount > 0 else {
-//                saveHistory(immediate: true)
-//                return
-//            }
-//
-//            // The exact tiles to offload/remove
-//            let overflowTiles = Array(flat.prefix(overflowCount))
-//            let overflowIDs = Set(overflowTiles.map(\.id))
-//
-//            do {
-//                try await archiveActor.offloadOldTiles(from: liveSnapshot, maxTiles: tileSoftCap)
-//
-//                // Remove EXACT tiles by id from live categories
-//                for cIdx in categories.indices where categories[cIdx].id != archiveCategoryID {
-//                    categories[cIdx].tiles.removeAll { overflowIDs.contains($0.id) }
-//                }
-//            #if DEBUG
-//            debugPrint("[HistoryVM.limitCheck] offloaded ids:", overflowTiles.map(\.id))
-//            #endif
-//
-//
-//                // Append to Archive so UI reflects immediately
-//                if let aIdx = categories.firstIndex(where: { $0.id == archiveCategoryID }) {
-//                    // Oldest should end up at the bottom; appended in actor as newest-first,
-//                    // but these overflowTiles are oldest-first, so append to the end here.
-//                    categories[aIdx].tiles.append(contentsOf: overflowTiles)
-//                }
-//
-//                /// Persist the new state immediately
-//                saveHistory(immediate: true)
-//            } catch {
-//                debugPrint("[HistoryVM.limitCheck] offload error: ", error)
-//                self.lastError = HistoryError.saveHistoryFailed
-//            }
-//        }
-//    }
+
     
     // MARK: - Non-throwing convenience (fire-and-forget)
     /// Non-throwing wrapper, background with a UI signal; catch internally, debugPrints, sets VM lasterror; saveHistory() calls saveHistoryThrowing() inside a Task
@@ -326,6 +280,54 @@ final class HistoryVM: ObservableObject {
         saveHistory()
         return new.id
     }
+    /// Rename category and persist. Validates and coalesces via saveHistory().
+       func renameCategory(id: UUID, to newName: String) {
+           guard let idx = categories.firstIndex(where: { $0.id == id }) else {
+               lastError = HistoryError.categoryNotFound
+               return
+           }
+           categories[idx].persistedInput = newName
+           validateCategory(id: id, title: newName)
+           saveHistory()
+       }
+
+       /// Delete a user-defined category. Tiles are moved to Archive first (safe).
+       @discardableResult
+       func deleteCategory(id: UUID) -> Bool {
+           // prevent deleting built-ins
+           guard id != generalCategoryID, id != archiveCategoryID else { return false }
+           guard
+               let delIdx = categories.firstIndex(where: { $0.id == id }),
+               let archIdx = categories.firstIndex(where: { $0.id == archiveCategoryID })
+           else {
+               lastError = HistoryError.categoryNotFound
+               return false
+           }
+
+           // Move tiles (newest-first) to Archive top, then enforce caps
+           let moving = categories[delIdx].tiles
+           if !moving.isEmpty {
+               categories[archIdx].tiles.insert(contentsOf: moving, at: 0)
+               applyCaps(afterInsertingIn: archIdx)
+               let arch = categories.first(where: { $0.id == archiveCategoryID })?.tiles ?? []
+               Task { await archiveActor.saveArchivedTiles(arch) }
+           }
+
+           categories.remove(at: delIdx)
+           saveHistory()
+           return true
+       }
+
+       /// Convenience: list of user-defined categories (not General/Archive)
+       var userCategoryIDs: [UUID] {
+           categories
+               .map(\.id)
+               .filter { $0 != generalCategoryID && $0 != archiveCategoryID }
+       }
+
+       func name(for id: UUID) -> String {
+           categories.first(where: { $0.id == id })?.persistedInput ?? ""
+       }
     
     // MARK: - Validation function to be called from the view
     func validateCategory(id: UUID, title: String) {
@@ -386,10 +388,7 @@ final class HistoryVM: ObservableObject {
     func updateTiles(in categoryID: UUID, to newTiles: [TileM]) {
         if let index = categories.firstIndex(where: { $0.id == categoryID }) {
             categories[index].tiles = newTiles
-            // If Archive list, trim from bottom if list exceeds cap of 200
-            if categoryID == archiveCategoryID, categories[index].tiles.count > tileSoftCap {
-                categories[index].tiles.removeLast(categories[index].tiles.count - tileSoftCap)
-            }
+            /// does the Archive=200 / General+2=10 trims
             applyCaps(afterInsertingIn: index)
             saveHistory()       /// Persist change
         }
@@ -401,8 +400,14 @@ final class HistoryVM: ObservableObject {
         
         // 1) Archive cap: 200 (drop bottom)
         if catID == archiveCategoryID {
-            let overflow = categories[idx].tiles.count - tileSoftCap // tileSoftCap == 200
-            if overflow > 0 { categories[idx].tiles.removeLast(overflow) }
+            let overflow = categories[idx].tiles.count - tileSoftCap    // tileSoftCap == 200
+            if overflow > 0 {
+                categories[idx].tiles.removeLast(overflow)
+                tileLimitWarning = true                             // An FYI for the user
+            }
+            // Mirror out to ArchiveActor to keep it authoritative as archive writer/updater
+            let intoArchive = categories[idx].tiles
+            Task { await archiveActor.saveArchivedTiles(intoArchive) }
             return
         }
 
@@ -426,17 +431,15 @@ final class HistoryVM: ObservableObject {
     func clearHistory() {
         categories = []     // clears model first
         saveHistory()       // persists a cleared list
-        
-        Task {  await persistence.clear(storageKey) }   // clear storage safely: see PersistenceActor
+        Task {  await persistence.clear(storageKey); await archiveActor.clearArchive() }   // clear storage safely: see PersistenceActor
     }
 
     
     // MARK: Helpers + Throwing Core
     
-    ///Throwing core (async throws): use when the caller wants to decide how to handle the error
-    /// SaveHistory() wraps Task and sets lastError internally - Throwing variant provided
+    /// Throwing immediate save - also persist sanitized data
     func saveHistoryThrowing() async throws { //core
-        try await persistence.write(categories, to: storageKey)
+        try await persistence.write(sanitizedForSave( categories ), to: storageKey)
     }
     
     func addToHistoryThrowing(_ tile: TileM, to categoryID: UUID) async throws {
@@ -463,12 +466,13 @@ final class HistoryVM: ObservableObject {
         
         // Keep newest at the top for UI when moving *into* the Archive
         categories[toIndex].tiles.insert(moving, at: 0)
-        
-        // If Archive, trim from bottom if exceeding the soft cap
-        if toID == archiveCategoryID, categories[toIndex].tiles.count > tileSoftCap {
-            categories[toIndex].tiles.removeLast(categories[toIndex].tiles.count - tileSoftCap)
+        /// single source of truth for all caps
+        applyCaps(afterInsertingIn: toIndex)
+        // Mirror in places that move tiles into Archive
+        if fromID == archiveCategoryID || toID == archiveCategoryID {
+            let intoArchive = categories.first(where: { $0.id == archiveCategoryID })?.tiles ?? []
+            Task { await archiveActor.saveArchivedTiles(intoArchive) }
         }
-        
         try await saveHistoryThrowing()
     }
     

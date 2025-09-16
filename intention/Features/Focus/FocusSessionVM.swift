@@ -35,7 +35,7 @@ final class FocusSessionVM: ObservableObject {
     
     /// UI state of the current 20-min chunk
     enum Phase {
-        case notStarted, running, finished
+        case notStarted, running, finished, paused
     }
     
     // MARK: - Published UI State
@@ -144,7 +144,7 @@ final class FocusSessionVM: ObservableObject {
             }
             //        await MainActor.run { self.naturallyAdvanceSessionChunk() }
             // Clear the task
-            self.chunkCountdown = nil
+            await MainActor.run { self.chunkCountdown = nil }
         }
     }
 
@@ -192,6 +192,47 @@ final class FocusSessionVM: ObservableObject {
         debugPrint("Current 20-min countdown stoppped and reset")
         #endif
     }
+    
+    func pauseCurrent20MinCountdown() async {
+        guard phase == .running else { return }
+        chunkCountdown?.cancel()
+        chunkCountdown = nil
+        phase = .paused
+    }
+    
+    func resumeCurrent20MinCountdown() async throws {
+        guard phase == .paused else { throw FocusSessionError.unexpected }
+        let seconds = countdownRemaining
+        guard seconds > 0 else {
+            // Nothing to resume; treat as finished
+            phase = .finished
+            naturallyAdvanceSessionChunk()
+            return
+        }
+
+        phase = .running
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(seconds))
+
+        chunkCountdown = Task { [weak self] in
+                guard let self else { return }
+                while !Task.isCancelled {
+                    let remaining = max(0, Int(clock.now.duration(to: deadline).components.seconds))
+                    await MainActor.run { self.countdownRemaining = remaining }
+                    if remaining == 0 { break }
+                    try? await clock.sleep(for: .seconds(1))
+                }
+
+                await MainActor.run {
+                    // Only mark finished if we actually were running when the task ended
+                    guard self.phase == .running else { return }
+                    self.phase = .finished
+                    self.haptics.notifyDone()
+                    self.naturallyAdvanceSessionChunk()
+                    self.chunkCountdown = nil
+                }
+            }
+        }
     
     // MARK: - Session Lifecycle/Flow
     
@@ -298,7 +339,6 @@ final class FocusSessionVM: ObservableObject {
         }
     }
     
-    
     // MARK: Helpers + Throwing Core
     var canPrimary: Bool {
         if tiles.count < 2 {
@@ -317,8 +357,10 @@ extension FocusSessionVM {
         let msgs = tileText.taskValidationMessages
         return msgs.isEmpty ? .valid : .invalid(messages: msgs)
     }
+    
+    /// A tile is "completed" iff its index is below the currentSessionChunk (0 or 1).
+       func isCompleted(_ tile: TileM) -> Bool {
+           guard let idx = tiles.firstIndex(of: tile) else { return false }
+           return idx < currentSessionChunk
+       }
 }
-
-
-
-

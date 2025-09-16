@@ -8,16 +8,13 @@
 import SwiftUI
 
 struct DynamicCountdown: View {
-    @ObservedObject var viewModel: FocusSessionVM
+    @ObservedObject var fVM: FocusSessionVM
     let palette: ScreenStylePalette
     
     /// Current progress size (0.0 to 1.0), passed from FocusSessionActiveV
     let progress: CGFloat
-    
-    
     private let activeSize: CGFloat = 200
     private let compactSize: CGFloat = 60
-    
     
     var body: some View {
         if isActive {
@@ -25,23 +22,34 @@ struct DynamicCountdown: View {
                 Circle()
                     .fill(palette.background.opacity( 0.2))
                 
+                // Slightly dims pie when paused
                 UnwindingPieShape(progress: progress)
-                    .fill(palette.primary)
+                    .fill(palette.primary.opacity(fVM.phase == .paused ? 0.4 : 1.0))
                 
-                Text("\(viewModel.formattedTime)")
-                    .font(.system(size: 48, weight: .bold, design: .monospaced))
-                    .foregroundStyle(palette.text)
+                VStack(spacing: 4) {
+                    Text("\(fVM.formattedTime)")
+                        .font(.system(size: 48, weight: .bold, design: .monospaced))
+                        .foregroundStyle(palette.text)
+                    
+                    if fVM.phase == .paused {
+                        Text("Paused").font(.subheadline).foregroundStyle(.secondary)
+                    }
+                }
             }
             .frame(width: activeSize, height: activeSize)
+            .contentShape(Circle())         // tap target matches the circle
+            .onTapGesture { handleTap() }
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel(fVM.phase == .paused ? "Resume" : "Pause")
+            .accessibilityHint("Tap to \(fVM.phase == .paused ? "resume" : "pause") the countdown")
             .animation(.easeInOut(duration: 0.2), value: progress)
             
         } else if isBetweenChunks {
             ZStack {
-                Circle()
+                RoundedRectangle(cornerRadius: 4)
                     .fill(palette.background.opacity(0.1))
-                Text("✓")
-                    .font(.title)
-                    .foregroundStyle(palette.primary)
+                Text("✓").font(.title).foregroundStyle(palette.primary)
+
             }
             .frame(width: compactSize, height: compactSize)
             .transition(.opacity)
@@ -51,12 +59,21 @@ struct DynamicCountdown: View {
         }
     }
     private var isActive: Bool {
-        viewModel.phase == .running ||
-        (viewModel.phase == .finished && viewModel.currentSessionChunk == 2)
+        fVM.phase == .running ||
+        fVM.phase == .paused  ||
+        (fVM.phase == .finished && fVM.currentSessionChunk == 2)
     }
     
     private var isBetweenChunks: Bool {
-        viewModel.phase == .finished && viewModel.currentSessionChunk == 1
+        fVM.phase == .finished && fVM.currentSessionChunk == 1
+    }
+
+    private func handleTap() {
+        if fVM.phase == .running {
+            fVM.performAsyncAction { await fVM.pauseCurrent20MinCountdown() }
+        } else if fVM.phase == .paused {
+            fVM.performAsyncAction { try await fVM.resumeCurrent20MinCountdown() }
+        }
     }
 }
 //

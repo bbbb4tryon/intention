@@ -7,14 +7,19 @@
 
 import SwiftUI
 
+extension View {
+    func forceLabelWhite() -> some View { self.foregroundStyle(.white).tint(.white) }
+}
+
 struct RecalibrationV: View {
     @EnvironmentObject var theme: ThemeManager
     @ObservedObject var vm: RecalibrationVM
     @State private var breathingChoice: Int = 2
+    @State private var balancingChoice: Int = 2
     
     // Tunable presets users expect: quick, obvious, one tap.
     private let breathePreset = 60   // 1 min
-    private let balancePreset = 30   // 30 sec
+    private let balancePreset = 60   // 1 min
     
     private let screen: ScreenName = .recalibrate
     private var p: ScreenStylePalette { theme.palette(for: screen) }
@@ -23,163 +28,254 @@ struct RecalibrationV: View {
     }
     
     var body: some View {
+        ScrollView {
+                Page {
+                    // H1 centered; prose left-aligned = calmer eye path
+                    T("Reset & Recalibrate", .largeTitle).underline()
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 12)
+                    
+                    // Supporting copy: left-aligned, subdued
+                    T("Short resets help you start your next 20-minute focus chunk fresh.", .body)
+                        .foregroundStyle(p.textSecondary)
+                    
+                    T("Choose one below:", .caption)
+                        .foregroundStyle(p.textSecondary)
 
-        ZStack {
-            LinearGradient(colors: [p.background, p.background.opacity(0.85)],
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-            .ignoresSafeArea()
-            
-            Page {
-                T("Reset & Recalibrate", .largeTitle).underline()
-                    .foregroundStyle(p.text)
-                    .friendlyHelper()
-                
-                Text("""
-                    Short resets help you start your next 20-minute focus chunk fresh.
-                     **Choose one below:**
-                    """)
-                .font(theme.fontTheme.toFont(.footnote))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.top, 4)
-                
-                /// users tap a length first (2/3/4), then “Breathe.”
-                if vm.phase == .idle {
-                    HStack(spacing: 8) {
-                        T("Breathing length", .caption)
-                            .foregroundStyle(.secondary)
-                        Picker("", selection: $breathingChoice) {
-                            Text("2m").tag(2)
-                            Text("3m").tag(3)
-                            Text("4m").tag(4)
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(maxWidth: 220)
+                    
+                    actionArea                          // the ONLY CTA/timer block
+                    
+                    // Lightweight guidance
+                    if vm.phase == .idle, let theMode = vm.mode {
+                        InstructionList( items: theMode.instructions, p: p, theme: theme )
+                            .padding(.top, 8)
                     }
-                    .onChange(of: breathingChoice) { new in
-                        do { try vm.setBreathingMinutes(new) }
-                        catch { vm.lastError = error }
-                    }
-                }
-                
-                /// When inactive, show simple, obvious choices
-                if vm.phase != .running {
-                    VStack(spacing: 12) {
-                        if vm.mode == nil {
-                            Button { start(.breathing) } label: {
-                                HStack(spacing: 8){
-                                    Image(systemName: RecalibrationMode.breathing.iconName)
-                                    T(activeTitle, .largeTitle)
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                            .primaryActionStyle(screen: .recalibrate)
-                            
-                            Button { start(.balancing) } label: {
-                                HStack(spacing: 8){
-                                    Image(systemName: RecalibrationMode.balancing.iconName)
-                                    T(activeTitle, .largeTitle)
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                            .primaryActionStyle(screen: .recalibrate)
-                        }
-                    }
-                } else {
-                    /// Active countdown view: big, legible, tappable cancel
-                    VStack(spacing: 16) {
-                        Text(activeTitle)
-                            .font(.headline)
-                        Text(vm.formattedTime)
-                            .font(.system(size: 56, weight: .semibold, design: .rounded))
-                            .monospacedDigit()
-                        Button(role: .destructive) { stop() } label: {
-                            Label("Cancel", systemImage: "xmark.circle")
-                                .frame(maxWidth: .infinity)
-                                .tint(.red)
-                        }
-                    }
-                    .padding(.top, 8)
-                }
-                // instructions for the selected mode:
-                if let m = vm.mode, vm.phase != .running {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(m.instructions, id: \.self) { Text("• \($0)") }
-                    }
-                    .font(theme.fontTheme.toFont(.footnote))
-                    .foregroundStyle(p.text)
-                    .padding(.top, 8)
-                }
-
-                VStack(spacing: 8) {
+                    
+                    // Live indicators
                     if vm.mode == .balancing {
-                        Text(vm.promptText) // shows “Switch feet” briefly each minute
-                            .font(.title3).fontWeight(.semibold)
-                    } else if vm.mode == .breathing {
-                        HStack(spacing: 6) {
-                            ForEach(Array(vm.breathingPhases.enumerated()), id: \.0) { idx, name in
-                                if idx == vm.breathingPhaseIndex { Text("• \(name)") } else { Text(name) }
-                                if idx != vm.breathingPhases.count - 1 { Text("·").opacity(0.6) }
-                            }
+                        if !vm.eyesClosedMode {
+                            Text(vm.promptText) // “Switch feet” flashes briefly each minute
+                                .font(.title3).fontWeight(.semibold)
                         }
-                        .font(.headline)
-                        .monospacedDigit()
+                        BalanceSideDots(activeIndex: vm.balancingPhaseIndex, p: p)
+                            .padding(.top, 6)
+                    } else if vm.mode == .breathing, vm.phase != .idle {
+                        BreathingPhaseGuide(
+                            phases: vm.breathingPhases,
+                            activeIndex: vm.breathingPhaseIndex,
+                            p: p
+                        )
+                        .padding(.top, 6)
                     }
-                    Text(vm.formattedTime).font(.system(.largeTitle, design: .rounded)).monospacedDigit()
                 }
-
             }
+            .background(p.background.ignoresSafeArea())
             .task { breathingChoice = vm.currentBreathingMinutes }
-            .presentationDetents([.height(320), .medium])
+            .presentationDetents([.fraction(0.4), .medium])   // iOS 16-friendly
             .presentationDragIndicator(.visible)
-            
-            // Error overlay—same pattern as the rest of the app
-            if let err = vm.lastError {
-                ErrorOverlay(error: err) { vm.lastError = nil }
-                    .zIndex(1)
+            .overlay {
+                if let err = vm.lastError {
+                    ErrorOverlay(error: err) { vm.lastError = nil }
+                }
             }
+    }
+        
+        // MARK: Helpers
+        private var PresetPicker: some View {
+            HStack(spacing: 8){
+                T("Breathing length", .caption).foregroundStyle(.secondary)
+                Picker("", selection: $breathingChoice) {
+                    Text("2m").tag(2); Text("3m").tag(3); Text("4m").tag(4)
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 220)
+            }
+            .onChange(of: breathingChoice) { new in
+                do { try vm.setBreathingMinutes(new) } catch { vm.lastError = error }
+            }
+        }
+    private var PresetPickerBal: some View {
+        HStack(spacing: 8){
+            Toggle (isOn: $vm.eyesClosedMode) {
+                T("Eyes-closed expert mode", .caption).foregroundStyle(.secondary)
+            }
+                .toggleStyle(.switch)
+//            Picker("", selection: $balancingChoice) {
+//                Text("Yes").tag(2); Text("No").tag(3)
+//            }
+//            .pickerStyle(.segmented)
+            .frame(maxWidth: 320)
+            
+        }
+        .onChange(of: balancingChoice) { new in
+            do { try vm.setBalancingMinutes(new) } catch { vm.lastError = error }
         }
     }
         
-        // MARK: - Private helpers
-        
-        private var activeTitle: String {
-            switch vm.mode {
-            case .breathing: return "Breathing"
-            case .balancing: return "Balancing"
-            case .none: return "Recalibration"
-            }
-        }
-        
-        private func start(_ mode: RecalibrationMode) {
-            Task {
-                do   { try await vm.start(mode: mode) }
-                catch {
-                    debugPrint("[RecalibrationV.start]", error.localizedDescription)
-                    vm.lastError = error
-                }
-            }
-        }
+        @ViewBuilder
+           private var actionArea: some View {
+               switch vm.phase {
+               case .idle:
+                   VStack(spacing: 12) {
+                       if vm.phase == .idle { PresetPicker }   // 2m / 3m / 4m
+                       Button {
+                           vm.performAsyncAction { try await vm.start(mode: .breathing) }
+                       } label: { T("Breathing", .action).foregroundColor(.white) }
+                       .recalibrationActionStyle()
 
-        private func stop() {
-            Task {
-                do   { try await vm.stop() }
-                catch {
-                    debugPrint("[RecalibrationV.stop]", error.localizedDescription)
-                    vm.lastError = error
-                }
-            }
-        }
+                       if vm.phase == .idle { PresetPickerBal }   // 2m / 3m / 4m
+                       Button {
+                           vm.performAsyncAction { try await vm.start(mode: .balancing) }
+                       } label: { T("Balancing", .action) }
+                           .recalibrationActionStyle()
+                   }
+                   
 
-        private func label(for seconds: Int) -> String {
-            if seconds % 60 == 0 {
-                let m = seconds / 60
-                return m == 1 ? "1-minute" : "\(m)-minute"
-            } else {
-                return "\(seconds)s"
+               case .running, .pause:
+                   VStack(spacing: 8) {
+                       T(vm.mode == .breathing ? "Breathing" : "Balancing", .section)
+                           .frame(maxWidth: .infinity, alignment: .center)
+
+                       Text(vm.formattedTime)
+                           .font(.system(size: 56, weight: .semibold, design: .rounded))
+                           .monospacedDigit()
+                           .frame(maxWidth: .infinity, alignment: .center)
+
+                       Button(role: .destructive) {
+                           vm.performAsyncAction { try await vm.stop() }
+                       } label: { T("Cancel", .action) }
+                   }
+
+               case .finished:
+                   EmptyView()
+               }
+           }
+       }
+    // Tiny, reusable instruction list (keeps body tidy)
+    private struct InstructionList: View {
+        let items: [String]
+        let p: ScreenStylePalette
+        let theme: ThemeManager
+        var body: some View {
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(items, id: \.self) { Text("• \($0)") }
             }
+            .font(theme.fontTheme.toFont(.footnote))
+            .foregroundStyle(p.text)
         }
-}
+    }
+
+    
+    
+    
+//
+//                    
+//                    /// users tap a length first (2/3/4), then “Breathe.”
+//                    if vm.phase == .idle {
+//                        HStack(spacing: 8) {
+//                            T("Breathing length", .caption)
+//                                .foregroundStyle(.secondary)
+//                            Picker("", selection: $breathingChoice) {
+//                                Text("2m").tag(2)
+//                                Text("3m").tag(3)
+//                                Text("4m").tag(4)
+//                            }
+//                            .pickerStyle(.segmented)
+//                            .frame(maxWidth: 220)
+//                        }
+//                        .onChange(of: breathingChoice) { new in
+//                            do { try vm.setBreathingMinutes(new) }
+//                            catch { vm.lastError = error }
+//                        }
+//                    }
+//                    
+//                    /// When inactive, show simple, obvious choices
+//                    if vm.phase != .running {
+//                        VStack(spacing: 12) {
+//                            if vm.mode == nil {
+//                                Button { start(.breathing) } label: {
+//                                    HStack(spacing: 8){
+//                                        Image(systemName: RecalibrationMode.breathing.iconName)
+//                                        T(activeTitle, .largeTitle)
+//                                    }
+//                                    .frame(maxWidth: .infinity)
+//                                }
+//                                .primaryActionStyle(screen: .recalibrate)
+//                                
+//                                Button { start(.balancing) } label: {
+//                                    HStack(spacing: 8){
+//                                        Image(systemName: RecalibrationMode.balancing.iconName)
+//                                        T(activeTitle, .largeTitle)
+//                                    }
+//                                    .frame(maxWidth: .infinity)
+//                                }
+//                                .primaryActionStyle(screen: .recalibrate)
+//                            }
+//                        }
+//                    } else {
+//                        /// Active countdown view: big, legible, tappable cancel
+//                        VStack(spacing: 16) {
+//                            Text(activeTitle)
+//                                .font(.headline)
+//                            Text(vm.formattedTime)
+//                                .font(.system(size: 56, weight: .semibold, design: .rounded))
+//                                .monospacedDigit()
+//                            Button(role: .destructive) { stop() } label: {
+//                                Label("Cancel", systemImage: "xmark.circle")
+//                                    .frame(maxWidth: .infinity)
+//                                    .tint(.red)
+//                            }
+//                        }
+//                        .padding(.top, 8)
+//                    }
+//                    // instructions for the selected mode:
+//                    if let m = vm.mode, vm.phase != .running {
+//                        VStack(alignment: .leading, spacing: 4) {
+//                            ForEach(m.instructions, id: \.self) { Text("• \($0)") }
+//                        }
+//                        .font(theme.fontTheme.toFont(.footnote))
+//                        .foregroundStyle(p.text)
+//                        .padding(.top, 8)
+//                    }
+//                    
+//                    VStack(spacing: 8) {
+//                        if vm.mode == .balancing {
+//                            Text(vm.promptText) // shows “Switch feet” briefly each minute
+//                                .font(.title3).fontWeight(.semibold)
+//                        } else if vm.mode == .breathing {
+//                            BreathingPhaseGuide(
+//                                phases: vm.breathingPhases,
+//                                activeIndex: vm.breathingPhaseIndex,
+//                                p: p
+//                            )
+//                            HStack(spacing: 6) {
+//                                ForEach(Array(vm.breathingPhases.enumerated()), id: \.0) { idx, name in
+//                                    if idx == vm.breathingPhaseIndex { Text("• \(name)") } else { Text(name) }
+//                                    if idx != vm.breathingPhases.count - 1 { Text("·").opacity(0.6) }
+//                                }
+//                            }
+//                            .font(.headline)
+//                            .monospacedDigit()
+//                        }
+//                        //                    Text(vm.formattedTime).font(.system(.largeTitle, design: .rounded)).monospacedDigit()
+//                    }
+//                    
+//                }
+//                .task { breathingChoice = vm.currentBreathingMinutes }
+//                .presentationDetents([.height(320), .medium])
+//                .presentationDragIndicator(.visible)
+//                
+//                // Error overlay—same pattern as the rest of the app
+//                if let err = vm.lastError {
+//                    ErrorOverlay(error: err) { vm.lastError = nil }
+//                        .zIndex(1)
+//                }
+//            }
+//            .background(p.background.ignoresSafeArea())
+//        }
+//    }
+
+
 
 //struct RecalibrateV: View {
 //    @EnvironmentObject var theme: ThemeManager

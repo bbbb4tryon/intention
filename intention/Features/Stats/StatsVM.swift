@@ -19,8 +19,8 @@ final class StatsVM: ObservableObject {
     @Published private(set) var totalCompletedIntentions: Int = 0
     @Published private(set) var recalibrationCounts: [RecalibrationMode: Int] = [:] // what?
     @Published private(set) var lastRecalibrationChoice: RecalibrationMode? = nil
-    @Published private(set) var runStreakDays: Int = 0
-    @Published private(set) var maxRunStreakDays: Int = 0
+    @Published private(set) var streak: Int = 0
+    @Published private(set) var longestStreak: Int = 0
     @Published var shouldPromptForMembership: Bool = false  // is good flag
     @Published var lastError: Error?
     
@@ -29,7 +29,7 @@ final class StatsVM: ObservableObject {
     private let membershipThreshold = 2
     private var completedSessions: [CompletedSession] = []
     
-    weak var membershipVM: MembershipVM?
+    weak var memVM: MembershipVM?
     
     init(persistence: any Persistence){
         self.persistence = persistence
@@ -40,7 +40,7 @@ final class StatsVM: ObservableObject {
         completedSessions.append(session)
         // Update intention count
         totalCompletedIntentions = completedSessions.flatMap(\.tileTexts).count
-        membershipVM?.triggerPromptifNeeded(afterSessions: completedSessions.count)
+        memVM?.triggerPromptifNeeded(afterSessions: completedSessions.count)
         
         /// if user did recalibrate (picked breathing or balancing), type will be non-nil, and count incremented
         if let type = session.recalibration {
@@ -108,8 +108,8 @@ final class StatsVM: ObservableObject {
         
         // If empty, no streak, otherwise start/continue Current Streak
         guard !sortedDays.isEmpty else {
-            runStreakDays = 0
-            maxRunStreakDays = 0
+            streak = 0
+            longestStreak = 0
 //            tilesCompletedThisWeek = 0
             return
             }
@@ -122,16 +122,16 @@ final class StatsVM: ObservableObject {
             let diff = calendar.dateComponents([.day], from: sortedDays[i], to: sortedDays[i - 1]).day ?? 0
             if diff == 1 {
                 currentStreak += 1
-                if isTrackingCurrent { runStreakDays = currentStreak }
+                if isTrackingCurrent { streak = currentStreak }
                 maxStreak = max(maxStreak, currentStreak)
             } else {
                 isTrackingCurrent = false
                 currentStreak = 1
             }
         }
-        // If all dates are consecutive, runStreakDays isn't updated in the loop
-        if isTrackingCurrent { runStreakDays = currentStreak }
-        maxRunStreakDays = maxStreak
+        // If all dates are consecutive, streak isn't updated in the loop
+        if isTrackingCurrent { streak = currentStreak }
+        longestStreak = maxStreak
     }
     
     

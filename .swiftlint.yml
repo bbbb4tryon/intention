@@ -5,14 +5,31 @@
 //  Created by Benjamin Tryon on 8/7/25.
 //
 
+#Tip: run --fix in a separate **commit** so reviewers can skim formatting diffs easily
+# Safe local run:   % swiftlint --fix --config .swiftlint.yml
+# quiet the “Run Script runs every build” warning: uncheck "Based on dependency analysis"
+# whole project::   % swiftlint --config .swiftlint.yml
+# single file::     % swiftlint lint --config .swiftlint.yml --path intention/Features/Recalibration/RecalibrationVM.swift
+# auto-fix::        % swiftlint --fix --config .swiftlint.yml
+
 disabled_rules:
   - line_length
   - trailing_whitespace
 
+# low-noise useful, catch real issues
 opt_in_rules:
+  - unused_import                # trims dead imports
+  - redundant_type_annotation    # let type inference work
   - missing_docs
   - todo
   - mark
+  - empty_count              # prefer isEmpty over count == 0
+  - redundant_nil_coalescing
+  - force_unwrapping         # warns on !
+  - force_try                # warns on try!
+  - force_cast               # warns on as!
+  - fatal_error_message      # require message on fatalError()
+  - implicit_return          # consistent return style in closures
 
 included:
   - intention/
@@ -21,11 +38,25 @@ included:
 missing_docs:
   severity: warning
 
-# Warn on TODO and FIXME
+# Treat NOTE like TODO and FIXME
 todo:
   severity: warning
+  keywords: ["TODO", "FIXME", "NOTE"]
 
 # Enforce structured MARKs for sections
 mark:
   severity: warning
 
+# If you ever see name nags in SwiftUI helpers, you can keep extending this list:
+identifier_name:
+  min_length: 1
+  allowed_symbols: ["_"]
+  excluded: ["p", "T", "m", "vm", "pal", "id", "idx", "cat", "delIdx", "archIdx", "msgs", "txt"]  # add any local idioms you use
+  
+# (Optional) If SwiftUI bodies still trip these, keep your thresholds—or loosen 10–20% more:
+function_body_length:
+  warning: 120
+  error: 200
+type_body_length:
+  warning: 400
+  error: 800

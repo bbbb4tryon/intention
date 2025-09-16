@@ -21,6 +21,11 @@ enum LegalConsent {
         UserDefaults.standard.set(currentVersion, forKey: LegalKeys.acceptedVersion)
         UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: LegalKeys.acceptedAtEpoch)
     }
+    /// DEBUG: clear all acceptance so the sheet will show again
+    static func clearForDebug() {
+        UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedVersion)
+        UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedAtEpoch)
+    }
 }
 
 // MARK: - File config (do NOT include .md)

@@ -32,6 +32,13 @@ struct ScreenStylePalette {
     let warning: Color
     let danger: Color
     let border: Color
+    
+    struct LinearGradientSpecial {
+        let colors: [Color]
+        let start: UnitPoint
+        let end: UnitPoint
+    }
+    let gradientBackground: LinearGradientSpecial?      // nil == use `background` color
 }
 // MARK: - App Font Theme
 enum AppFontTheme: String, CaseIterable {
@@ -84,7 +91,8 @@ enum AppColorTheme: String, CaseIterable {
                         success:   .green,
                         warning:   .yellow,
                         danger:    .red,
-                        border:    .black.opacity(0.12)
+                        border:    .black.opacity(0.12),
+                        gradientBackground: nil
                     )
 
                 case .recalibrate:
@@ -99,8 +107,13 @@ enum AppColorTheme: String, CaseIterable {
                         success:   .green,
                         warning:   .yellow,
                         danger:    .red,
-                        border:    .black.opacity(0.10)
+                        border:    .black.opacity(0.10),
+                        gradientBackground: .init(
+                            colors: [Color.blue.opacity(0.20), Color.blue.opacity(0.85)],
+                            start: .topLeading,
+                            end: .bottomTrailing
                     )
+                        )
 
                 case .membership:
                     return .init(
@@ -113,7 +126,8 @@ enum AppColorTheme: String, CaseIterable {
                         success:   .green,
                         warning:   .yellow,
                         danger:    .red,
-                        border:    .black.opacity(0.10)
+                        border:    .black.opacity(0.10),
+                        gradientBackground: nil
                     )
                 }
 
@@ -133,7 +147,8 @@ enum AppColorTheme: String, CaseIterable {
                         success:   .green,
                         warning:   .yellow,
                         danger:    .red,
-                        border:    .white.opacity(0.15)
+                        border:    .white.opacity(0.15),
+                        gradientBackground: nil
                     )
                 case .history:
                     return .init(
@@ -146,7 +161,8 @@ enum AppColorTheme: String, CaseIterable {
                         success:   .green,
                         warning:   .yellow,
                         danger:    .red,
-                        border:    .white.opacity(0.15)
+                        border:    .white.opacity(0.15),
+                        gradientBackground: nil
                     )
                 case .settings:
                     return .init(
@@ -159,7 +175,8 @@ enum AppColorTheme: String, CaseIterable {
                         success:   .green,
                         warning:   .yellow,
                         danger:    .red,
-                        border:    .white.opacity(0.15)
+                        border:    .white.opacity(0.15),
+                        gradientBackground: nil
                     )
                 case .recalibrate:
                     return .init(
@@ -172,7 +189,8 @@ enum AppColorTheme: String, CaseIterable {
                         success:   .green,
                         warning:   .yellow,
                         danger:    .red,
-                        border:    .white.opacity(0.18)
+                        border:    .white.opacity(0.18),
+                        gradientBackground: nil
                     )
                 case .membership:
                     return .init(
@@ -185,7 +203,8 @@ enum AppColorTheme: String, CaseIterable {
                         success:   .green,
                         warning:   .yellow,
                         danger:    .red,
-                        border:    .white.opacity(0.18)
+                        border:    .white.opacity(0.18),
+                        gradientBackground: nil
                     )
                 }
             // ---------- FIRE ----------
@@ -204,7 +223,8 @@ enum AppColorTheme: String, CaseIterable {
                                     success:   .green,
                                     warning:   .yellow,
                                     danger:    .red,
-                                    border:    .white.opacity(0.14)
+                                    border:    .white.opacity(0.14),
+                    gradientBackground: nil
                                 )
             case .history:
                 return .init(
@@ -217,7 +237,8 @@ enum AppColorTheme: String, CaseIterable {
                     success:   .green,
                     warning:   .yellow,
                     danger:    .red,
-                    border:    .white.opacity(0.14)
+                    border:    .white.opacity(0.14),
+                    gradientBackground: nil
                 )
             case .settings:
                 return .init(
@@ -230,7 +251,8 @@ enum AppColorTheme: String, CaseIterable {
                                     success:   .green,
                                     warning:   .yellow,
                                     danger:    .red,
-                                    border:    .white.opacity(0.14)
+                                    border:    .white.opacity(0.14),
+                    gradientBackground: nil
                                 )
             case .recalibrate:
                 return .init(
@@ -243,7 +265,8 @@ enum AppColorTheme: String, CaseIterable {
                     success:   .green,
                     warning:   .yellow,
                     danger:    .red,
-                    border:    .white.opacity(0.16)
+                    border:    .white.opacity(0.16),
+                    gradientBackground: nil
                 )
             case .membership:
                 return .init(
@@ -256,7 +279,8 @@ enum AppColorTheme: String, CaseIterable {
                     success:   .green,
                     warning:   .yellow,
                     danger:    .red,
-                    border:    .white.opacity(0.16)
+                    border:    .white.opacity(0.16),
+                    gradientBackground: nil
                 )
             }
         }

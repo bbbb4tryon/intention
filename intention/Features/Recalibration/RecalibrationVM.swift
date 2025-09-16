@@ -24,16 +24,19 @@ enum RecalibrationError: LocalizedError {
 /// Haptics are triggered from VM only (View stays quiet).
 
 /// Swift-6 friendly captures; cancel on deinit.
+/// VM is already @MainActor, so the Task {} body runs on the main actor; you can mutate published properties directly (no MainActor.run)
 @MainActor
 final class RecalibrationVM: ObservableObject {
-    enum Phase { case idle, running, finished }
+    enum Phase { case idle, running, finished, pause }
     
     @Published private(set) var phase: Phase = .idle
     @Published private(set) var mode: RecalibrationMode? = nil
     @Published var timeRemaining: Int = 0
     @Published var lastError: Error? = nil
-    @Published var promptText: String = ""  // “Switch feet” pulses EMOM
-    @Published var breathingPhaseIndex: Int = 0 // 0:Inhale, 1:Hold, 2:Exhale, 3:Hold
+    @Published var breathingPhaseIndex: Int = 0     // 0:Inhale, 1:Hold, 2:Exhale, 3:Hold
+    @Published var promptText: String = ""          // “Switch feet” pulses EMOM
+    @Published var eyesClosedMode: Bool = false     // UI toggles this before start()
+    @Published var balancingPhaseIndex: Int = 0
     
     var formattedTime: String {
         let m = timeRemaining / 60, s = timeRemaining % 60
@@ -53,42 +56,32 @@ final class RecalibrationVM: ObservableObject {
 
     // Policy knobs (VM decides "when")
     private var breathingMinutes: Int
-    private let balancingMinutes: Int
+    private var balancingMinutes: Int
     private let inhale = 6, hold1 = 3, exhale = 6, hold2 = 3
 
     private let haptics: HapticsClient
     private var task: Task<Void, Never>?
 
-    init(haptics: HapticsClient,
-         breathingMinutes: Int = 2,
-         balancingMinutes: Int = 4)
+    init(haptics: HapticsClient, breathingMinutes: Int = 2, balancingMinutes: Int = 4)
     {
         self.haptics = haptics
         self.breathingMinutes = min(4, max(2, breathingMinutes))
-        self.balancingMinutes = balancingMinutes
+        self.balancingMinutes = min(4, max(4, balancingMinutes))
     }
 
     deinit { task?.cancel() }
 
     
     // MARK: Core API (async throws; View calls these)
-    func setBreathingMinutes(_ minutes: Int) throws {
-        guard (2...4).contains(minutes) else { throw RecalibrationError.invalidBreathingMinutes }
-        guard phase != .running else { throw RecalibrationError.cannotChangeWhileRunning }
-        breathingMinutes = minutes
-    }
     
     func start(mode: RecalibrationMode) async throws {
         cancel()
         self.mode = mode
         self.phase = .running
+        self.timeRemaining = (mode == .breathing ? breathingMinutes : balancingMinutes) * 60
         switch mode {
-        case .balancing:
-            timeRemaining = balancingMinutes * 60
-            runBalancing()
-        case .breathing:
-            timeRemaining = breathingMinutes * 60
-            runBreathing()
+        case .balancing: runBalancing()
+        case .breathing: runBreathing()
         }
     }
     func stop() async throws {
@@ -103,75 +96,123 @@ final class RecalibrationVM: ObservableObject {
         task = nil
     }
     
-    // MARK: Private helpers
+    func setBreathingMinutes(_ minutes: Int) throws {
+        guard (2...4).contains(minutes) else { throw RecalibrationError.invalidBreathingMinutes }
+        guard phase != .running else { throw RecalibrationError.cannotChangeWhileRunning }
+        breathingMinutes = minutes
+    }
+    
+    func setBalancingMinutes(_ mins: Int) throws {
+        guard (1...4).contains(mins) else { throw RecalibrationError.invalidBreathingMinutes }
+        guard phase != .running else { throw RecalibrationError.cannotChangeWhileRunning }
+        balancingMinutes = mins
+    }
+    
+    // MARK: Balancing - short-short every min; long-long-short on done
     private func runBalancing() {
         // Minute beeps: short–short; Done: long–long–short; only show “Switch feet” briefly each minute
+        /// cue at start + each minute, set balancingPhaseIndex, optionally show promptText for 1s
         let total = timeRemaining
+//        var lastMinBoundary = total
+        
         task = Task { [weak self] in
             guard let self else { return }
+            var lastCueAt = -1                      // ensure we cue at the start and then each minute boundary
+            
             while self.timeRemaining > 0 && !Task.isCancelled {
-                if self.timeRemaining == total || self.timeRemaining % 60 == 0 {
-                    await self.haptics.notifySwitch()      // short–short
-                    await MainActor.run {
+                // EMOM fire at boundary
+                if self.timeRemaining == total || (self.timeRemaining % 60 == 0 && self.timeRemaining != lastCueAt) {
+//                    let elapsed = total - self.timeRemaining
+//                    let minuteIndex = (elapsed / 60) % 2          // 0,1,0,1...
+                    //                    self.haptics.notifySwitch()             // short–short
+                    haptics.notifySwitch()                       // short–short
+                    //                    await MainActor.run {
+                    //                        self.balancingPhaseIndex = minuteIndex
+                    lastCueAt = self.timeRemaining
+                    if !self.eyesClosedMode {
                         self.promptText = "Switch feet"
-                    }
-                    try? await Task.sleep(nanoseconds: 1_000_000_000) // show for ~1s
-                    await MainActor.run { self.promptText = "" }
-                }
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-                await MainActor.run { self.timeRemaining -= 1 }
-            }
-            guard !Task.isCancelled else { return }
-            await self.haptics.notifyDone() // long–long–short
-            await MainActor.run {
-                self.phase = .finished
-                self.mode = nil
-                self.promptText = ""
-            }
-            await MainActor.run { self.onCompleted?(.balancing) }
-        }
-    }
-
-    private func runBreathing() {
-        // Show one line “Inhale · Hold · Exhale · Hold” and move a subtle dot via breathingPhaseIndex
-        task = Task { [weak self] in
-            guard let self else { return }
-            let phases = [(0, inhale), (1, hold1), (2, exhale), (3, hold2)]
-            while self.timeRemaining > 0 && !Task.isCancelled {
-                for (idx, secs) in phases {
-                    await MainActor.run {
-                        self.breathingPhaseIndex = idx
-                        // NOTE: No big label per phase; UI uses breathingPhaseLine + index to draw the dot
-                    }
-                    for _ in 0..<secs {
-                        guard !Task.isCancelled else { return }
                         try? await Task.sleep(nanoseconds: 1_000_000_000)
-                        await MainActor.run { self.timeRemaining = max(0, self.timeRemaining - 1) }
-                        if self.timeRemaining == 0 { break }
+                        self.promptText = ""
                     }
-                    if self.timeRemaining == 0 { break }
-                    await self.haptics.added() // tiny cue at phase boundaries
                 }
+//                        if !self.eyesClosedMode { self.promptText = "Switch feet" }
+//                    }
+//                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+//                    await MainActor.run { self.promptText = "" }
+//                    lastCueAt = self.timeRemaining
+//                }
+
+                // Tick every second no matter what
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+//                await MainActor.run { self.timeRemaining -= 1 }
+                self.timeRemaining -= 1
             }
+
             guard !Task.isCancelled else { return }
-            await self.haptics.notifyDone() // long–long–short
-            await MainActor.run {
+            haptics.notifyDone()                // long–long–short
+//            await MainActor.run {
                 self.phase = .finished
                 let finished = self.mode
                 self.mode = nil
                 self.promptText = ""
                 if let m = finished { self.onCompleted?(m) }
-            }
+//            }
+//            await MainActor.run { self.onCompleted?(.balancing) }
         }
     }
 
+    // MARK: Breathing — 6/3/6/3, tiny cue each phase
+    private func runBreathing() {
+        // Show one line “Inhale · Hold · Exhale · Hold” and move a subtle dot via breathingPhaseIndex
+        task = Task { [weak self] in
+            guard let self else { return }
+            let seq: [(idx: Int, secs: Int)] = [(0, inhale), (1, hold1), (2, exhale), (3, hold2)]
+            while self.timeRemaining > 0 && !Task.isCancelled {
+                for (idx, secs) in seq {
+//                    await MainActor.run {
+                        self.breathingPhaseIndex = idx
+                        // NOTE: No big label per phase; UI uses breathingPhaseLine + index to draw the dot
+//                    }
+                    for _ in 0..<secs {
+                        guard !Task.isCancelled else { return }
+                        try? await Task.sleep(nanoseconds: 1_000_000_000)
+//                        await MainActor.run { self.timeRemaining = max(0, self.timeRemaining - 1) }
+                        self.timeRemaining = max(0, self.timeRemaining - 1)
+                        if self.timeRemaining == 0 { break }
+                    }
+                    if self.timeRemaining == 0 { break }
+                    haptics.added()             // tiny cue at phase boundaries
+                }
+            }
+            guard !Task.isCancelled else { return }
+            haptics.notifyDone()                // long–long–short
+//            await MainActor.run {
+                self.phase = .finished
+                let finished = self.mode
+                self.mode = nil
+                self.promptText = ""
+                if let m = finished { self.onCompleted?(m) }
+//            }
+        }
+    }
 
        private func phaseBlock(label: String, seconds: Int) async {
-           await haptics.added()   // single short cue at each phase start
+           haptics.added()                          // single short cue at each phase start
            for _ in 0..<seconds {
                guard !Task.isCancelled else { return }
                try? await Task.sleep(nanoseconds: 1_000_000_000)
                await MainActor.run { self.timeRemaining = max(0, self.timeRemaining - 1) }
            }
        }
+    
+    func performAsyncAction(_ action: @escaping () async throws -> Void) {
+        Task {
+            do {
+                try await action()
+            } catch {
+                debugPrint("[FocusSessionVM.performAsyncAction] error:", error)
+                self.lastError = error
+            }
+        }
+    }
 }

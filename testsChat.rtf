@@ -1,0 +1,332 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Times-Roman;\f1\fmodern\fcharset0 Courier;\f2\froman\fcharset0 Times-Bold;
+\f3\fmodern\fcharset0 Courier-Bold;\f4\froman\fcharset0 Times-Italic;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid101\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid2}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}}
+\margl1440\margr1440\vieww9420\viewh6300\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf0 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Make your UI test fast by launching with tiny timers. If 
+\f1\fs26 TimerConfig.current
+\f0\fs24  already reads a 
+\f1\fs26 ProcessInfo
+\f0\fs24  env var (recommended), the UI test will \'93just work.\'94 If not, add a small check in 
+\f1\fs26 TimerConfig.current
+\f0\fs24  to read 
+\f1\fs26 TIMER_CHUNK_SECONDS
+\f0\fs24  from 
+\f1\fs26 ProcessInfo.processInfo.environment\
+\
+\pard\pardeftab720\sa298\partightenfactor0
+
+\f2\b\fs36 \cf0 \strokec2 A) UI test (golden path)\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\fs24 \cf0 File:
+\f0\b0 \strokec2  
+\f1\fs26 \strokec2 IntentionUITests/GoldenPathUITests.swift
+\f0\fs24 \strokec2 \
+import XCTest\
+\
+final class GoldenPathUITests: XCTestCase \{\
+\
+    override func setUp() \{\
+        continueAfterFailure = false\
+    \}\
+\
+    func test_FocusFlow_GoldenPath_Breathing_Recalibration_IncrementsStats() \{\
+        let app = XCUIApplication()\
+        // Make \'9320 min\'94 \uc0\u8776  3s for tests (adjust to what TimerConfig.current reads)\
+        app.launchEnvironment["TIMER_CHUNK_SECONDS"] = "3"\
+        app.launch()\
+\
+        // 1) Add two intentions\
+        let textField = app.textFields.element(boundBy: 0)\
+        XCTAssertTrue(textField.waitForExistence(timeout: 3), "Input field should appear")\
+        textField.tap()\
+        textField.typeText("Write outline")\
+        app.buttons["Add"].tap()\
+\
+        // After first add, CTA still \'93Add\'94\
+        XCTAssertTrue(app.buttons["Add"].exists)\
+\
+        textField.typeText("Draft section 1")\
+        app.buttons["Add"].tap()\
+\
+        // After second add, CTA should swap to \'93Begin\'94\
+        XCTAssertTrue(app.buttons["Begin"].waitForExistence(timeout: 1), "CTA should switch to Begin")\
+\
+        // 2) Begin the first tiny chunk\
+        app.buttons["Begin"].tap()\
+\
+        // Countdown should appear briefly; we don\'92t need to assert its exact value.\
+        // Wait for the first chunk to auto-finish (3s) and the flow to advance.\
+        sleep(4) // chunk1 ~3s\
+\
+        // Let chunk2 auto-run too (another ~3s)\
+        sleep(4)\
+\
+        // 3) Recalibration sheet should appear \'97 tap \'93Breathing\'94\
+        // Your Recalibration sheet should have a \'93Breathing\'94 button/text somewhere.\
+        let breathing = app.buttons["Breathing"]\
+        XCTAssertTrue(breathing.waitForExistence(timeout: 3), "Recalibration sheet should show Breathing")\
+        breathing.tap()\
+\
+        // 4) Verify Stats updated.\
+        // Switch to Settings tab (3rd tab)\
+        app.tabBars.buttons.element(boundBy: 2).tap()\
+\
+        // Expect the UI to reflect increments. We assert \'93Breathing\'94 exists and look for a nonzero number nearby.\
+        // Keep it simple/robust (you can add accessibilityIdentifiers to be even stricter).\
+        XCTAssertTrue(app.staticTexts["Breathing"].exists, "Breathing stat label should exist")\
+        // Optional soft assertion for any nonzero number appearing somewhere:\
+        let anyNumber = app.staticTexts.containing(NSPredicate(format: "label MATCHES %@", "^[1-9][0-9]*$")).firstMatch\
+        XCTAssertTrue(anyNumber.exists, "Some stat value should be > 0 after a completed session")\
+    \}\
+\}\
+\
+\pard\pardeftab720\partightenfactor0
+\cf0 \strokec2 If a label is hard to find, expose a few 
+\f2\b \strokec2 accessibilityIdentifiers
+\f0\b0 \strokec2  in your views (e.g., for the primary CTA, countdown, and Stats numbers) to make this bullet-proof.\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \strokec2 \'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \outl0\strokewidth0 \'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\pard\pardeftab720\sa298\partightenfactor0
+
+\f2\b\fs36 \cf0 \outl0\strokewidth0 \strokec2 B) VM test 1 \'97 
+\f3\fs39 \strokec2 FocusSessionVM
+\f2\fs36 \strokec2  scenarios\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\fs24 \cf0 File:
+\f0\b0 \strokec2  
+\f1\fs26 \strokec2 IntentionTests/FocusSessionVM_Scenarios.swift
+\f0\fs24 \strokec2 \
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \strokec2 import XCTest\
+@testable import intention\
+\
+final class FocusSessionVM_Scenarios: XCTestCase \{\
+\
+    func makeVM(tinySeconds: Int = 3) -> FocusSessionVM \{\
+        let tiny = TimerConfig(chunkDuration: tinySeconds)\
+        return FocusSessionVM(previewMode: false, haptics: NoopHapticsClient(), config: tiny)\
+    \}\
+\
+    func test_GivenEmpty_WhenAddTwoTiles_ThenCanPrimaryTogglesToBegin() async throws \{\
+        let vm = makeVM()\
+        XCTAssertFalse(vm.canPrimary, "Empty input should not enable primary")\
+\
+        vm.tileText = "Tile A"\
+        try await vm.addTileAndPrepareForSession(vm.tileText)\
+        XCTAssertTrue(vm.canPrimary, "After 1st tile, CTA should be Add (still enabled)")\
+\
+        vm.tileText = "Tile B"\
+        try await vm.addTileAndPrepareForSession(vm.tileText)\
+\
+        // With 2 tiles, CTA must become Begin (phase .notStarted)\
+        XCTAssertEqual(vm.tiles.count, 2)\
+        XCTAssertTrue(vm.canPrimary, "CTA should now be Begin")\
+        XCTAssertEqual(vm.phase, .notStarted)\
+    \}\
+\
+    func test_WhenBeginOverallSession_ThenPhaseRunning_AndCountdownTicks() async throws \{\
+        let vm = makeVM()\
+        vm.tileText = "One"; try await vm.addTileAndPrepareForSession(vm.tileText)\
+        vm.tileText = "Two"; try await vm.addTileAndPrepareForSession(vm.tileText)\
+\
+        try await vm.beginOverallSession()\
+        XCTAssertEqual(vm.phase, .running)\
+\
+        let start = vm.countdownRemaining\
+        try await Task.sleep(nanoseconds: 1_100_000_000) // ~1.1s\
+        XCTAssertLessThan(vm.countdownRemaining, start, "Countdown should tick down")\
+    \}\
+\}\
+\outl0\strokewidth0 \
+\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\pard\pardeftab720\sa298\partightenfactor0
+
+\f2\b\fs36 \cf0 \outl0\strokewidth0 \strokec2 C) VM test 2 + persistence seam \'97 
+\f3\fs39 \strokec2 HistoryVM
+\f2\fs36 \strokec2  scenarios\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b0\fs24 \cf0 \strokec2 This file exercises 
+\f2\b \strokec2 move/undo
+\f0\b0 \strokec2  (user-visible) and the 
+\f2\b \strokec2 debounced save
+\f0\b0 \strokec2  seam.\
+
+\f2\b \strokec2 File:
+\f0\b0 \strokec2  
+\f1\fs26 \strokec2 IntentionTests/HistoryVM_Scenarios.swift
+\f0\fs24 \strokec2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\fs26 \cf0 \strokec2 \
+\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\fs24 \cf0 import XCTest\
+@testable import intention\
+\
+// Minimal in-memory persistence for seam tests\
+final actor InMemoryPersistence: Persistence \{\
+    private var store: [String: Data] = [:]\
+    let encoder = JSONEncoder()\
+    let decoder = JSONDecoder()\
+\
+    // For counting/coalescing\
+    private(set) var writeCount = 0\
+    private(set) var lastKey: String?\
+\
+    func write<T: Codable>(_ object: T, to key: String) async throws \{\
+        store[key] = try encoder.encode(object)\
+        writeCount += 1\
+        lastKey = key\
+    \}\
+\
+    func readIfExists<T: Codable>(_ type: T.Type, from key: String) async throws -> T? \{\
+        guard let data = store[key] else \{ return nil \}\
+        return try decoder.decode(type, from: data)\
+    \}\
+\
+    func clear(_ key: String) async \{\
+        store.removeValue(forKey: key)\
+    \}\
+\}\
+\
+final class HistoryVM_Scenarios: XCTestCase \{\
+\
+    @MainActor func makeVM() -> (HistoryVM, InMemoryPersistence) \{\
+        let mem = InMemoryPersistence()\
+        let vm = HistoryVM(persistence: mem)\
+        // Ensure built-ins exist\
+        vm.reconcileAndEnsureBuiltIns()\
+        return (vm, mem)\
+    \}\
+\
+    @MainActor func test_MoveTile_SetsUndo_And_InsertsAtIndexZero() async throws \{\
+        let (vm, _) = makeVM()\
+        let general = vm.generalCategoryID\
+        let archive = vm.archiveCategoryID\
+\
+        // Seed: put a couple tiles in General so there's something to move\
+        vm.addToHistory(TileM(text: "A"), to: general)\
+        vm.addToHistory(TileM(text: "B"), to: general)\
+\
+        // move the older tile (B is newest at index 0, so move A)\
+        guard\
+          let from = vm.categories.firstIndex(where: \{ $0.id == general \}),\
+          let tileA = vm.categories[from].tiles.last\
+        else \{ return XCTFail("Failed to seed") \}\
+\
+        try await vm.moveTileThrowing(tileA, from: general, to: archive)\
+\
+        // Undo toast info set\
+        XCTAssertNotNil(vm.lastUndoableMove)\
+\
+        // Should insert at top (index 0) in the Archive\
+        guard let to = vm.categories.firstIndex(where: \{ $0.id == archive \}) else \{\
+            return XCTFail("Archive not found")\
+        \}\
+        XCTAssertEqual(vm.categories[to].tiles.first, tileA)\
+\
+        // Undo within 3s should return it\
+        vm.undoLastMove()\
+        // Give the undo Task a moment\
+        try? await Task.sleep(nanoseconds: 200_000_000)\
+        // Back in General at top\
+        guard let from2 = vm.categories.firstIndex(where: \{ $0.id == general \}) else \{\
+            return XCTFail("General not found after undo")\
+        \}\
+        XCTAssertEqual(vm.categories[from2].tiles.first, tileA)\
+    \}\
+\
+    @MainActor func test_PersistenceSeam_DebounceAndFlush() async throws \{\
+        let (vm, mem) = makeVM()\
+\
+        // Rapid calls should coalesce to ~1 write after the debounce window\
+        vm.addToHistory(TileM(text: "X"), to: vm.generalCategoryID)\
+        vm.saveHistory() // schedule debounced\
+        vm.saveHistory() // schedule debounced (coalesced)\
+        vm.saveHistory() // schedule debounced (coalesced)\
+\
+        // Wait slightly > 300ms (your VM's debounce)\
+        try? await Task.sleep(nanoseconds: 500_000_000)\
+        let writesAfterDebounce = await mem.writeCount\
+        XCTAssertEqual(writesAfterDebounce, 1, "Debounced saves should coalesce")\
+\
+        // Calling flush should write immediately even if nothing changed\
+        vm.flushPendingSaves()\
+        // Allow the flush task to run\
+        try? await Task.sleep(nanoseconds: 100_000_000)\
+        let writesAfterFlush = await mem.writeCount\
+        XCTAssertEqual(writesAfterFlush, 2, "flushPendingSaves should force an immediate write")\
+    \}\
+\}\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f2\b \cf0 \strokec2 Notes on robustness & marketing-friendly UX checks
+\f0\b0 \strokec2 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls1\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 UI test names are 
+\f4\i descriptive
+\f0\i0  and align with user expectations (what someone in the 21\'9660 demo would call success): add \uc0\u8594  begin \u8594  auto-finish \u8594  breathe \u8594  see stats go up.\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Assertions focus on 
+\f2\b visible state
+\f0\b0  (button title swap, sheet presented, a stat visibly increments), not internals.\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 To make these airtight, sprinkle 
+\f3\b\fs26 accessibilityIdentifier
+\f0\b0\fs24  on: the main CTA, the countdown label, and the Stats numbers (\'93stats.total\'94, \'93stats.breathing\'94, etc.).\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls2\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 In the toolbar, select 
+\f2\b iPhone 15
+\f0\b0  (Simulator).\
+\ls2\ilvl0
+\f2\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Unit tests
+\f0\b0 : press the diamonds or 
+\f1\fs26 \uc0\u8984 U
+\f0\fs24 .\
+\ls2\ilvl0
+\f2\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 UI tests
+\f0\b0 : same, but they\'92ll launch your app.\
+\ls2\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 If you use a Test Plan, ensure 
+\f2\b Destinations
+\f0\b0  contains your simulator (not \'93Any iOS Device\'94).\
+\ls2\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Keep your 
+\f2\b iOS Deployment Target
+\f0\b0  \uc0\u8804  the simulator\'92s OS.\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \outl0\strokewidth0 \
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \
+}

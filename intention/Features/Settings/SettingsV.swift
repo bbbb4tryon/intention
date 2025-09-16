@@ -11,8 +11,9 @@ import UserNotifications
 struct SettingsV: View {
     @EnvironmentObject var theme: ThemeManager
     @EnvironmentObject var prefs: AppPreferencesVM
-    @EnvironmentObject var membershipVM: MembershipVM
-    @ObservedObject var viewModel: StatsVM
+    @EnvironmentObject var memVM: MembershipVM
+    @ObservedObject var statsVM: StatsVM
+    @AppStorage(DebugKeys.forceLegalNextLaunch) private var debugShowLegalNextLaunch = false
     
     @State private var userID: String = ""      /// aka deviceID
     @State private var showTerms = false
@@ -25,26 +26,27 @@ struct SettingsV: View {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
     
-    var body: some View {     
+    var body: some View {
         ScrollView {
             Page(top: 4, alignment: .center) {
-            #if DEBUG
-            Button("Debug: Reset Legal Gate") {
-                UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedVersion)
-                UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedAtEpoch)
+        #if DEBUG
+        Section("Developer") {
+            Button("Reset Legal Gate Now") {
+                LegalConsent.clearForDebug() // your helper that clears acceptance
             }
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            #endif
+            Toggle("Show Legal on Next Launch", isOn: $debugShowLegalNextLaunch)
+        }
+        #endif
+
 
                 Card {
                     VStack(alignment: .leading, spacing: 8){
                         T("Membership", .section)
                         //                        .friendlyHelper()
-                        (membershipVM.isMember
+                        (memVM.isMember
                          ? T("Status: Active", .secondary) : T("Status: Not Active", .secondary)
                         )
-                        .foregroundStyle(membershipVM.isMember ? .green : .secondary)
+                        .foregroundStyle(memVM.isMember ? .green : .secondary)
                         
                         T("Your user ID/device ID: \(userID)", .caption)
                             .foregroundStyle(p.textSecondary)
@@ -66,24 +68,24 @@ struct SettingsV: View {
                 /// Stats
                 Card {
                     HStack(spacing: 20) {
-                        StatBlock(icon: "list.bullet",
-                                  value: "\(viewModel.totalCompletedIntentions)",
+                        StatPill(icon: "list.bullet",
+                                  value: "\(statsVM.totalCompletedIntentions)",
                                   caption: "Accomplished",
                                   screen: .settings)
                         
-                        StatBlock(icon: "rosette",
-                                  value: "\(viewModel.maxRunStreakDays)",
+                        StatPill(icon: "rosette",
+                                  value: "\(statsVM.longestStreak)",
                                   caption: "Streak",
                                   screen: .settings)
                     }
                     Divider()
                     HStack(spacing: 20) {
-                        StatBlock(icon: "leaf.fill",
-                                  value: "\(viewModel.recalibrationCounts[.breathing,  default: 0])",
+                        StatPill(icon: "leaf.fill",
+                                  value: "\(statsVM.recalibrationCounts[.breathing,  default: 0])",
                                   caption: "Breathing",
                                   screen: .settings)
-                        StatBlock(icon: "figure.walk",
-                                  value: "\(viewModel.recalibrationCounts[.balancing,  default: 0])",
+                        StatPill(icon: "figure.walk",
+                                  value: "\(statsVM.recalibrationCounts[.balancing,  default: 0])",
                                   caption: "Balancing",
                                   screen: .settings)
                     }
@@ -183,7 +185,7 @@ struct SettingsV: View {
         stats.logSession(CompletedSession(date: .now, tileTexts: ["By Example", "Analysis checklist"], recalibration: .breathing))
 
         return PreviewWrapper {
-            SettingsV(viewModel: PreviewMocks.stats)
+            SettingsV(statsVM: PreviewMocks.stats)
                 .previewTheme()
         }
     }

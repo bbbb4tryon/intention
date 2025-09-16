@@ -15,13 +15,20 @@ struct HistoryV: View {
     @State private var newTextTiles: [UUID: String] = [:]       /// Store new tile text per category using its `id` as key
     @State private var isOrganizing = false
     @State private var createdCategoryID: UUID?
-  
+    @State private var targetCategoryID: UUID?
+    //
+    @State private var showRenamePicker = false
+    @State private var showDeletePicker = false
+    @State private var showRenameSheet = false
+    @State private var renameText = ""
+    @State private var showDeleteConfirm = false
+    
     private let screen: ScreenName = .history
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
-
+    
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
@@ -30,38 +37,59 @@ struct HistoryV: View {
                     categoriesList(p: p)
                     Spacer(minLength: 16)
                 }
+                .alert("Delete category?",
+                       isPresented: $showDeleteConfirm) {
+                    Button("Delete", role: .destructive) {
+                        if let id = targetCategoryID { _ = viewModel.deleteCategory(id: id) }
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("Tiles will be moved to Archive.")
+                }
+                
+                // Sheet for renaming (iOS 16-friendly)
+                .sheet(isPresented: $showRenameSheet) {
+                    NavigationStack {
+                        Form {
+                            Section("New Name") {
+                                TextField("Category name", text: $renameText)
+                                    .textInputAutocapitalization(.words)
+                                    .disableAutocorrection(true)
+                            }
+                        }
+                        .navigationTitle("Rename")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cancel") { showRenameSheet = false }
+                            }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Save") {
+                                    if let id = targetCategoryID {
+                                        viewModel.renameCategory(id: id, to: renameText.trimmingCharacters(in: .whitespacesAndNewlines))
+                                    }
+                                    showRenameSheet = false
+                                }
+                                .disabled(renameText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            }
+                        }
+                    }
+                    .presentationDetents([.medium])
+                }
             }
             
             /// Kept outside ScrollView - gives space to GeometryReader
-        organizerOverlay
+            organizerOverlay
         }
-        .safeAreaInset(edge: .bottom) { undoToast }
+        .safeAreaInset(edge: .bottom, spacing: 10) { VStack(spacing: 10){ undoToast; capToast } }
         .animation(.easeInOut(duration: 0.2), value: viewModel.lastUndoableMove != nil)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 12) {
-                    Button(action: {
-                        if isOrganizing { viewModel.flushPendingSaves() }    /// When "Done" tapped, force a final write 
-                        isOrganizing.toggle()
-                    }) {
-                        T(isOrganizing ? "Done" : "Organize", .section)
-                    }
-                    .secondaryActionStyle(screen: screen)
-                    
-                    Button(action: {
-                        if let id = viewModel.addEmptyUserCategory() { createdCategoryID = id }
-                    }) {
-                        T("Add Category", .section)
-                    }
-                    .secondaryActionStyle(screen: .history)
-                    .disabled(!viewModel.canAddUserCategory())
-                }
-            }
-        }
+        .toolbar { historyToolbar }
+        .navigationBarTitleDisplayMode(.inline) // optional, for a tighter header
     }
     
     /// Splitting subviews
-    @ViewBuilder private var header: some View {
+    @ViewBuilder
+    private var header: some View {
         T("Tap a category title to edit and group.", .body)
             .foregroundStyle(p.textSecondary)
             .accessibilityAddTraits(.isHeader)
@@ -107,6 +135,26 @@ struct HistoryV: View {
         }
     }
     
+    @ViewBuilder private var capToast: some View {
+        if viewModel.tileLimitWarning {
+            BottomToast {
+                HStack {
+                    T("Archive capped at 200; oldest items were removed.", .caption)
+                    Spacer()
+                    Button { viewModel.tileLimitWarning = false } label: { T("OK", .action) }
+                        .secondaryActionStyle(screen: .history)
+                }
+            }
+            .padding(.horizontal, 16)
+            .task {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                viewModel.tileLimitWarning = false
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+    
+    
     /// Organizer show as an overlay so it doesn't fight ScrollView dimensions
     @ViewBuilder private var organizerOverlay: some View {
         if isOrganizing {
@@ -136,11 +184,11 @@ struct HistoryV: View {
                     .shadow(radius: 3, y: 1)
                     
                     
-                    Button(action: { isOrganizing = false }) {
+                    Button { viewModel.flushPendingSaves(); withAnimation { isOrganizing = false }} label: {
                         T("Done", .section)
                     }
-                        .secondaryActionStyle(screen: .history)
-                        .padding(.bottom, 12)
+                    .secondaryActionStyle(screen: .history)
+                    .padding(.bottom, 12)
                 }
                 //FIXME: use my button of this?
                 .padding(12)
@@ -154,8 +202,104 @@ struct HistoryV: View {
             .zIndex(1)
         }
     }
+    
+    @ToolbarContentBuilder private var historyToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .topBarTrailing) {
+            
+            // Organize / Done toggle
+            Button {
+                if isOrganizing { viewModel.flushPendingSaves() }
+                withAnimation { isOrganizing.toggle() }
+            } label: {
+                Label {
+                    T(isOrganizing ? "Done" : "Organize", .section)
+                } icon: {
+                    Image(systemName: "arrow.up.arrow.down")
+                }
+            }
+            .secondaryActionStyle(screen: screen)
+            
+            // More menu
+            Menu {
+                Button {
+                    // If only one user cat, go straight to rename sheet; else pick first
+                    if let only = viewModel.userCategoryIDs.only {
+                        targetCategoryID = only
+                        renameText = viewModel.name(for: only)
+                        showRenameSheet = true
+                    } else {
+                        showRenamePicker = true
+                    }
+                } label: { T("Rename Category", .section) }
+                
+                
+                Button {
+                    // If only one user cat, confirm delete directly; else choose which
+                    if let only = viewModel.userCategoryIDs.only {
+                        targetCategoryID = only
+                        showDeletePicker = true
+                    } else {
+                        showDeletePicker = true
+                    }
+                } label: { T("Delete Category", .section) }
+                
+                Divider()
+                
+                Button {
+                    if let id = viewModel.addEmptyUserCategory() { createdCategoryID = id }
+                } label: { T("Add Category", .section) }
+                    .disabled(!viewModel.canAddUserCategory())
+                
+            } label: {
+                Label { T("More", .section) } icon: { Image(systemName: "ellipsis.circle") }
+            }
+            .secondaryActionStyle(screen: screen)
+            
+            // Rename picker
+            .confirmationDialog("Choose category to rename",
+                isPresented: $showRenamePicker,
+                titleVisibility: .visible
+            ) {
+                ForEach(viewModel.userCategoryIDs, id: \.self) { id in
+                    let label = viewModel.name(for: id).ifEmpty("Untitled")
+                    Button(label) {
+                        targetCategoryID = id
+                        renameText = viewModel.name(for: id)
+                        showRenameSheet = true
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            }
+
+            // Delete picker (note the role initializer)
+            .confirmationDialog("Choose category to delete",
+                isPresented: $showDeletePicker,
+                titleVisibility: .visible
+            ) {
+                ForEach(viewModel.userCategoryIDs, id: \.self) { id in
+                    let label = viewModel.name(for: id).ifEmpty("Untitled")
+                    Button(role: .destructive) {
+                        targetCategoryID = id
+                        showDeleteConfirm.toggle()
+                    } label: {
+                        Text(label)
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            }
+
+        }
+    }
 }
 
+// UUID helper
+extension Array {
+    var only: Element? { count == 1 ? first : nil }
+}
+
+extension String {
+    func ifEmpty(_ replacement: String) -> String { isEmpty ? replacement : self }
+}
     
     // MARK: extracted CategorySectionRow
     /// Extracted row to simplify type-checking
@@ -203,7 +347,7 @@ private struct CategorySectionRow: View {
 //                    }
 //                }
 //            }
-//            .safeAreaInset(edge: .bottom) {
+//            .safeAreaInset(edge: .bottom, spacing: 10) {
 //                if let move = viewModel.lastUndoableMove {
 //                    BottomToast {
 //                        HStack {

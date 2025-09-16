@@ -35,19 +35,11 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "778F542C2E6F60C2002FA9AF"
-               BuildableName = "intendlyTests.xctest"
-               BlueprintName = "intendlyTests"
+               BlueprintIdentifier = "77C7FF2F2E721B71007B3B65"
+               BuildableName = "unitTests.xctest"
+               BlueprintName = "unitTests"
                ReferencedContainer = "container:intention.xcodeproj">
             </BuildableReference>
-            <SkippedTests>
-               <Test
-                  Identifier = "intendlyTests/testExample()">
-               </Test>
-               <Test
-                  Identifier = "intendlyTests/testPerformanceExample()">
-               </Test>
-            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>
@@ -71,13 +63,6 @@
             ReferencedContainer = "container:intention.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "RESET_LEGAL_ON_LAUNCH = 1"
-            value = ""
-            isEnabled = "YES">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
