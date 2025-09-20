@@ -65,7 +65,7 @@ struct DynamicMessageAndActionArea: View {
                         T("Add your first (or second) intention above", .body)
                             .foregroundStyle(p.textSecondary)
                             .multilineTextAlignment(.center)
-                    } else if focusVM.phase == .notStarted {
+                    } else if focusVM.phase == .idle {
                         T("Press Begin below to start your 20-minute focus.", .caption)
                             .foregroundStyle(p.textSecondary)
                             .multilineTextAlignment(.center)

@@ -8,51 +8,59 @@ import SwiftUI
 
 struct PrimaryActionStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.colorScheme) private var scheme
     let palette: ScreenStylePalette
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline)
-            .padding(.vertical, 12)
+            .foregroundStyle(scheme == .dark ? Color.btnTextDark : Color.btnTextLight)
+            .padding(.vertical, 14)
             .frame(maxWidth: .infinity)
-            .foregroundStyle(.white.opacity(isEnabled ? 1 : 0.7))
-            .background(palette.accent.opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1.0) : 0.45))
+            .background(palette.accent)
+        // .background(palette.accent.opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1.0) : 0.45))        // if pressed
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .opacity(configuration.isPressed ? 0.9 : 1.0)
     }
 }
 
 struct SecondaryActionStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.colorScheme) private var scheme
     let palette: ScreenStylePalette
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline)
+            .foregroundStyle(scheme == .dark ? Color.btnTextDark : Color.btnTextLight)
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity)
-            .foregroundStyle(palette.text.opacity(isEnabled ? 1 : 0.6))
-            .background(palette.surface.opacity(configuration.isPressed ? 0.9 : 1.0))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(palette.border, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(palette.accent)
+            .background(palette.accent.opacity(configuration.isPressed ? 0.8 : 1.0))
+            .overlay(   RoundedRectangle(cornerRadius: 12, style: .continuous) .stroke(palette.accent, lineWidth: 2) )
+            .clipShape( RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .opacity(configuration.isPressed ? 0.9 : 1.0)
     }
 }
 struct RecalibrationActionStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.colorScheme) private var scheme
     let palette: ScreenStylePalette
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity)
-            .foregroundStyle(.yellow.opacity(isEnabled ? 1 : 0.7))
-            .background(palette.success.opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1.0) : 0.45))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .foregroundStyle(scheme == .dark ? Color.btnTextDark : Color.btnTextLight)
+                       .padding(.vertical, 14)
+                       .frame(maxWidth: .infinity)
+                       .background(palette.accent)
+                       .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                       .opacity(configuration.isPressed ? 0.9 : 1.0)
     }
 }
 
+extension View {
+    func primaryActionStyle(screen: ScreenName) -> some View {          modifier(_PrimaryActionStyleMod(screen: screen)) }
+    func secondaryActionStyle(screen: ScreenName) -> some View {        modifier(_SecondaryActionStyleMod(screen: screen)) }
+    func recalibrationActionStyle(screen: ScreenName) -> some View {    modifier(_RecalibrationActionStyleMod(screen: screen)) }
+}
+
 // env-aware wrapper (replaces the current one that calls ThemeManager())
-private struct PrimaryActionStyleEnv: ViewModifier {
+private struct _PrimaryActionStyleMod: ViewModifier {
     @EnvironmentObject var theme: ThemeManager
     let screen: ScreenName
     func body(content: Content) -> some View {
@@ -60,7 +68,7 @@ private struct PrimaryActionStyleEnv: ViewModifier {
     }
 }
 // env-aware wrapper (replaces the current one that calls ThemeManager())
-private struct SecondaryActionStyleEnv: ViewModifier {
+private struct _SecondaryActionStyleMod: ViewModifier {
     @EnvironmentObject var theme: ThemeManager
     let screen: ScreenName
     func body(content: Content) -> some View {
@@ -68,17 +76,12 @@ private struct SecondaryActionStyleEnv: ViewModifier {
     }
 }
 
-private struct RecalibrationActionStyleEnv: ViewModifier {
+private struct _RecalibrationActionStyleMod: ViewModifier {
     @EnvironmentObject var theme: ThemeManager
+    let screen: ScreenName
     func body(content: Content) -> some View {
-        content.buttonStyle(RecalibrationActionStyle(palette: theme.palette(for: .recalibrate)))
+        content.buttonStyle(RecalibrationActionStyle(palette: theme.palette(for: screen)))
     }
-}
-
-extension View {
-    func primaryActionStyle(screen: ScreenName) -> some View { modifier(PrimaryActionStyleEnv(screen: screen)) }
-    func secondaryActionStyle(screen: ScreenName) -> some View { modifier(SecondaryActionStyleEnv(screen: screen)) }
-    func recalibrationActionStyle() -> some View { modifier(RecalibrationActionStyleEnv()) }
 }
 
 /// Helper to apply ButtonStyle inside a View modifier chain

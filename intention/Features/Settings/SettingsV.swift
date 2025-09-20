@@ -1,5 +1,5 @@
 //
-//  HistoryV.swift
+//  SettingsV.swift
 //  intention
 //
 //  Created by Benjamin Tryon on 6/11/25.
@@ -29,13 +29,25 @@ struct SettingsV: View {
     var body: some View {
         ScrollView {
             Page(top: 4, alignment: .center) {
+                
         #if DEBUG
         Section("Developer") {
-            Button("Reset Legal Gate Now") {
-                LegalConsent.clearForDebug() // your helper that clears acceptance
-            }
+            Button("Reset Debug")           { UserDefaults.standard.removeObject(forKey: "debug.chunkSeconds") }
+            Button("Reset Legal Gate Now")  { LegalConsent.clearForDebug() } .controlSize(.large)
+            Button("Open Recalibration (Test)") { NotificationCenter.default.post(name: .init("dev.openRecalibration"), object: nil) }
             Toggle("Show Legal on Next Launch", isOn: $debugShowLegalNextLaunch)
+            
+            Picker("Timer (debug)", selection: Binding(
+                   get: { UserDefaults.standard.integer(forKey: "debug.chunkSeconds") },
+                   set: { UserDefaults.standard.set($0, forKey: "debug.chunkSeconds") }
+               )) {
+                   Text("10s").tag(10)
+                   Text("30s").tag(30)
+                   Text("60s").tag(60)
+                   Text("OFF (20m)").tag(0)         // 0 disables override
+               }
         }
+                
         #endif
 
                 Card {

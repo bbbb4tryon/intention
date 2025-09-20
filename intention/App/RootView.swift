@@ -63,14 +63,15 @@ extension RootView {
 
 /// RootView wires shared VMs, persistence, and the single paywall sheet.
 struct RootView: View {
-  
+    
     // MARK: legal gate (AppStorage)
     @AppStorage(LegalKeys.acceptedVersion) private var acceptedVersion: Int = 0
     @AppStorage(LegalKeys.acceptedAtEpoch) private var acceptedAtEpoch: Double = 0
     
     // MARK: presentation
     @State private var activeSheet: RootSheet?
-
+    @State private var isBusy = false
+    
     // MARK: scene
     @Environment(\.scenePhase) private var scenePhase
     
@@ -107,21 +108,19 @@ struct RootView: View {
         focus.historyVM     = history                               // Focus writes completions into History
         stats.memVM         = membership                            // Stats can query membership state
         
-//        _theme = StateObject(wrappedValue: ThemeManager())        // FIXME: remove because this is a second init (first is _theme)
+        //        _theme = StateObject(wrappedValue: ThemeManager())        // FIXME: remove because this is a second init (first is _theme)
         _memVM = StateObject(wrappedValue: MembershipVM())          // FIXME: remove because this is a second init (first is _memVM)
         
         // recalibration completion → Stats + reset focus flow
-        recal.onCompleted = { [weak stats, weak focus] mode in
+        recal.onCompleted = { [weak stats, weak focus] (mode: RecalibrationMode) in
             guard let stats = stats else { return }
-               let texts = focus?.tiles.map(\.text) ?? []
-               stats.logSession(CompletedSession(
-                   date: .now,
-                   tileTexts: texts,
-                   recalibration: mode
-               ))
-               Task { @MainActor in
-                   await focus?.resetSessionStateForNewStart()
-               }
+            let texts = focus?.tiles.map(\.text) ?? []
+            stats.logSession(CompletedSession(
+                date: .now,
+                tileTexts: texts,
+                recalibration: mode
+            ))
+            Task { @MainActor in await focus?.resetSessionStateForNewStart() }
         }
         
         // assign to the wrappers
@@ -138,20 +137,24 @@ struct RootView: View {
     // MARK: - body
     var body: some View {
         // shared palette locals help calm the swift type-checker
-        let palFocus    = theme.palette(for: .homeActiveIntentions)
-        let _palHist     = theme.palette(for: .history)
-        let _palSettings = theme.palette(for: .settings)
-        let tabBG       = palFocus.background.opacity(0.88)          // Makes tab bar match app theme (iOS 16+)
+        let palFocus        = theme.palette(for: .homeActiveIntentions)
+        //      let _palHist        = theme.palette(for: .history)
+        let _               = theme.palette(for: .history)
+        //      let _palSettings    = theme.palette(for: .settings)
+        let _               = theme.palette(for: .settings)
+        let tabBG           = palFocus.background.opacity(0.88)          // Makes tab bar match app theme (iOS 16+)
         
         // FIXME: MAY NEED TO REMOVE?
-        let _palRecal    = theme.palette(for: .recalibrate)
-        let _palMem      = theme.palette(for: .membership)
+        //        let _palRecal     = theme.palette(for: .recalibrate)
+        let _               = theme.palette(for: .recalibrate)
+        //      let _palMem         = theme.palette(for: .membership)
+        let _               = theme.palette(for: .membership)
         
         // Focus tab
         let focusContent    = FocusSessionActiveV(
             focusVM: focusVM,     // not viewModel:focusVM - focusVM: focusVM matches view's property name
             recalibrationVM: recalVM
-            )
+        )
         
         let focusScreen     = FocusShell(screen: .homeActiveIntentions) {
             focusContent
@@ -162,7 +165,7 @@ struct RootView: View {
                 .navigationTitle("Focus")
                 .navigationBarTitleDisplayMode(.inline)
         }
-        .tabItem { Image(systemName: "timer") }
+            .tabItem { Image(systemName: "timer") }
         
         // History tab
         let historyContent  = HistoryV(viewModel: historyVM)
@@ -172,7 +175,7 @@ struct RootView: View {
                 .navigationTitle("History")
                 .navigationBarTitleDisplayMode(.inline)
         }
-        .tabItem { Image(systemName: "clock") }
+            .tabItem { Image(systemName: "clock") }
         
         // Settings tab (drives stats, membership, ...)
         let settingsContent = SettingsV(statsVM: statsVM)
@@ -182,7 +185,7 @@ struct RootView: View {
                 .navigationTitle("Settings")
                 .navigationBarTitleDisplayMode(.inline)
         }
-        .tabItem { Image(systemName: "gear") }
+            .tabItem { Image(systemName: "gear") }
         
         // Tabs built as a *local* keeps long chains out of top-level expression
         let tabs    = TabView {
@@ -212,97 +215,99 @@ struct RootView: View {
             .onChange(of: scenePhase) { phase in
                 switch phase {
                 case .inactive, .background:
+                    Task { await focusVM.pauseCurrent20MinCountdown() }
                     historyVM.flushPendingSaves()
-                    
-                case .active: break
+                case .active:   recalVM.appDidBecomeActive()    // if recalibration is visible
                 @unknown default: break
                 }
             }
-        // MARK: App launch + legal gate
-        .onAppear {
-            if LegalConsent.needsConsent() {
-                activeSheet = .legal
+        // MARK: App launch + restore any active session state + legal gate
+            .onAppear {
+                isBusy = true
+                Task { await focusVM.restoreActiveSessionIfAny()}
+                if LegalConsent.needsConsent() { activeSheet = .legal }
+                hapticsEngine.warm()        // implemented as a no-op wrapper than just calls prepare()
+                
+                // Wrapped in #if debug to not affect release
+#if DEBUG
+                if ProcessInfo.processInfo.environment["RESET_LEGAL_ON_LAUNCH"] == "1" {
+                    UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedVersion)
+                    UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedAtEpoch)
+                    activeSheet = .legal
+                }
+#endif
+                
+                //            /// First-run categories
+                //            if !hasInitializedGeneralCategory {
+                //                historyVM.ensureGeneralCategory()
+                //                hasInitializedGeneralCategory = true
+                //                debugPrint("Default category initialized from RootView")
+                //            }
+                //            if !hasInitializedArchiveCategory {
+                //                historyVM.ensureArchiveCategory()
+                //                hasInitializedArchiveCategory = true
+                //                debugPrint("Archive category initialized from RootView")
+                //            }
             }
-            
-            // Wrapped in #if debug to not affect release
-            #if DEBUG
-            if ProcessInfo.processInfo.environment["RESET_LEGAL_ON_LAUNCH"] == "1" {
-                UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedVersion)
-                UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedAtEpoch)
-                activeSheet = .legal
-            }
-            #endif
-            
-//            /// First-run categories
-//            if !hasInitializedGeneralCategory {
-//                historyVM.ensureGeneralCategory()
-//                hasInitializedGeneralCategory = true
-//                debugPrint("Default category initialized from RootView")
-//            }
-//            if !hasInitializedArchiveCategory {
-//                historyVM.ensureArchiveCategory()
-//                hasInitializedArchiveCategory = true
-//                debugPrint("Archive category initialized from RootView")
-//            }
-        }
+        
         // Membership prompt choreography
-        .onChange(of: memVM.shouldPrompt) { show in
-            if show, activeSheet == nil { activeSheet = .membership }
-        }
-        .onChange(of: activeSheet) { sheet in
-            if sheet == nil, memVM.shouldPrompt { activeSheet = .membership }
-        }
+            .onChange(of: memVM.shouldPrompt) { show in
+                if show, activeSheet == nil { activeSheet = .membership }
+            }
+            .onChange(of: activeSheet) { sheet in
+                if sheet == nil, memVM.shouldPrompt { activeSheet = .membership }
+            }
         // MARK: Sheets
-                   .sheet(item: $activeSheet) { sheet in
-                       switch sheet {
-                       case .legal:
-                           LegalAgreementSheetV(
-                               onAccept: {
-                                   LegalConsent.recordAcceptance()
-                                   acceptedVersion = LegalConfig.currentVersion
-                                   acceptedAtEpoch = Date().timeIntervalSince1970
-                                   activeSheet = nil
-                               },
-                               onShowTerms: { activeSheet = .terms },
-                               onShowPrivacy: { activeSheet = .privacy },
-                               onShowMedical: { activeSheet = .medical }
-                           )
-
-                       case .membership:
-                           NavigationStack {
-                               MembershipSheetV()
-                                   .environmentObject(memVM)
-                                   .environmentObject(theme)
-                           }
-                           .onDisappear { memVM.shouldPrompt = false }
-
-                       case .terms:
-                           NavigationStack {
-                               LegalDocV(
-                                   title: "Terms of Use",
-                                   markdown: MarkdownLoader.load(named: LegalConfig.termsFile)
-                               )
-                           }
-
-                       case .privacy:
-                           NavigationStack {
-                               LegalDocV(
-                                   title: "Privacy Policy",
-                                   markdown: MarkdownLoader.load(named: LegalConfig.privacyFile)
-                               )
-                           }
-
-                       case .medical:
-                           NavigationStack {
-                               LegalDocV(
-                                   title: "Wellness Disclaimer",
-                                   markdown: MarkdownLoader.load(named: LegalConfig.medicalFile)
-                               )
-                           }
-                       }
-                   }
-           }
-       }
+            .sheet(item: $activeSheet) { sheet in
+                switch sheet {
+                case .legal:
+                    LegalAgreementSheetV(
+                        onAccept: {
+                            LegalConsent.recordAcceptance()
+                            acceptedVersion = LegalConfig.currentVersion
+                            acceptedAtEpoch = Date().timeIntervalSince1970
+                            activeSheet = nil
+                        },
+                        onShowTerms: { activeSheet = .terms },
+                        onShowPrivacy: { activeSheet = .privacy },
+                        onShowMedical: { activeSheet = .medical }
+                    )
+                    
+                case .membership:
+                    NavigationStack {
+                        MembershipSheetV()
+                            .environmentObject(memVM)
+                            .environmentObject(theme)
+                    }
+                    .onDisappear { memVM.shouldPrompt = false }
+                    
+                case .terms:
+                    NavigationStack {
+                        LegalDocV(
+                            title: "Terms of Use",
+                            markdown: MarkdownLoader.load(named: LegalConfig.termsFile)
+                        )
+                    }
+                    
+                case .privacy:
+                    NavigationStack {
+                        LegalDocV(
+                            title: "Privacy Policy",
+                            markdown: MarkdownLoader.load(named: LegalConfig.privacyFile)
+                        )
+                    }
+                    
+                case .medical:
+                    NavigationStack {
+                        LegalDocV(
+                            title: "Wellness Disclaimer",
+                            markdown: MarkdownLoader.load(named: LegalConfig.medicalFile)
+                        )
+                    }
+                }
+            }
+    }
+}
         
 //        
 //        

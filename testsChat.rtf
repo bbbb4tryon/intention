@@ -1,17 +1,18 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2822
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Times-Roman;\f1\fmodern\fcharset0 Courier;\f2\froman\fcharset0 Times-Bold;
-\f3\fmodern\fcharset0 Courier-Bold;\f4\froman\fcharset0 Times-Italic;}
+\f3\fmodern\fcharset0 Courier-Bold;\f4\froman\fcharset0 Times-Italic;\f5\froman\fcharset0 TimesNewRomanPSMT;
+\f6\fnil\fcharset0 Menlo-Regular;}
 {\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
 {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
 {\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
 {\list\listtemplateid2\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid101\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid2}}
 {\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}}
-\margl1440\margr1440\vieww9420\viewh6300\viewkind0
+\margl1440\margr1440\vieww23000\viewh17100\viewkind0
 \deftab720
 \pard\pardeftab720\partightenfactor0
 
 \f0\fs24 \cf0 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 Make your UI test fast by launching with tiny timers. If 
+Make your UI test fast by launching with tiny timers. If 
 \f1\fs26 TimerConfig.current
 \f0\fs24  already reads a 
 \f1\fs26 ProcessInfo
@@ -24,13 +25,13 @@
 \
 \pard\pardeftab720\sa298\partightenfactor0
 
-\f2\b\fs36 \cf0 \strokec2 A) UI test (golden path)\
+\f2\b\fs36 \cf0 A) UI test (golden path)\
 \pard\pardeftab720\sa240\partightenfactor0
 
 \fs24 \cf0 File:
-\f0\b0 \strokec2  
-\f1\fs26 \strokec2 IntentionUITests/GoldenPathUITests.swift
-\f0\fs24 \strokec2 \
+\f0\b0  
+\f1\fs26 IntentionUITests/GoldenPathUITests.swift
+\f0\fs24 \
 import XCTest\
 \
 final class GoldenPathUITests: XCTestCase \{\
@@ -91,27 +92,25 @@ final class GoldenPathUITests: XCTestCase \{\
 \}\
 \
 \pard\pardeftab720\partightenfactor0
-\cf0 \strokec2 If a label is hard to find, expose a few 
-\f2\b \strokec2 accessibilityIdentifiers
-\f0\b0 \strokec2  in your views (e.g., for the primary CTA, countdown, and Stats numbers) to make this bullet-proof.\
+\cf0 If a label is hard to find, expose a few 
+\f2\b accessibilityIdentifiers
+\f0\b0  in your views (e.g., for the primary CTA, countdown, and Stats numbers) to make this bullet-proof.\
 \pard\pardeftab720\sa240\partightenfactor0
-\cf0 \strokec2 \'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
-\pard\pardeftab720\sa240\partightenfactor0
-\cf0 \outl0\strokewidth0 \'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\cf0 \'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
 \'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
 \pard\pardeftab720\sa298\partightenfactor0
 
-\f2\b\fs36 \cf0 \outl0\strokewidth0 \strokec2 B) VM test 1 \'97 
-\f3\fs39 \strokec2 FocusSessionVM
-\f2\fs36 \strokec2  scenarios\
+\f2\b\fs36 \cf0 B) VM test 1 \'97 
+\f3\fs39 FocusSessionVM
+\f2\fs36  scenarios\
 \pard\pardeftab720\sa240\partightenfactor0
 
 \fs24 \cf0 File:
-\f0\b0 \strokec2  
-\f1\fs26 \strokec2 IntentionTests/FocusSessionVM_Scenarios.swift
-\f0\fs24 \strokec2 \
-\pard\pardeftab720\sa240\partightenfactor0
-\cf0 \strokec2 import XCTest\
+\f0\b0  
+\f1\fs26 IntentionTests/FocusSessionVM_Scenarios.swift
+\f0\fs24 \
+import XCTest\
 @testable import intention\
 \
 final class FocusSessionVM_Scenarios: XCTestCase \{\
@@ -151,32 +150,31 @@ final class FocusSessionVM_Scenarios: XCTestCase \{\
         XCTAssertLessThan(vm.countdownRemaining, start, "Countdown should tick down")\
     \}\
 \}\
-\outl0\strokewidth0 \
 \
-\pard\pardeftab720\sa240\partightenfactor0
-\cf0 \'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
 \'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
 \'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
 \pard\pardeftab720\sa298\partightenfactor0
 
-\f2\b\fs36 \cf0 \outl0\strokewidth0 \strokec2 C) VM test 2 + persistence seam \'97 
-\f3\fs39 \strokec2 HistoryVM
-\f2\fs36 \strokec2  scenarios\
+\f2\b\fs36 \cf0 C) VM test 2 + persistence seam \'97 
+\f3\fs39 HistoryVM
+\f2\fs36  scenarios\
 \pard\pardeftab720\sa240\partightenfactor0
 
-\f0\b0\fs24 \cf0 \strokec2 This file exercises 
-\f2\b \strokec2 move/undo
-\f0\b0 \strokec2  (user-visible) and the 
-\f2\b \strokec2 debounced save
-\f0\b0 \strokec2  seam.\
+\f0\b0\fs24 \cf0 This file exercises 
+\f2\b move/undo
+\f0\b0  (user-visible) and the 
+\f2\b debounced save
+\f0\b0  seam.\
 
-\f2\b \strokec2 File:
-\f0\b0 \strokec2  
-\f1\fs26 \strokec2 IntentionTests/HistoryVM_Scenarios.swift
-\f0\fs24 \strokec2 \
+\f2\b File:
+\f0\b0  
+\f1\fs26 IntentionTests/HistoryVM_Scenarios.swift
+\f0\fs24 \
 \pard\pardeftab720\partightenfactor0
 
-\f1\fs26 \cf0 \strokec2 \
+\f1\fs26 \cf0 \
 \
 \pard\pardeftab720\sa240\partightenfactor0
 
@@ -278,55 +276,97 @@ final class HistoryVM_Scenarios: XCTestCase \{\
         XCTAssertEqual(writesAfterFlush, 2, "flushPendingSaves should force an immediate write")\
     \}\
 \}\
-\pard\pardeftab720\sa240\partightenfactor0
 
-\f2\b \cf0 \strokec2 Notes on robustness & marketing-friendly UX checks
-\f0\b0 \strokec2 \
+\f2\b Notes on robustness & marketing-friendly UX checks
+\f0\b0 \
 \pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
-\ls1\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 UI test names are 
+\ls1\ilvl0\cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+UI test names are 
 \f4\i descriptive
-\f0\i0  and align with user expectations (what someone in the 21\'9660 demo would call success): add \uc0\u8594  begin \u8594  auto-finish \u8594  breathe \u8594  see stats go up.\
-\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 Assertions focus on 
+\f0\i0  and align with user expectations (what someone in the 21\'9660 demo would call success): add 
+\f5 \uc0\u8594 
+\f0  begin 
+\f5 \uc0\u8594 
+\f0  auto-finish 
+\f5 \uc0\u8594 
+\f0  breathe 
+\f5 \uc0\u8594 
+\f0  see stats go up.\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Assertions focus on 
 \f2\b visible state
 \f0\b0  (button title swap, sheet presented, a stat visibly increments), not internals.\
-\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 To make these airtight, sprinkle 
+\ls1\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+To make these airtight, sprinkle 
 \f3\b\fs26 accessibilityIdentifier
 \f0\b0\fs24  on: the main CTA, the countdown label, and the Stats numbers (\'93stats.total\'94, \'93stats.breathing\'94, etc.).\
 \pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
-\ls2\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 In the toolbar, select 
+\ls2\ilvl0\cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+In the toolbar, select 
 \f2\b iPhone 15
 \f0\b0  (Simulator).\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
 \ls2\ilvl0
-\f2\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 Unit tests
+\f2\b \cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Unit tests
 \f0\b0 : press the diamonds or 
-\f1\fs26 \uc0\u8984 U
+\f6\fs26 \uc0\u8984 
+\f1 U
 \f0\fs24 .\
 \ls2\ilvl0
-\f2\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 UI tests
+\f2\b \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+UI tests
 \f0\b0 : same, but they\'92ll launch your app.\
-\ls2\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 If you use a Test Plan, ensure 
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls2\ilvl0\cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+If you use a Test Plan, ensure 
 \f2\b Destinations
 \f0\b0  contains your simulator (not \'93Any iOS Device\'94).\
-\ls2\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 Keep your 
+\ls2\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Keep your 
 \f2\b iOS Deployment Target
 \f0\b0  \uc0\u8804  the simulator\'92s OS.\
 \pard\pardeftab720\sa240\partightenfactor0
-\cf0 \outl0\strokewidth0 \
+\cf0 \
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+import XCTest\
+\
+final class KeyboardDismissUITests: XCTestCase \{\
+  override func setUp() \{ continueAfterFailure = false \}\
+\
+  func test_KeyboardDismisses_WhenSwitchTabsAndReturn() \{\
+    let app = XCUIApplication()\
+    app.launchEnvironment["TIMER_CHUNK_SECONDS"] = "3"\
+    app.launch()\
+\
+    let tf = app.textFields.element(boundBy: 0)\
+    XCTAssertTrue(tf.waitForExistence(timeout: 3))\
+    tf.tap(); tf.typeText("A")\
+    app.buttons["Add"].tap()\
+    tf.typeText("B")\
+    app.buttons["Add"].tap()\
+    app.buttons["Begin"].tap()\
+\
+    app.tabBars.buttons.element(boundBy: 2).tap() // Settings\
+    app.tabBars.buttons.element(boundBy: 0).tap() // Focus\
+\
+    // Tap the text field (we drop focus on .running, so keyboard should not trap the view)\
+    tf.tap()\
+\
+    // Try dismiss via Done if present; otherwise tap background element\
+    if app.keyboards.buttons["Done"].waitForExistence(timeout: 1) \{\
+      app.keyboards.buttons["Done"].tap()\
+    \} else \{\
+      app.otherElements.containing(NSPredicate(format: "identifier == %@", "primaryCTA")).element.tap()\
+    \}\
+\
+    XCTAssertTrue(app.staticTexts["countdownLabel"].waitForExistence(timeout: 2))\
+  \}\
+\}\
 \'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
 \'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
 \'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
 \
-\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
-\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
-\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
-\pard\pardeftab720\sa240\partightenfactor0
-\cf0 \
 }

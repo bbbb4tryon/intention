@@ -11,8 +11,8 @@ import Foundation
 
 /// Testing seam
 public protocol Persistence: Sendable {
-    func write<T: Codable>(_ object: T, to key: String) async throws
-    func readIfExists<T: Codable>(_ type: T.Type, from key: String) async throws -> T?
+    func write<T: Codable & Sendable>(_ object: T, to key: String) async throws
+    func readIfExists<T: Codable & Sendable>(_ type: T.Type, from key: String) async throws -> T?
     func clear(_ key: String) async
 }
 

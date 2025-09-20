@@ -7,13 +7,26 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7767BD432E79FD870045D430 /* Intention-All.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 7767BD422E79FD870045D430 /* Intention-All.xctestplan */; };
 		7787866E2DF236D4004EDBEF /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = 7787866D2DF236D4004EDBEF /* Documentation.docc */; };
 		77DA310D2E44D7F100C6DC9E /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = 77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */; };
 		77DA31352E45872300C6DC9E /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77DA31342E45872300C6DC9E /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		7767BD532E7A07D90045D430 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7787864F2DF220C5004EDBEF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 778786562DF220C5004EDBEF;
+			remoteInfo = intention;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		770F222E2E02EF2E00F9CEB3 /* intention.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = intention.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7767BD422E79FD870045D430 /* Intention-All.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Intention-All.xctestplan"; sourceTree = "<group>"; };
+		7767BD4F2E7A07D90045D430 /* IntentionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IntentionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7787866D2DF236D4004EDBEF /* Documentation.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = Documentation.docc; sourceTree = "<group>"; };
 		77B8BFDD2E567C010060EFD5 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/iPhoneOS.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
@@ -21,6 +34,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		7705D2292E7B7DA50046B67E /* Exceptions for "intention" folder in "IntentionTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shared/Helpers/Math.swift,
+			);
+			target = 7767BD4E2E7A07D90045D430 /* IntentionTests */;
+		};
 		7792901E2DFA2D7D00F93B23 /* Exceptions for "intention" folder in "intention" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -31,10 +51,16 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		7767BD502E7A07D90045D430 /* IntentionTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = IntentionTests;
+			sourceTree = "<group>";
+		};
 		778786592DF220C5004EDBEF /* intention */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				7792901E2DFA2D7D00F93B23 /* Exceptions for "intention" folder in "intention" target */,
+				7705D2292E7B7DA50046B67E /* Exceptions for "intention" folder in "IntentionTests" target */,
 			);
 			path = intention;
 			sourceTree = "<group>";
@@ -42,6 +68,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		7767BD4C2E7A07D90045D430 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		778786542DF220C5004EDBEF /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -60,7 +93,10 @@
 				77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */,
 				7787866D2DF236D4004EDBEF /* Documentation.docc */,
 				778786592DF220C5004EDBEF /* intention */,
+				7767BD502E7A07D90045D430 /* IntentionTests */,
 				77DA31332E45872300C6DC9E /* Frameworks */,
+				7767BD422E79FD870045D430 /* Intention-All.xctestplan */,
+				7767BD4F2E7A07D90045D430 /* IntentionTests.xctest */,
 			);
 			sourceTree = "<group>";
 		};
@@ -76,6 +112,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		7767BD4E2E7A07D90045D430 /* IntentionTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7767BD552E7A07D90045D430 /* Build configuration list for PBXNativeTarget "IntentionTests" */;
+			buildPhases = (
+				7767BD4B2E7A07D90045D430 /* Sources */,
+				7767BD4C2E7A07D90045D430 /* Frameworks */,
+				7767BD4D2E7A07D90045D430 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7767BD542E7A07D90045D430 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				7767BD502E7A07D90045D430 /* IntentionTests */,
+			);
+			name = IntentionTests;
+			packageProductDependencies = (
+			);
+			productName = IntentionTests;
+			productReference = 7767BD4F2E7A07D90045D430 /* IntentionTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		778786562DF220C5004EDBEF /* intention */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 778786622DF220C7004EDBEF /* Build configuration list for PBXNativeTarget "intention" */;
@@ -83,7 +142,7 @@
 				778786532DF220C5004EDBEF /* Sources */,
 				778786542DF220C5004EDBEF /* Frameworks */,
 				778786552DF220C5004EDBEF /* Resources */,
-				77DA310E2E44D86A00C6DC9E /* ShellScript */,
+				7705D2272E7B3B3C0046B67E /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -106,9 +165,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1640;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
+					7767BD4E2E7A07D90045D430 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = 778786562DF220C5004EDBEF;
+					};
 					778786562DF220C5004EDBEF = {
 						CreatedOnToolsVersion = 16.4;
 						LastSwiftMigration = 1640;
@@ -132,15 +195,24 @@
 			projectRoot = "";
 			targets = (
 				778786562DF220C5004EDBEF /* intention */,
+				7767BD4E2E7A07D90045D430 /* IntentionTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		7767BD4D2E7A07D90045D430 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		778786552DF220C5004EDBEF /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7767BD432E79FD870045D430 /* Intention-All.xctestplan in Resources */,
 				77DA310D2E44D7F100C6DC9E /* .swiftlint.yml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -148,7 +220,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		77DA310E2E44D86A00C6DC9E /* ShellScript */ = {
+		7705D2272E7B3B3C0046B67E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -163,11 +235,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif command -v swiftlint >/dev/null 2>&1; then\n  CHANGED=\"$(git diff --name-only --diff-filter=ACMRTUXB origin/main...HEAD 2>/dev/null | grep -E '\\.swift$' || true)\"\n  if [ \"$CI\" = \"true\" ] || [ -z \"$CHANGED\" ]; then\n    swiftlint --config \"${SRCROOT}/.swiftlint.yml\"\n  else\n    echo \"$CHANGED\" | xargs -I {} swiftlint lint --config \"${SRCROOT}/.swiftlint.yml\" --path \"{}\"\n  fi\nelse\n  echo \"warning: SwiftLint not installed – skipping\"\nfi\n";
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		7767BD4B2E7A07D90045D430 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		778786532DF220C5004EDBEF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -178,7 +257,57 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		7767BD542E7A07D90045D430 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 778786562DF220C5004EDBEF /* intention */;
+			targetProxy = 7767BD532E7A07D90045D430 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		7767BD562E7A07D90045D430 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 343T42D9R8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "-.IntentionTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/intention.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/intention";
+			};
+			name = Debug;
+		};
+		7767BD572E7A07D90045D430 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 343T42D9R8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "-.IntentionTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/intention.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/intention";
+			};
+			name = Release;
+		};
 		778786602DF220C7004EDBEF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -215,9 +344,11 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = 343T42D9R8;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_TESTING_SEARCH_PATHS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -233,7 +364,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -280,9 +411,11 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = 343T42D9R8;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTING_SEARCH_PATHS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -292,7 +425,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -311,6 +444,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = 343T42D9R8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -346,6 +480,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = 343T42D9R8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -374,6 +509,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		7767BD552E7A07D90045D430 /* Build configuration list for PBXNativeTarget "IntentionTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7767BD562E7A07D90045D430 /* Debug */,
+				7767BD572E7A07D90045D430 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		778786522DF220C5004EDBEF /* Build configuration list for PBXProject "intention" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -30,11 +30,17 @@ struct HistoryV: View {
     }
     
     var body: some View {
-        ZStack(alignment: .bottom) {
+//        ZStack(alignment: .bottom) {
             ScrollView {
                 Page(top: 4, alignment: .center) {
-                    header
-                    categoriesList(p: p)
+                    T("History", .section)
+                    
+                    ForEach(viewModel.sortedCategories) { cats in
+                        Card {
+                            CategoryHeaderRow(category: cats)
+                            CategoryTileList(category: cats )
+                        }
+                    }
                     Spacer(minLength: 16)
                 }
                 .alert("Delete category?",
@@ -77,10 +83,12 @@ struct HistoryV: View {
                     .presentationDetents([.medium])
                 }
             }
-            
+            .background()p.background.ignoresSafeArea())
+            .tint(p.accent)
+
             /// Kept outside ScrollView - gives space to GeometryReader
             organizerOverlay
-        }
+
         .safeAreaInset(edge: .bottom, spacing: 10) { VStack(spacing: 10) { undoToast; capToast } }
         .animation(.easeInOut(duration: 0.2), value: viewModel.lastUndoableMove != nil)
         .toolbar { historyToolbar }
@@ -90,7 +98,7 @@ struct HistoryV: View {
     /// Splitting subviews
     @ViewBuilder
     private var header: some View {
-        T("Tap a category title to edit and group.", .body)
+        T("Tasks You Intended to Complete and Did", .body)
             .foregroundStyle(p.textSecondary)
             .accessibilityAddTraits(.isHeader)
     }
@@ -112,6 +120,8 @@ struct HistoryV: View {
                     isArchive: isArchive,
                     autoFocus: createdCategoryID == categoryItem.id
                 )
+                
+                extensionHistoryVM
             }
         }
     }

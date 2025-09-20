@@ -120,13 +120,13 @@ struct RecalibrationV: View {
                        Button {
                            vm.performAsyncAction { try await vm.start(mode: .breathing) }
                        } label: { T("Breathing", .action).foregroundColor(.white) }
-                       .recalibrationActionStyle()
+                           .recalibrationActionStyle(screen: screen)
 
                        if vm.phase == .idle { PresetPickerBal }   // 2m / 3m / 4m
                        Button {
                            vm.performAsyncAction { try await vm.start(mode: .balancing) }
                        } label: { T("Balancing", .action) }
-                           .recalibrationActionStyle()
+                           .recalibrationActionStyle(screen: screen)
                    }
 
                case .running, .pause:

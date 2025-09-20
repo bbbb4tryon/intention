@@ -77,7 +77,7 @@ enum AppColorTheme: String, CaseIterable {
             case .default:
                 let baseBackground: Color = .intTan
                 let textPrimary: Color   = .intCharcoal
-                let textSecondary: Color = .intCharcoal.opacity(0.72)
+                let textSecondary: Color = .intCharcoal.opacity(0.85)
 
                 switch screen {
                 case .homeActiveIntentions, .history, .settings:
@@ -103,7 +103,7 @@ enum AppColorTheme: String, CaseIterable {
                         surface: .intTan.opacity(0.2),
                         accent: accent,
                         text: .black,
-                        textSecondary: .black.opacity(0.70),
+                        textSecondary: .black.opacity(0.85),
                         success: .green,
                         warning: .yellow,
                         danger: .red,
@@ -143,7 +143,7 @@ enum AppColorTheme: String, CaseIterable {
                         surface: .white.opacity(0.08),
                         accent: accent,
                         text: tx,
-                        textSecondary: tx.opacity(0.78),
+                        textSecondary: tx.opacity(0.85),
                         success: .green,
                         warning: .yellow,
                         danger: .red,
@@ -157,7 +157,7 @@ enum AppColorTheme: String, CaseIterable {
                         surface: .white.opacity(0.06),
                         accent: accent,
                         text: tx,
-                        textSecondary: tx.opacity(0.78),
+                        textSecondary: tx.opacity(0.85),
                         success: .green,
                         warning: .yellow,
                         danger: .red,
@@ -171,7 +171,7 @@ enum AppColorTheme: String, CaseIterable {
                         surface: .white.opacity(0.08),
                         accent: accent,
                         text: tx,
-                        textSecondary: tx.opacity(0.78),
+                        textSecondary: tx.opacity(0.85),
                         success: .green,
                         warning: .yellow,
                         danger: .red,
@@ -219,7 +219,7 @@ enum AppColorTheme: String, CaseIterable {
                                     surface: .white.opacity(0.07),
                                     accent: accent,
                                     text: tx,
-                                    textSecondary: tx.opacity(0.78),
+                                    textSecondary: tx.opacity(0.85),
                                     success: .green,
                                     warning: .yellow,
                                     danger: .red,
@@ -233,7 +233,7 @@ enum AppColorTheme: String, CaseIterable {
                     surface: .white.opacity(0.06),
                     accent: accent,
                     text: tx,
-                    textSecondary: tx.opacity(0.78),
+                    textSecondary: tx.opacity(0.85),
                     success: .green,
                     warning: .yellow,
                     danger: .red,
@@ -247,7 +247,7 @@ enum AppColorTheme: String, CaseIterable {
                                     surface: .white.opacity(0.07),
                                     accent: accent,
                                     text: tx,
-                                    textSecondary: tx.opacity(0.78),
+                                    textSecondary: tx.opacity(0.85),
                                     success: .green,
                                     warning: .yellow,
                                     danger: .red,
@@ -307,24 +307,36 @@ final class ThemeManager: ObservableObject {
         colorTheme.colors(for: screen)
     }
 
-    /// Use for static copy (headers, labels, captions, body)
     func styledText(_ content: String, as role: TextRole, in screen: ScreenName) -> Text {
         let font  = fontTheme.toFont(Self.fontStyle(for: role))
         let color = Self.color(for: role, palette: palette(for: screen))
-        return Text(content).font(font).foregroundColor(color)
+        let weight: Font.Weight = switch role {
+        case .largeTitle:   .bold
+        case .header:       .semibold
+        case .section:      .semibold
+        case .title3:       .semibold
+        case .label:        .medium
+        case .action:       .semibold
+        default:            .regular
+        }
+        
+        return Text(content).font(font).fontWeight(weight).foregroundColor(color)
     }
 
-    // MARK: Mapping
+    // MARK: Style mapping
     static func fontStyle(for role: TextRole) -> Font.TextStyle {
         switch role {
-        case .largeTitle: .largeTitle
-        case .header:     .title
-        case .section:    .title2
-        case .title3:     .title3
-        case .label, .action: .headline
-        case .body, .tile: .body
-        case .secondary, .placeholder: .subheadline
-        case .caption:    .caption
+        case .largeTitle:   .largeTitle
+        case .header:       .largeTitle
+        case .section:      .title2
+        case .title3:       .title3
+        case .label:        .headline
+        case .action:       .headline
+        case .body:         .body
+        case .tile:         .body
+        case .secondary:    .subheadline
+        case .placeholder:  .subheadline
+        case .caption:      .caption
         }
     }
 
@@ -341,6 +353,12 @@ final class ThemeManager: ObservableObject {
             return palette.accent
         }
     }
+}
+
+// MARK: - defines consistent, app-wide color of button text
+extension Color {
+    static let btnTextLight = Color(red: 0.96, green: 0.96, blue: 0.96)     // #F5F5F5
+    static let btnTextDark  = Color(red: 0.99, green: 0.99, blue: 0.99)     // #FDFDFD
 }
 
 // MARK: - Preview Convenience

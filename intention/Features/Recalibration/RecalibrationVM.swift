@@ -31,6 +31,7 @@ final class RecalibrationVM: ObservableObject {
     
     @Published private(set) var phase: Phase = .idle
     @Published private(set) var mode: RecalibrationMode?
+    @Published private(set) var startedAt: Date?    // part of "snapshotting" the wall-clock to recompute remaining time on re-activation
     @Published var timeRemaining: Int = 0
     @Published var lastError: Error?
     @Published var breathingPhaseIndex: Int = 0     // 0:Inhale, 1:Hold, 2:Exhale, 3:Hold
@@ -53,7 +54,7 @@ final class RecalibrationVM: ObservableObject {
     // Prompts
     let breathingPhases = ["Inhale", "Hold", "Exhale", "Hold"]
     var breathingPhaseLine: String { breathingPhases.joined(separator: " . ") }
-
+    
     // Policy knobs (VM decides "when")
     private var breathingMinutes: Int
     private var balancingMinutes: Int
@@ -61,6 +62,10 @@ final class RecalibrationVM: ObservableObject {
 
     private let haptics: HapticsClient
     private var task: Task<Void, Never>?
+    
+    // Related to time the user backgrounded/spent time outside the app
+    private var intendedDuration: Int = 0       // seconds (for .current mode)
+
 
     init(haptics: HapticsClient, breathingMinutes: Int = 2, balancingMinutes: Int = 4) {
         self.haptics = haptics
@@ -71,17 +76,18 @@ final class RecalibrationVM: ObservableObject {
     deinit { task?.cancel() }
     
     // MARK: Core API (async throws; View calls these)
-    
+    // When starting (not resuming when re-activated after leaving, see `appDidBecomeActive()`):
     func start(mode: RecalibrationMode) async throws {
         cancel()
         self.mode = mode
         self.phase = .running
-        self.timeRemaining = (mode == .breathing ? breathingMinutes : balancingMinutes) * 60
-        switch mode {
-        case .balancing: runBalancing()
-        case .breathing: runBreathing()
-        }
+        let mins = (mode == .breathing ? breathingMinutes : balancingMinutes)
+        self.intendedDuration = mins * 60
+        self.timeRemaining = intendedDuration
+        self.startedAt = Date()
+        switch mode { case .balancing: runBalancing(); case .breathing: runBreathing() }
     }
+    
     func stop() async throws {
         cancel()
         phase = .idle
@@ -106,6 +112,30 @@ final class RecalibrationVM: ObservableObject {
         balancingMinutes = mins
     }
     
+    
+    func appWillResignActive() { /* no-op; wall clock handles it */}
+    
+    // Resuming when re-activated after leaving, see `start(mode:)`
+    // is called un RootView when scene becomes active:
+    func appDidBecomeActive() {
+        guard phase == .running, let started = startedAt else { return }
+        let elapsed = Int(Date().timeIntervalSince(started))
+        let remain = max(0, intendedDuration - elapsed)
+        if remain != timeRemaining { timeRemaining = remain }
+        if remain == 0 {
+            // finish immediately
+            phase = .finished
+            let finished = mode
+            mode = nil
+            promptText = ""
+            if let aMode = finished { onCompleted?(aMode) }
+            notifiedDoneByHaptics()
+        }
+    }
+    
+    private func notifiedDoneByHaptics() { haptics.notifyDone() }
+    
+    
     // MARK: Balancing - short-short every min; long-long-short on done
     private func runBalancing() {
         // Minute beeps: short–short; Done: long–long–short; only show “Switch feet” briefly each minute
@@ -122,8 +152,8 @@ final class RecalibrationVM: ObservableObject {
                 if self.timeRemaining == total || (self.timeRemaining % 60 == 0 && self.timeRemaining != lastCueAt) {
 //                    let elapsed = total - self.timeRemaining
 //                    let minuteIndex = (elapsed / 60) % 2          // 0,1,0,1...
-                    //                    self.haptics.notifySwitch()             // short–short
-                    haptics.notifySwitch()                       // short–short
+                    //                    self.haptics.warn()             // short–short
+                    haptics.warn()                       // short–short
                     //                    await MainActor.run {
                     //                        self.balancingPhaseIndex = minuteIndex
                     lastCueAt = self.timeRemaining

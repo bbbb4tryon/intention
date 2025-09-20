@@ -1,0 +1,36 @@
+{
+  "configurations" : [
+    {
+      "id" : "3D4972D0-82ED-4784-B475-51FF94F40D08",
+      "name" : "Local( default)",
+      "options" : {
+
+      }
+    },
+    {
+      "id" : "03B77CAE-06C5-4851-8B26-80E86EA9F707",
+      "name" : "TinyTimers",
+      "options" : {
+        "environmentVariableEntries" : [
+          {
+            "key" : "TIMER_CHUNK_SECONDS",
+            "value" : "3"
+          }
+        ]
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:intention.xcodeproj",
+        "identifier" : "7767BD4E2E7A07D90045D430",
+        "name" : "IntentionTests"
+      }
+    }
+  ],
+  "version" : 1
+}

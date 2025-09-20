@@ -17,6 +17,8 @@ struct CategoryHeaderRow: View {
     let isArchive: Bool
     var autoFocus: Bool = false
     @FocusState private var nameFocused: Bool
+    @FocusState private var editingCategoryID: UUID?
+    var category: CategoriesModel
     
     // MARK: Validation from PM
     private var vState: ValidationState {
@@ -25,51 +27,67 @@ struct CategoryHeaderRow: View {
     }
     
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: isArchive ? "lock.fill" : "folder.fill")
-                .foregroundStyle(isArchive ? .secondary : palette.accent)
-            
-            if isArchive {
-                Text("Archive")
-                    .font(fontTheme.toFont(.title3))
-                    .foregroundStyle(palette.textSecondary)
-                Spacer()
-                CountBadge_Archive(fontTheme: fontTheme, count: categoryItem.tiles.count)
-            } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    ZStack(alignment: .leading) {
-                        if categoryItem.persistedInput.isEmpty {
-                            Text("Name this category")
-                                .font(fontTheme.toFont(.caption))
-                                .foregroundStyle(palette.textSecondary)
-                                .padding(.horizontal, 12)
-                        }
-                        TextField("", text: $categoryItem.persistedInput, onCommit: saveHistory)
-                            .textInputAutocapitalization(.words)
-                            .disableAutocorrection(true)
-                            .focused($nameFocused)
-                            .validatingField(state: vState, palette: palette)
-                            .accessibilityLabel("Category name")
-                    }
-                    
-                    ValidationCaption(state: vState, palette: palette)
-                }
-                Spacer()
-                CountBadge_Archive(fontTheme: fontTheme, count: categoryItem.tiles.count)
-
-                Button {
-                    newTextTiles[categoryItem.id] = newTextTiles[categoryItem.id] ?? ""
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(palette.accent)
-                }
-                .accessibilityLabel("Add tile")
+            HStack(spacing: 8) {
+                Image(systemName: "folder")
+                TextField("Category", text: bindingFor(category))
+                    .focused($editingCategoryID, equals: category.id)
+                    .padding(10)
+                    .background(.thinMaterial.opacity(0.4))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(editingCategoryID == category.id ? .secondary : Color.clear, lineWidth: 1)
+                    )
+                    .onTapGesture { editingCategoryID = category.id }
             }
         }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .onAppear { if autoFocus && !isArchive { nameFocused = true } }
     }
+    
+//    var body: some View {
+//        HStack(spacing: 8) {
+//            Image(systemName: isArchive ? "lock.fill" : "folder.fill")
+//                .foregroundStyle(isArchive ? .secondary : palette.accent)
+//            
+//            if isArchive {
+//                Text("Archive")
+//                    .font(fontTheme.toFont(.title3))
+//                    .foregroundStyle(palette.textSecondary)
+//                Spacer()
+//                CountBadge_Archive(fontTheme: fontTheme, count: categoryItem.tiles.count)
+//            } else {
+//                VStack(alignment: .leading, spacing: 4) {
+//                    ZStack(alignment: .leading) {
+//                        if categoryItem.persistedInput.isEmpty {
+//                            Text("Name this category")
+//                                .font(fontTheme.toFont(.caption))
+//                                .foregroundStyle(palette.textSecondary)
+//                                .padding(.horizontal, 12)
+//                        }
+//                        TextField("", text: $categoryItem.persistedInput, onCommit: saveHistory)
+//                            .textInputAutocapitalization(.words)
+//                            .disableAutocorrection(true)
+//                            .focused($nameFocused)
+//                            .validatingField(state: vState, palette: palette)
+//                            .accessibilityLabel("Category name")
+//                    }
+//                    
+//                    ValidationCaption(state: vState, palette: palette)
+//                }
+//                Spacer()
+//                CountBadge_Archive(fontTheme: fontTheme, count: categoryItem.tiles.count)
+//
+//                Button {
+//                    newTextTiles[categoryItem.id] = newTextTiles[categoryItem.id] ?? ""
+//                } label: {
+//                    Image(systemName: "plus.circle.fill")
+//                        .foregroundStyle(palette.accent)
+//                }
+//                .accessibilityLabel("Add tile")
+//            }
+//        }
+//        .padding(.horizontal)
+//        .padding(.vertical, 8)
+//        .onAppear { if autoFocus && !isArchive { nameFocused = true } }
+//    }
 }
 
 #if DEBUG
