@@ -12,10 +12,10 @@ struct CategoryHeaderRow: View {
     @Binding var categoryItem: CategoriesModel
     let palette: ScreenStylePalette
     let fontTheme: AppFontTheme
-    @Binding var newTextTiles: [UUID: String]
-    let saveHistory: () -> Void         // so onCommit can Save
     let isArchive: Bool
     var autoFocus: Bool = false
+    @Binding var newTextTiles: [UUID: String]
+    let saveHistory: () -> Void         // so onCommit can Save
     @FocusState private var nameFocused: Bool
     @FocusState private var editingCategoryID: UUID?
     var category: CategoriesModel
@@ -28,17 +28,18 @@ struct CategoryHeaderRow: View {
     
     var body: some View {
             HStack(spacing: 8) {
-                Image(systemName: "folder")
-                TextField("Category", text: bindingFor(category))
+                Image(systemName: "square.stack.3d.down.right.fill")
+                TextField("Category", text: $categoryItem.persistedInput)
                     .focused($editingCategoryID, equals: category.id)
+                    .focused($nameFocused)
                     .padding(10)
                     .background(.thinMaterial.opacity(0.4))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(editingCategoryID == category.id ? .secondary : Color.clear, lineWidth: 1)
-                    )
+                    .overlay(RoundedRectangle(cornerRadius: 10) .stroke(editingCategoryID == category.id ? .secondary : Color.clear, lineWidth: 1) )
+                    .overlay(RoundedRectangle(cornerRadius: 10) .stroke(nameFocused ? .secondary : Color.clear, lineWidth: 1) )
                     .onTapGesture { editingCategoryID = category.id }
+                    .onTapGesture { nameFocused }
             }
+            .task { if autoFocus { nameFocused = true }
         }
     }
     

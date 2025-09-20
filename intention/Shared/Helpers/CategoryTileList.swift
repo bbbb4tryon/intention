@@ -9,6 +9,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct CategoryTileList: View {
+    @EnvironmentObject var viewModel: HistoryVM
     @Binding var categoryItem: CategoriesModel
     let palette: ScreenStylePalette
     let fontTheme: AppFontTheme
@@ -18,8 +19,8 @@ struct CategoryTileList: View {
     var body: some View {
         if categoryItem.tiles.isEmpty {
             VStack {
-                Text("Intentions Completed")
-                    .font(fontTheme.toFont(.caption))
+                Text("Completed Intentions")
+                    .font(fontTheme.toFont(.subheadline))
                     .foregroundStyle(palette.textSecondary)
             }
             .background(isArchive ? Color.secondary.opacity(0.08) : .clear)
@@ -40,6 +41,8 @@ struct CategoryTileList: View {
                             .background(palette.surface.opacity(0.6))
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
+                    .draggable(DragPayload(tile: tile, from: categoryItem.id))
+
                     .swipeActions(edge: .trailing, allowsFullSwipe: !isArchive) {
                         if !isArchive {
                             Button(role: .destructive) {
@@ -59,6 +62,21 @@ struct CategoryTileList: View {
             .padding(.horizontal)
             .allowsHitTesting(!isArchive)   // Archive is read-only
             .opacity(isArchive ? 0.9 : 1.0)
+            .dropDestination(for: DragPayload.self) { items, _ in
+                guard let payload = items.first else { return false }
+                if payload.from == categoryItem.id { return false } // same bucket; handled by normal reordering
+                Task {
+                    do {
+                        try await viewModel.moveTileThrowing(payload.tile,
+                                                             from: payload.from,
+                                                             to: categoryItem.id)
+                        saveHistory()
+                    } catch {
+                        viewModel.lastError = error
+                    }
+                }
+                return true
+            }
         }
     }
 }

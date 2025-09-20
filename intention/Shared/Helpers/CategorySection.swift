@@ -11,10 +11,10 @@ struct CategorySection: View {
     @Binding var categoryItem: CategoriesModel
     let palette: ScreenStylePalette
     let fontTheme: AppFontTheme
-    @Binding var newTextTiles: [UUID: String]
     let saveHistory: () -> Void
     let isArchive: Bool
     var autoFocus: Bool = false
+    @Binding var newTextTiles: [UUID: String]
     @State private var collapsed: Set<UUID> = []
 
     var body: some View {

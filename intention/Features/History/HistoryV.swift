@@ -16,7 +16,6 @@ struct HistoryV: View {
     @State private var isOrganizing = false
     @State private var createdCategoryID: UUID?
     @State private var targetCategoryID: UUID?
-    //
     @State private var showRenamePicker = false
     @State private var showDeletePicker = false
     @State private var showRenameSheet = false
@@ -35,10 +34,14 @@ struct HistoryV: View {
                 Page(top: 4, alignment: .center) {
                     T("History", .section)
                     
-                    ForEach(viewModel.sortedCategories) { cats in
+                    // $Bindings are so rows can edit categories
+                    ForEach($viewModel.categories, id: \.id) { $categoryItem in
+                        let isArchive = categoryItem.id == viewModel.archiveCategoryID
+                        
                         Card {
-                            CategoryHeaderRow(category: cats)
-                            CategoryTileList(category: cats )
+                            CategorySection(categoryItem: $categoryItem, palette: p, fontTheme: theme.fontTheme, saveHistory: { viewModel.saveHistory() }, isArchive: isArchive, autoFocus: createdCategoryID == categoryItem.id,
+                                            newTextTiles: categoriesList(p: ScreenStylePalette) )
+                            .environmentObject(viewModel)       // needed for more calls
                         }
                     }
                     Spacer(minLength: 16)
@@ -83,7 +86,7 @@ struct HistoryV: View {
                     .presentationDetents([.medium])
                 }
             }
-            .background()p.background.ignoresSafeArea())
+            .background(p.background.ignoresSafeArea())
             .tint(p.accent)
 
             /// Kept outside ScrollView - gives space to GeometryReader
@@ -332,10 +335,7 @@ private struct CategorySectionRow: View {
             autoFocus: autoFocus
         )
         .background(background)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(stroke, lineWidth: 1)
-        )
+        .overlay(RoundedRectangle(cornerRadius: 12) .stroke(stroke, lineWidth: 1) )
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
