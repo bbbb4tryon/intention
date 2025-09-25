@@ -156,9 +156,18 @@ struct FocusSessionActiveV: View {
         .background(p.background.ignoresSafeArea())
         .tint(p.accent)
         // Single bottom chrome: do NOT add an overlay; this keeps it snug to the tab bar
-        .fullScreenCover(isPresented: $focusVM.showRecalibrate) {
+        .sheet(isPresented: $focusVM.showRecalibrate) {
+          NavigationStack {
             RecalibrationV(vm: recalibrationVM)
-                .presentationDragIndicator(.visible)
+              .presentationDetents([.fraction(0.4), .medium])
+              .presentationDragIndicator(.visible)
+              .interactiveDismissDisabled(false)
+              .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                  Button("Close") { dismiss() }
+                }
+              }
+          }
         }
         .onReceive(
             NotificationCenter.default.publisher(

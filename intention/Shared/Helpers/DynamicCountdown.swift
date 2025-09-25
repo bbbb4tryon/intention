@@ -17,9 +17,7 @@ struct DynamicCountdown: View {
     private let activeSize: CGFloat = 150
     private let compactSize: CGFloat = 60
     let digitSize: CGFloat = 48
-    
-    private let screen: ScreenName = .history
-    private var p: ScreenStylePalette { theme.palette(for: screen) }
+
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
@@ -28,24 +26,24 @@ struct DynamicCountdown: View {
         if isActive {
             ZStack {
                 Circle()
-                    .fill(p.background.opacity( 0.2))
+                    .fill(palette.background.opacity( 0.2))
                 
                 // Slightly dims pie when paused
                 UnwindingPieShape(progress: progress)
-                    .fill(p.primary.opacity(fVM.phase == .paused ? 0.4 : 1.0))
+                    .fill(palette.primary.opacity(fVM.phase == .paused ? 0.4 : 1.0))
                 
                 VStack(spacing: 4) {
                     T("\(fVM.formattedTime)", .largeTitle)
                         .font(.system(size: digitSize, weight: .bold, design: .monospaced))
-                        .foregroundStyle(p.text)
+                        .foregroundStyle(palette.text)
                     
                     if fVM.phase == .paused {
                         T("Paused", .title3)
-                            .foregroundStyle(p.textSecondary)
+                            .foregroundStyle(palette.textSecondary)
                             .overlay(
                         Circle()
-                            .stroke(p.accent, lineWidth: 2)
-                            .fill(p.intText.opacity(0.35))
+                            .stroke(palette.accent, lineWidth: 2)
+                            .fill(Color.intText.opacity(0.35))
                         )
                     }
                 }
@@ -61,8 +59,8 @@ struct DynamicCountdown: View {
         } else if isBetweenChunks {
             ZStack {
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(p.background.opacity(0.1))
-                Text("✓").font(.title).foregroundStyle(p.primary)
+                    .fill(palette.background.opacity(0.1))
+                Text("✓").font(.title).foregroundStyle(palette.primary)
 
             }
             .frame(width: compactSize, height: compactSize)
