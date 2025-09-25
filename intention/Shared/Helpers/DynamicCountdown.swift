@@ -41,9 +41,10 @@ struct DynamicCountdown: View {
                         T("Paused", .title3)
                             .foregroundStyle(palette.textSecondary)
                             .overlay(
-                        Circle()
-                            .stroke(palette.accent, lineWidth: 2)
-                            .fill(Color.intText.opacity(0.35))
+                                ZStack {
+                                    Circle().fill(Color.intText.opacity(0.35))       // light overlay
+                                    Circle().stroke(palette.accent, lineWidth: 2)    // accent ring
+                                  }
                         )
                     }
                 }
