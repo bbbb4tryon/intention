@@ -8,31 +8,45 @@
 import SwiftUI
 
 struct DynamicCountdown: View {
+    @EnvironmentObject var theme: ThemeManager
     @ObservedObject var fVM: FocusSessionVM
     let palette: ScreenStylePalette
     
-    /// Current progress size (0.0 to 1.0), passed from FocusSessionActiveV
+    /// Current progress sizes (0.0 to 1.0), passed from FocusSessionActiveV
     let progress: CGFloat
-    private let activeSize: CGFloat = 200
+    private let activeSize: CGFloat = 150
     private let compactSize: CGFloat = 60
+    let digitSize: CGFloat = 48
+    
+    private let screen: ScreenName = .history
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var T: (String, TextRole) -> Text {
+        { key, role in theme.styledText(key, as: role, in: screen) }
+    }
     
     var body: some View {
         if isActive {
             ZStack {
                 Circle()
-                    .fill(palette.background.opacity( 0.2))
+                    .fill(p.background.opacity( 0.2))
                 
                 // Slightly dims pie when paused
                 UnwindingPieShape(progress: progress)
-                    .fill(palette.primary.opacity(fVM.phase == .paused ? 0.4 : 1.0))
+                    .fill(p.primary.opacity(fVM.phase == .paused ? 0.4 : 1.0))
                 
                 VStack(spacing: 4) {
-                    Text("\(fVM.formattedTime)")
-                        .font(.system(size: 48, weight: .bold, design: .monospaced))
-                        .foregroundStyle(palette.text)
+                    T("\(fVM.formattedTime)", .largeTitle)
+                        .font(.system(size: digitSize, weight: .bold, design: .monospaced))
+                        .foregroundStyle(p.text)
                     
                     if fVM.phase == .paused {
-                        Text("Paused").font(.subheadline).foregroundStyle(.secondary)
+                        T("Paused", .title3)
+                            .foregroundStyle(p.textSecondary)
+                            .overlay(
+                        Circle()
+                            .stroke(p.accent, lineWidth: 2)
+                            .fill(p.intText.opacity(0.35))
+                        )
                     }
                 }
             }
@@ -47,8 +61,8 @@ struct DynamicCountdown: View {
         } else if isBetweenChunks {
             ZStack {
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(palette.background.opacity(0.1))
-                Text("✓").font(.title).foregroundStyle(palette.primary)
+                    .fill(p.background.opacity(0.1))
+                Text("✓").font(.title).foregroundStyle(p.primary)
 
             }
             .frame(width: compactSize, height: compactSize)

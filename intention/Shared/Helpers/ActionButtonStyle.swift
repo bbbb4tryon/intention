@@ -12,10 +12,10 @@ struct PrimaryActionStyle: ButtonStyle {
     let palette: ScreenStylePalette
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(scheme == .dark ? Color.btnTextDark : Color.btnTextLight)
+            .foregroundStyle(Color.intText)
             .padding(.vertical, 14)
             .frame(maxWidth: .infinity)
-            .background(palette.accent)
+            .background(palette.primary)
         // .background(palette.accent.opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1.0) : 0.45))        // if pressed
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .opacity(configuration.isPressed ? 0.9 : 1.0)
@@ -28,10 +28,10 @@ struct SecondaryActionStyle: ButtonStyle {
     let palette: ScreenStylePalette
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(scheme == .dark ? Color.btnTextDark : Color.btnTextLight)
+            .foregroundStyle(Color.intText)
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity)
-            .background(palette.accent)
+            .background(palette.primary)
             .background(palette.accent.opacity(configuration.isPressed ? 0.8 : 1.0))
             .overlay(   RoundedRectangle(cornerRadius: 12, style: .continuous) .stroke(palette.accent, lineWidth: 2) )
             .clipShape( RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -44,12 +44,12 @@ struct RecalibrationActionStyle: ButtonStyle {
     let palette: ScreenStylePalette
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(scheme == .dark ? Color.btnTextDark : Color.btnTextLight)
-                       .padding(.vertical, 14)
-                       .frame(maxWidth: .infinity)
-                       .background(palette.accent)
-                       .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                       .opacity(configuration.isPressed ? 0.9 : 1.0)
+            .foregroundStyle(Color.intText)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity)
+            .background(palette.primary)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .opacity(configuration.isPressed ? 0.9 : 1.0)
     }
 }
 
@@ -64,7 +64,8 @@ private struct _PrimaryActionStyleMod: ViewModifier {
     @EnvironmentObject var theme: ThemeManager
     let screen: ScreenName
     func body(content: Content) -> some View {
-        content.buttonStyle(PrimaryActionStyle(palette: theme.palette(for: screen)))
+        let p = theme.palette(for: screen)
+        content.buttonStyle(PrimaryActionStyle(palette: p))
     }
 }
 // env-aware wrapper (replaces the current one that calls ThemeManager())
@@ -72,7 +73,8 @@ private struct _SecondaryActionStyleMod: ViewModifier {
     @EnvironmentObject var theme: ThemeManager
     let screen: ScreenName
     func body(content: Content) -> some View {
-        content.buttonStyle(SecondaryActionStyle(palette: theme.palette(for: screen)))
+        let p = theme.palette(for: screen)
+        content.buttonStyle(SecondaryActionStyle(palette: p))
     }
 }
 
@@ -80,7 +82,8 @@ private struct _RecalibrationActionStyleMod: ViewModifier {
     @EnvironmentObject var theme: ThemeManager
     let screen: ScreenName
     func body(content: Content) -> some View {
-        content.buttonStyle(RecalibrationActionStyle(palette: theme.palette(for: screen)))
+        let p = theme.palette(for: screen)
+        content.buttonStyle(RecalibrationActionStyle(palette: p))
     }
 }
 

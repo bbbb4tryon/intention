@@ -5,6 +5,7 @@
 //  Created by Benjamin Tryon on 9/20/25.
 //
 
+import Foundation
 import UniformTypeIdentifiers
 import SwiftUI
 

@@ -28,6 +28,7 @@ extension View {
         }
     }
     
+    //FIXME: -  affect does this have now?
     @ViewBuilder
     func safeAreaTopPadding() -> some View {
         if #available(iOS 17.0, *) {

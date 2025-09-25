@@ -9,11 +9,13 @@
 import SwiftUI
 
 struct MembershipSheetV: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var viewModel: MembershipVM
     @EnvironmentObject var theme: ThemeManager
     
     @State private var isFavorite = false
     @State var codeInput: String = ""
+    @State private var isBusy = false
     
     private let screen: ScreenName = .membership
     private var p: ScreenStylePalette { theme.palette(for: screen) }
@@ -49,7 +51,7 @@ struct MembershipSheetV: View {
                         Label {
                             T("Member!", .label)
                         } icon: {
-                            Image(systemName: "star")
+                            Image(systemName: "star").foregroundStyle(p.primary)
                         }
                         .symbolBounceIfAvailable()
                     } else {
@@ -167,6 +169,46 @@ struct MembershipSheetV: View {
                     .zIndex(1)
                 }
             }
+            .background(p.background.ignoresSafeArea())
+            .tint(p.primary)
         }
+        .toolbar { ToolbarItem(placement: .cancellationAction ){ Button( "Close") { dismiss() }}} // Let people leave
     }
 }
+#if DEBUG
+extension MembershipVM {
+    @MainActor
+    func _previewSet(member: Bool) {
+        // Adjust these lines to match your properties if names differ.
+        self.isMember = member
+        // Optional: also fake a product if your UI needs it
+        // self.primaryProduct = nil
+    }
+}
+#endif
+
+#if DEBUG
+#Preview("Membership — Non-Member") {
+    // Uses your PreviewWrapper + default mocks
+    PreviewWrapper {
+        MembershipSheetV()
+    }
+}
+
+#Preview("Membership — Member") {
+    MainActor.assumeIsolated {
+        // Create an isolated VM so we don’t mutate shared PreviewMocks.membershipVM
+        let memberVM = MembershipVM()
+        memberVM._previewSet(member: true)
+        
+        return MembershipSheetV()
+        // Inject the exact env objects MembershipSheetV expects
+            .environmentObject(PreviewMocks.theme)
+            .environmentObject(memberVM)
+        // The rest are harmless and keep parity with app environment
+            .environmentObject(PreviewMocks.prefs)
+            .environmentObject(PreviewMocks.history)
+            .environmentObject(PreviewMocks.stats)
+    }
+}
+#endif

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7705D2682E80C32C0046B67E /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 7705D2672E80C32C0046B67E /* README.md */; };
 		7767BD432E79FD870045D430 /* Intention-All.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 7767BD422E79FD870045D430 /* Intention-All.xctestplan */; };
 		7787866E2DF236D4004EDBEF /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = 7787866D2DF236D4004EDBEF /* Documentation.docc */; };
 		77DA310D2E44D7F100C6DC9E /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = 77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */; };
@@ -24,6 +25,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		7705D2672E80C32C0046B67E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		770F222E2E02EF2E00F9CEB3 /* intention.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = intention.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7767BD422E79FD870045D430 /* Intention-All.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Intention-All.xctestplan"; sourceTree = "<group>"; };
 		7767BD4F2E7A07D90045D430 /* IntentionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IntentionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -89,6 +91,7 @@
 		7787864E2DF220C5004EDBEF = {
 			isa = PBXGroup;
 			children = (
+				7705D2672E80C32C0046B67E /* README.md */,
 				770F222E2E02EF2E00F9CEB3 /* intention.app */,
 				77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */,
 				7787866D2DF236D4004EDBEF /* Documentation.docc */,
@@ -212,6 +215,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7705D2682E80C32C0046B67E /* README.md in Resources */,
 				7767BD432E79FD870045D430 /* Intention-All.xctestplan in Resources */,
 				77DA310D2E44D7F100C6DC9E /* .swiftlint.yml in Resources */,
 			);

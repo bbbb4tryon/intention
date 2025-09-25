@@ -158,6 +158,10 @@ final class StatsVM: ObservableObject {
         //                    self.lastError = error
         //                }
     }
+    
+    var totalRecalibrations: Int {
+        recalibrationCounts.values.reduce(0, +)
+    }
 }
 
 // MARK: Supporting Types -

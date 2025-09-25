@@ -9,8 +9,8 @@ import Foundation
 import SwiftUI
 
 // MARK: - Inject a known, stable ID
-// Updates the initializer with an external ID assignment
-struct CategoriesModel: Identifiable, Codable {
+// DragPayload: Transferable handles drag and drop
+struct CategoriesModel: Identifiable, Codable, Hashable {
     let id: UUID
     var persistedInput: String
     var tiles: [TileM]

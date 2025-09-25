@@ -7,16 +7,16 @@
 
 import Foundation
 
-// Representative of a single user-created "intention" tile
-//  supports JSON encoding
+// DragPayload: Transferable handles drag and drop
 struct TileM: Identifiable, Sendable, Codable, Hashable {
     let id: UUID
     var text: String
-    var timeStamp: Date
+//    var timeStamp: Date
     
-    init(text: String) {
-        self.id = UUID()
+    init(id: UUID = UUID(), text: String) {
+//        self.id = UUID()
+        self.id = id
         self.text = text
-        self.timeStamp = Date()
+//        self.timeStamp = Date()
     }
 }

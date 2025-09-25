@@ -38,15 +38,15 @@ struct DynamicMessageAndActionArea: View {
                                 .primaryActionStyle(screen: screen)
 
                             Button { focusVM.performAsyncAction { try focusVM.startCurrent20MinCountdown() } }
-                            label: { T("Start Next Intention", .action) }
+                            label: { T("Start Intention", .action) }
                                 .primaryActionStyle(screen: screen)
 
                             Button(role: .destructive) {
                                 focusVM.performAsyncAction { await focusVM.resetSessionStateForNewStart() }
-                            } label: { T("End Session Early", .label) }
+                            } label: { T("End Early", .label) }
                         }
                     } else if focusVM.currentSessionChunk == 1 && focusVM.phase == .finished {
-                        T("First 20 minutes done.\nStart your next intention?", .title3)
+                        T("First 20 minutes done, start next one?", .title3)
                             .foregroundStyle(p.text)
                             .multilineTextAlignment(.center)
 
@@ -62,7 +62,7 @@ struct DynamicMessageAndActionArea: View {
 //                            .foregroundStyle(p.textSecondary)
 //                            .multilineTextAlignment(.center)
                     } else if focusVM.tiles.count < 2 {
-                        T("Add your first (or second) intention above", .body)
+                        T("", .body)
                             .foregroundStyle(p.textSecondary)
                             .multilineTextAlignment(.center)
                     } else if focusVM.phase == .idle {

@@ -6,13 +6,14 @@
 //
 
 import SwiftUI
-
+/// content-management screen with an explicit Edit/Done mode
 struct HistoryV: View {
     @EnvironmentObject var theme: ThemeManager
     @ObservedObject var viewModel: HistoryVM
+    @Environment(\.editMode) private var editMode
     
     // UI State
-    @State private var newTextTiles: [UUID: String] = [:]       /// Store new tile text per category using its `id` as key
+    //    @State private var newTextTiles: [UUID: String] = [:]       /// Store new tile text per category using its `id` as key
     @State private var isOrganizing = false
     @State private var createdCategoryID: UUID?
     @State private var targetCategoryID: UUID?
@@ -21,6 +22,7 @@ struct HistoryV: View {
     @State private var showRenameSheet = false
     @State private var renameText = ""
     @State private var showDeleteConfirm = false
+    @State private var isBusy = false
     
     private let screen: ScreenName = .history
     private var p: ScreenStylePalette { theme.palette(for: screen) }
@@ -29,344 +31,281 @@ struct HistoryV: View {
     }
     
     var body: some View {
-//        ZStack(alignment: .bottom) {
-            ScrollView {
-                Page(top: 4, alignment: .center) {
-                    T("History", .section)
-                    
+        ScrollView {
+            Page(top: 6, alignment: .center) {
+                
+                LazyVStack(alignment: .leading, spacing: 8) {
                     // $Bindings are so rows can edit categories
-                    ForEach($viewModel.categories, id: \.id) { $categoryItem in
-                        let isArchive = categoryItem.id == viewModel.archiveCategoryID
-                        
-                        Card {
-                            CategorySection(categoryItem: $categoryItem, palette: p, fontTheme: theme.fontTheme, saveHistory: { viewModel.saveHistory() }, isArchive: isArchive, autoFocus: createdCategoryID == categoryItem.id,
-                                            newTextTiles: categoriesList(p: ScreenStylePalette) )
-                            .environmentObject(viewModel)       // needed for more calls
-                        }
+                    ForEach($viewModel.categories) { $category in
+                        CategoryCard(
+                            category: $category,
+                            isArchive: category.id == viewModel.archiveCategoryID,
+                            onRename: { id in
+                                targetCategoryID = id
+                                renameText = viewModel.name(for: id)
+                                showRenameSheet = true
+                            },
+                            onDelete: { id in
+                                targetCategoryID = id
+                                showDeleteConfirm = true
+                            }
+                        )
+                        .id(category.id)
+                        .padding(.horizontal, 16)
+                        .environmentObject(theme)
                     }
-                    Spacer(minLength: 16)
                 }
-                .alert("Delete category?",
-                       isPresented: $showDeleteConfirm) {
-                    Button("Delete", role: .destructive) {
-                        if let id = targetCategoryID { _ = viewModel.deleteCategory(id: id) }
+                .padding(.vertical, 12)
+            }
+            // Toasts
+            VStack(spacing: 8) {
+                if let move = viewModel.lastUndoableMove {
+                    HStack {
+                        Text("\(move.tile.text) moved").font(.footnote)
+                        Spacer()
+                        Button {viewModel.undoLastMove() } label: { T("Undo", .action) }.primaryActionStyle(screen: screen)
                     }
-                    Button("Cancel", role: .cancel) { }
-                } message: {
-                    Text("Tiles will be moved to Archive.")
+                    .padding(.horizontal, 12)           // Card instead?
+                    .padding(.vertical, 10)             // Card instead?
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
                 
-                // Sheet for renaming (iOS 16-friendly)
-                .sheet(isPresented: $showRenameSheet) {
-                    NavigationStack {
-                        Form {
-                            Section("New Name") {
-                                TextField("Category name", text: $renameText)
-                                    .textInputAutocapitalization(.words)
-                                    .disableAutocorrection(true)
-                            }
+                if viewModel.tileLimitWarning {
+                    Text("Archive capped at 200; oldest items were removed.")
+                        .font(.footnote)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .task {
+                            try? await Task.sleep(nanoseconds: 2_000_000_000)
+                            await MainActor.run { viewModel.tileLimitWarning = false }
                         }
-                        .navigationTitle("Rename")
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Cancel") { showRenameSheet = false }
-                            }
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button("Save") {
-                                    if let id = targetCategoryID {
-                                        viewModel.renameCategory(id: id, to: renameText.trimmingCharacters(in: .whitespacesAndNewlines))
-                                    }
-                                    showRenameSheet = false
-                                }
-                                .disabled(renameText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                            }
-                        }
-                    }
-                    .presentationDetents([.medium])
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .background(p.background.ignoresSafeArea())
-            .tint(p.accent)
-
-            /// Kept outside ScrollView - gives space to GeometryReader
-            organizerOverlay
-
-        .safeAreaInset(edge: .bottom, spacing: 10) { VStack(spacing: 10) { undoToast; capToast } }
+        }
+        .background(p.background.ignoresSafeArea())
+        .tint(p.accent)
         .animation(.easeInOut(duration: 0.2), value: viewModel.lastUndoableMove != nil)
-        .toolbar { historyToolbar }
-        .navigationBarTitleDisplayMode(.inline) // optional, for a tighter header
-    }
-    
-    /// Splitting subviews
-    @ViewBuilder
-    private var header: some View {
-        T("Tasks You Intended to Complete and Did", .body)
-            .foregroundStyle(p.textSecondary)
-            .accessibilityAddTraits(.isHeader)
-    }
-    
-    @ViewBuilder
-    private func categoriesList(p: ScreenStylePalette) -> some View {
-        LazyVStack(alignment: .leading, spacing: 16) {
-            ForEach($viewModel.categories, id: \.id) { $categoryItem in   // mutate individual category fields
-                /// Disables inputs and editing/ Provides subtle "card" treatment
-                /// Derive isArchive from the VM
-                let isArchive = categoryItem.id == viewModel.archiveCategoryID
-                
-                CategorySection(
-                    categoryItem: $categoryItem,
-                    palette: p,
-                    fontTheme: theme.fontTheme,
-                    newTextTiles: $newTextTiles,
-                    saveHistory: { viewModel.saveHistory()  },
-                    isArchive: isArchive,
-                    autoFocus: createdCategoryID == categoryItem.id
-                )
-                
-                extensionHistoryVM
-            }
+        .toolbar { historyToolbar }.environmentObject(theme)
+        /// [.medium] is half-screen, .visible affordance
+        .sheet(isPresented: $showRenameSheet) {
+            renameSheet
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
         }
-    }
-    
-    @ViewBuilder private var undoToast: some View {
-        if let move = viewModel.lastUndoableMove {
-            BottomToast {
-                HStack {
-                    T("Moved: \(move.tile.text)", .caption)
-                    Spacer()
-                    Button( action: { viewModel.undoLastMove() }) {
-                        T("Undo", .action)
-                    }
-                    .secondaryActionStyle(screen: .history)
+        .alert("Delete category?", isPresented: $showDeleteConfirm) {
+            Button("Delete", role: .destructive) {
+                if let id = targetCategoryID {
+                    Task { _ = viewModel.deleteCategory(id: id) }
                 }
             }
-            .padding(.horizontal, 16)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        } else {
-            EmptyView()
-        }
-    }
-    
-    @ViewBuilder private var capToast: some View {
-        if viewModel.tileLimitWarning {
-            BottomToast {
-                HStack {
-                    T("Archive capped at 200; oldest items were removed.", .caption)
-                    Spacer()
-                    Button { viewModel.tileLimitWarning = false } label: { T("OK", .action) }
-                        .secondaryActionStyle(screen: .history)
-                }
-            }
-            .padding(.horizontal, 16)
-            .task {
-                try? await Task.sleep(nanoseconds: 3_000_000_000)
-                viewModel.tileLimitWarning = false
-            }
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        }
-    }
-    
-    /// Organizer show as an overlay so it doesn't fight ScrollView dimensions
-    @ViewBuilder private var organizerOverlay: some View {
-        if isOrganizing {
-            GeometryReader { proxy in
-                let targetH = min(proxy.size.height * 0.75, 600)    // Use available height, avoid UIScreen.*
-                
-                VStack(spacing: 12) {
-                    T("Organize Tiles", .section)
-                        .padding(.top, 12)
-                    
-                    TileOrganizerWrapper(
-                        categories: $viewModel.categories,
-                        onMoveTile: { tile, fromID, toID in
-                            Task { @MainActor in                /// Using the throwing async core
-                                do { try await viewModel.moveTileThrowing(tile, from: fromID, to: toID) } catch { viewModel.lastError = error }
-                            }
-                        },
-                        onReorder: { newTiles, categoryID in
-                            viewModel.updateTiles(in: categoryID, to: newTiles)
-                            // save (debounced by VM if possible)
-                            viewModel.saveHistory()
+            Button("Cancel", role: .cancel) { }
+        } message: { Text("Tiles will be moved to Archive.") }
+        
+        
+            .fullScreenCover(isPresented: $isOrganizing,
+                             onDismiss: { viewModel.flushPendingSaves() }) {
+                OrganizerOverlayScreen(
+                    categories: $viewModel.categories,
+                    onMoveTile: { tile, fromID, toID in
+                        Task { @MainActor in
+                            do { try await viewModel.moveTileThrowing(tile, from: fromID, to: toID) }
+                            catch { viewModel.lastError = error }
                         }
-                    )
-                    .frame(height: targetH)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .shadow(radius: 3, y: 1)
-                    
-                    Button { viewModel.flushPendingSaves(); withAnimation { isOrganizing = false }} label: {
-                        T("Done", .section)
+                    },
+                    onReorder: { newTiles, categoryID in
+                        viewModel.updateTiles(in: categoryID, to: newTiles)
+                        viewModel.saveHistory()
+                    },
+                    onDone: {
+                        viewModel.flushPendingSaves()
+                        isOrganizing = false
                     }
-                    .secondaryActionStyle(screen: .history)
-                    .padding(.bottom, 12)
-                }
-                // FIXME: use my button of this?
-                .padding(12)
-                .background(.ultraThinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .padding(.horizontal, 16)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                )
+                .environmentObject(theme)
+                // Match Membership background exactly (Default = systemGroupedBackground)
+                .background(theme.palette(for: .membership).background.ignoresSafeArea())
+                // If you want to block swipe-down dismissal, uncomment:
+                // .interactiveDismissDisabled(true)
             }
-            .ignoresSafeArea(.keyboard) // keep organizer steady while keyboard shows
-            .zIndex(1)
-        }
+                             .task(id: isOrganizing) {
+                                 // On leaving organize mode, force-flush pending saves.
+                                 if !isOrganizing { viewModel.flushPendingSaves() }
+                             }
     }
     
-    @ToolbarContentBuilder private var historyToolbar: some ToolbarContent {
+    //    @ToolbarContentBuilder private var historyToolbar: some ToolbarContent {
+    //        ToolbarItemGroup(placement: .topBarTrailing) {
+    @ToolbarContentBuilder
+    private var historyToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
-            
-            // Organize / Done toggle
             Button {
                 if isOrganizing { viewModel.flushPendingSaves() }
                 withAnimation { isOrganizing.toggle() }
             } label: {
-                Label {
-                    T(isOrganizing ? "Done" : "Organize", .section)
-                } icon: {
-                    Image(systemName: "arrow.up.arrow.down")
-                }
+                Label(
+                    isOrganizing ? "Done" : "Edit", systemImage: "arrow.up.arrow.down"
+                ).foregroundStyle(p.primary)
             }
-            .secondaryActionStyle(screen: screen)
             
-            // More menu
             Menu {
-                Button {
-                    // If only one user cat, go straight to rename sheet; else pick first
-                    if let only = viewModel.userCategoryIDs.only {
+                Button("Rename Category") {
+                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
                         targetCategoryID = only
                         renameText = viewModel.name(for: only)
                         showRenameSheet = true
                     } else {
                         showRenamePicker = true
                     }
-                } label: { T("Rename Category", .section) }
+                }
                 
-                Button {
-                    // If only one user cat, confirm delete directly; else choose which
-                    if let only = viewModel.userCategoryIDs.only {
+                Button("Delete Category", role: .destructive) {
+                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
                         targetCategoryID = only
-                        showDeletePicker = true
+                        showDeleteConfirm = true
                     } else {
                         showDeletePicker = true
                     }
-                } label: { T("Delete Category", .section) }
+                }
                 
                 Divider()
                 
-                Button {
-                    if let id = viewModel.addEmptyUserCategory() { createdCategoryID = id }
-                } label: { T("Add Category", .section) }
-                    .disabled(!viewModel.canAddUserCategory())
-                
+                Button("Add Category") {
+                    if let id = viewModel.addEmptyUserCategory() {
+                        createdCategoryID = id
+                    }
+                }
+                .disabled(!viewModel.canAddUserCategory())
             } label: {
-                Label { T("More", .section) } icon: { Image(systemName: "ellipsis.circle") }
+                Image(systemName: "ellipsis.circle").foregroundStyle(p.primary)
             }
-            .secondaryActionStyle(screen: screen)
-            
-            // Rename picker
-            .confirmationDialog("Choose category to rename",
-                isPresented: $showRenamePicker,
-                titleVisibility: .visible
-            ) {
-                ForEach(viewModel.userCategoryIDs, id: \.self) { id in
-                    let label = viewModel.name(for: id).ifEmpty("Untitled")
-                    Button(label) {
-                        targetCategoryID = id
-                        renameText = viewModel.name(for: id)
-                        showRenameSheet = true
-                    }
-                }
-                Button("Cancel", role: .cancel) { }
-            }
-
-            // Delete picker (note the role initializer)
-            .confirmationDialog("Choose category to delete",
-                isPresented: $showDeletePicker,
-                titleVisibility: .visible
-            ) {
-                ForEach(viewModel.userCategoryIDs, id: \.self) { id in
-                    let label = viewModel.name(for: id).ifEmpty("Untitled")
-                    Button(role: .destructive) {
-                        targetCategoryID = id
-                        showDeleteConfirm.toggle()
-                    } label: {
-                        Text(label)
-                    }
-                }
-                Button("Cancel", role: .cancel) { }
-            }
-
         }
     }
+    
+    
+    @ViewBuilder private var renameSheet: some View {
+        NavigationStack {
+            Form {
+                Section("New Name") {
+                    TextField("Category name", text: $renameText)
+                        .textInputAutocapitalization(.words)
+                        .disableAutocorrection(true)
+                    
+                    Button { Task { viewModel.canAddUserCategory() } } label: { T("Rename Category", .action) }
+                        .primaryActionStyle(screen: screen)
+                }
+            }
+            .navigationTitle("Rename")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { showRenameSheet = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        if let id = targetCategoryID {
+                            viewModel.renameCategory(id: id, to: renameText.trimmingCharacters(in: .whitespacesAndNewlines))
+                        }
+                        showRenameSheet = false
+                    }
+                    .disabled(renameText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
 }
-
 // UUID helper
 extension Array {
     var only: Element? { count == 1 ? first : nil }
 }
 
-extension String {
-    func ifEmpty(_ replacement: String) -> String { isEmpty ? replacement : self }
-}
-    
-    // MARK: extracted CategorySectionRow
-    /// Extracted row to simplify type-checking
-private struct CategorySectionRow: View {
-    @Binding var categoryItem: CategoriesModel
-    let palette: ScreenStylePalette
-    let fontTheme: AppFontTheme
-    @Binding var newTextTiles: [UUID: String]
-    let saveHistory: () -> Void
+// MARK: - Category Card (private) = Header + Tile List
+///composes CategoryHeaderRow + CategoryTileList with the rounded card chrome. Keeping it private avoids scattering styling across files and keeps the view tree simple
+private struct CategoryCard: View {
+    @Binding var category: CategoriesModel
     let isArchive: Bool
-    let autoFocus: Bool
-
+    var onRename: (UUID) -> Void
+    var onDelete: (UUID) -> Void
+    @EnvironmentObject private var viewModel: HistoryVM
+    
     var body: some View {
-        let background = isArchive ? palette.surface : .clear
-        let stroke     = isArchive ? palette.border  : .clear
-
-        CategorySection(
-            categoryItem: $categoryItem,
-            palette: palette,
-            fontTheme: fontTheme,
-            newTextTiles: $newTextTiles,
-            saveHistory: saveHistory,
-            isArchive: isArchive,
-            autoFocus: autoFocus
-        )
-        .background(background)
-        .overlay(RoundedRectangle(cornerRadius: 12) .stroke(stroke, lineWidth: 1) )
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        VStack(alignment: .leading, spacing: 8) {
+            CategoryHeaderRow(
+                title: isArchive ? "Archive" : category.persistedInput.ifEmpty("Untitled"),
+                count: category.tiles.count,
+                isArchive: isArchive,
+                allowEdit: !isArchive && category.id != viewModel.generalCategoryID,
+                onRename: { onRename(category.id) },
+                onDelete:  { onDelete(category.id) }
+            )
+            
+            CategoryTileList(category: $category, isArchive: isArchive)
+                .environmentObject(viewModel)
+        }
+        .padding(12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
-                        
-//                        Spacer(minLength: 16)
-//                    }       //FIXME: IS LazyVStack screwing up the look?
-//                    if let error = viewModel.lastError {
-//                        ErrorOverlay(error: error) {
-//                            viewModel.lastError = nil
-//                        }
-//                        .zIndex(1)  // Keeps the above the context of it's error
-//                    }
-//                }
-//            }
-//            .safeAreaInset(edge: .bottom, spacing: 10) {
-//                if let move = viewModel.lastUndoableMove {
-//                    BottomToast {
-//                        HStack {
-//                            Text("Moved: \(move.tile.text)").font(.footnote)
-//                            Spacer()
-//                            Button("Undo") {    viewModel.undoLastMove()    }
-//                        }
-//                    }
-//                    .padding(.horizontal, 16)
-//                    .transition(.move(edge: .bottom).combined(with: .opacity))
-//                }
-//            }
-//        }
-////        .friendlyAnimatedHelper(viewModel.lastUndoableMove != nil)
-//    }
-// }
+
+// MARK: - OrganizerOverlayScreen
+private struct OrganizerOverlayScreen: View {
+    @EnvironmentObject var theme: ThemeManager
+    @Binding var categories: [CategoriesModel]
+    var onMoveTile: (TileM, UUID, UUID) -> Void
+    var onReorder: (_ newTiles: [TileM], _ categoryID: UUID) -> Void
+    var onDone: () -> Void
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 10) {
+                TileOrganizerWrapper(
+                    categories: $categories,
+                    onMoveTile: onMoveTile,
+                    onReorder: onReorder
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .shadow(radius: 3, y: 1)
+                .padding(16)
+            }
+            .navigationTitle("Organize")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { onDone() }
+                }
+            }
+        }
+        // If you *always* want systemGroupedBackground regardless of theme:
+        // .background(Color(.systemGroupedBackground).ignoresSafeArea())
+    }
+}
+
+// UUID helper
+private extension String {
+    func ifEmpty(_ replacement: String) -> String { isEmpty ? replacement : self }
+}
+
+#if DEBUG
+extension HistoryV {
+    init(
+        viewModel: HistoryVM,
+        _preview_isOrganizing: Bool = false,
+        _preview_showRenameSheet: Bool = false,
+        _preview_targetCategoryID: UUID? = nil,
+        _preview_renameText: String = ""
+    ) {
+        self.viewModel = viewModel
+        _isOrganizing    = State(initialValue: _preview_isOrganizing)
+        _showRenameSheet = State(initialValue: _preview_showRenameSheet)
+        _targetCategoryID = State(initialValue: _preview_targetCategoryID)
+        _renameText      = State(initialValue: _preview_renameText)
+    }
+}
+#endif
+
 
 // Mock/ test data prepopulated
 #if DEBUG
@@ -379,10 +318,35 @@ private struct CategorySectionRow: View {
             historyVM.addToHistory(TileM(text: "Do item"), to: generalID)
             historyVM.addToHistory(TileM(text: "Get other item"), to: generalID)
         }
-
+        
         return PreviewWrapper {
             HistoryV(viewModel: historyVM)
                 .previewTheme()
+        }
+    }
+}
+#endif
+
+#if DEBUG
+#Preview("History — Organizer Overlay") {
+    MainActor.assumeIsolated {
+        // Build a self-contained HistoryVM with some tiles
+        let h = HistoryVM(persistence: PersistenceActor())
+        h.ensureGeneralCategory()
+        h.ensureArchiveCategory()
+        
+        if let userID = h.addEmptyUserCategory() {
+            h.renameCategory(id: userID, to: "Projects")
+            h.addToHistory(TileM(text: "Refactor overlay"), to: userID)
+            h.addToHistory(TileM(text: "Add accessibility"), to: userID)
+            h.addToHistory(TileM(text: "Debug accessibility"), to: userID)
+            h.addToHistory(TileM(text: "Ship v1"), to: userID)
+            h.addToHistory(TileM(text: "Prep screenshots"), to: userID)
+        }
+        
+        return PreviewWrapper {
+            // Force organizer overlay ON for preview
+            HistoryV(viewModel: h, _preview_isOrganizing: true)
         }
     }
 }

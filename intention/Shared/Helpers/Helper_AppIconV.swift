@@ -9,6 +9,7 @@ import SwiftUI
 
 // MARK: - AppIconView
 struct Helper_AppIconV: View {
+    @State var isBusy = false
     var body: some View {
         // safely unwraps uiimage from bundle extension
         if let uiImage = AppIconProvider.icon {
@@ -21,6 +22,7 @@ struct Helper_AppIconV: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .foregroundStyle(.intGreen)
+                .progressOverlay($isBusy, text: "Loading...")
         }
     }
 }

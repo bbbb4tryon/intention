@@ -17,7 +17,7 @@ struct FocusShell<Content: View>: View {
     
     var body: some View {
         let pal = theme.palette(for: screen)
-//        let base = content
+        //        let base = content
         let backgrounded = content.background(pal.surface)    // card/surface under widgets
         
         ZStack {
@@ -56,27 +56,28 @@ extension RootView {
 }
 #endif
 
-/// App entry content. Owns all VMs and injects them downward; owns the single paywall sheet
-/// - Keeps VMs in the parent (single source of truth)
-/// - Uses a FocusShell to centralize background/toolbar/handlers
-/// - Breaks long chains into locals to help the type-checker (iOS 16-friendly)
-
-/// RootView wires shared VMs, persistence, and the single paywall sheet.
+/// App entry content. Owns and wires shared VMs/actors; hosts the single paywall/legal sheets.
+/// - Keeps VMs at the root (single source of truth)
+/// - Centralizes scene-phase handling and background chrome via `FocusShell`
 struct RootView: View {
     
-    // MARK: legal gate (AppStorage)
+    // MARK: AppStorage – legal gate
+    /// Last accepted legal version.
     @AppStorage(LegalKeys.acceptedVersion) private var acceptedVersion: Int = 0
+    /// Acceptance timestamp (epoch seconds).
     @AppStorage(LegalKeys.acceptedAtEpoch) private var acceptedAtEpoch: Double = 0
     
     // MARK: presentation
+    /// Which root-level sheet is visible (legal, membership, etc).
     @State private var activeSheet: RootSheet?
+    /// Global busy overlay.
     @State private var isBusy = false
     
-    // MARK: scene
+    // MARK: Scene
+    /// Scene phase guardrail: pause timers, flush history, warm haptics.
     @Environment(\.scenePhase) private var scenePhase
     
-    // MARK: single source of truth (owned at the root)
-    // Owns shared services / VMs and injected downwards
+    // MARK: Single source of truth (owned here, injected downward)
     @StateObject private var theme: ThemeManager
     @StateObject private var memVM: MembershipVM
     @StateObject private var historyVM: HistoryVM
@@ -86,13 +87,13 @@ struct RootView: View {
     @StateObject private var prefs: AppPreferencesVM
     @StateObject private var hapticsEngine: HapticsService            // warmed generators (UI object)
     
-    // MARK: initializer: build dependencies, wire once, then assign to @StateObject wrappers
+    /// Build once: create actors/services, wire VMs, and assign to `@StateObject` wrappers.
     init() {
-        // infrastructure actors/services
+        // 1) Infra actors/services
         let persistence     = PersistenceActor()
         let config          = TimerConfig.current
         
-        // plain instances (no self usage allowed inside init)
+        // 2) Plain instances (no self)
         let theme           = ThemeManager()
         let membership      = MembershipVM()
         let prefs           = AppPreferencesVM()
@@ -104,14 +105,14 @@ struct RootView: View {
         let recal           = RecalibrationVM(haptics: liveHaptics)
         let stats           = StatsVM(persistence: persistence)
         
-        // "Single point" of wiring (create) across VMs
+        // 3) Cross-VM wiring (focus→history, stats→membership)
         focus.historyVM     = history                               // Focus writes completions into History
         stats.memVM         = membership                            // Stats can query membership state
         
         //        _theme = StateObject(wrappedValue: ThemeManager())        // FIXME: remove because this is a second init (first is _theme)
         _memVM = StateObject(wrappedValue: MembershipVM())          // FIXME: remove because this is a second init (first is _memVM)
         
-        // recalibration completion → Stats + reset focus flow
+        // 4) Recalibration completion hook → log + reset
         recal.onCompleted = { [weak stats, weak focus] (mode: RecalibrationMode) in
             guard let stats = stats else { return }
             let texts = focus?.tiles.map(\.text) ?? []
@@ -123,7 +124,7 @@ struct RootView: View {
             Task { @MainActor in await focus?.resetSessionStateForNewStart() }
         }
         
-        // assign to the wrappers
+        // 5) Assign to `_StateObject` backing vars aka "wrappers"
         _theme          = StateObject(wrappedValue: theme)
         _memVM          = StateObject(wrappedValue: membership)
         _historyVM      = StateObject(wrappedValue: history)
@@ -142,13 +143,12 @@ struct RootView: View {
         let _               = theme.palette(for: .history)
         //      let _palSettings    = theme.palette(for: .settings)
         let _               = theme.palette(for: .settings)
-        let tabBG           = palFocus.background.opacity(0.88)          // Makes tab bar match app theme (iOS 16+)
-        
-        // FIXME: MAY NEED TO REMOVE?
         //        let _palRecal     = theme.palette(for: .recalibrate)
         let _               = theme.palette(for: .recalibrate)
         //      let _palMem         = theme.palette(for: .membership)
         let _               = theme.palette(for: .membership)
+        let tabBG           = palFocus.background.opacity(0.88)          // Makes tab bar match app theme (iOS 16+)
+        
         
         // Focus tab
         let focusContent    = FocusSessionActiveV(
@@ -188,6 +188,7 @@ struct RootView: View {
             .tabItem { Image(systemName: "gear") }
         
         // Tabs built as a *local* keeps long chains out of top-level expression
+        // Wrapped here to apply shared toolbars, backgrounds, tab icon coloring
         let tabs    = TabView {
             focusNav
             historyNav
@@ -196,6 +197,7 @@ struct RootView: View {
         
         // Wrap here to apply shared toolbars, backgrounds
         let content = tabs
+            .tint(palFocus.primary)
             .toolbarBackground(tabBG, for: .tabBar)
             .toolbarBackground(.visible, for: .tabBar)
         
@@ -207,12 +209,15 @@ struct RootView: View {
             .environmentObject(historyVM)
             .environmentObject(prefs)
             .environmentObject(hapticsEngine)
+            .environmentObject(focusVM)
+            .progressOverlay($isBusy, text: "Loading...")
         
         // Keep nav bars coherent with theme - applied per screen via FocusShell/background
             .toolbarBackground(tabBG, for: .navigationBar)
         
         // MARK: App lifecycle (guardrail: scene handling lives at root)
             .onChange(of: scenePhase) { phase in
+                isBusy = true
                 switch phase {
                 case .inactive, .background:
                     Task { await focusVM.pauseCurrent20MinCountdown() }
@@ -224,7 +229,9 @@ struct RootView: View {
         // MARK: App launch + restore any active session state + legal gate
             .onAppear {
                 isBusy = true
-                Task { await focusVM.restoreActiveSessionIfAny()}
+                Task { await focusVM.restoreActiveSessionIfAny();
+                    hapticsEngine.warm();
+                    isBusy = false }
                 if LegalConsent.needsConsent() { activeSheet = .legal }
                 hapticsEngine.warm()        // implemented as a no-op wrapper than just calls prepare()
                 
@@ -251,6 +258,7 @@ struct RootView: View {
             }
         
         // Membership prompt choreography
+        ///FIXME: remove one of the membership because they're "re"-presented?
             .onChange(of: memVM.shouldPrompt) { show in
                 if show, activeSheet == nil { activeSheet = .membership }
             }
@@ -308,7 +316,7 @@ struct RootView: View {
             }
     }
 }
-        
+
 //        
 //        
 //        TabView {

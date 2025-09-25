@@ -374,7 +374,7 @@ final class FocusSessionVM: ObservableObject {
             tiles = snap.tileTexts.map { TileM(text: $0) }
             currentSessionChunk = snap.chunkIndex
             countdownRemaining = min(max(snap.remainingSeconds, 0), config.chunkDuration)
-            phase = snap.phase == .running ? .paused : snap.phase   // safe resume point
+            phase = snap.phase == .running ? .paused : snap.phase   // safe resume point; forces "Paused" when re-entering the app
             sessionActive = (phase == .paused || phase == .running || currentSessionChunk > 0)
         }
     }
@@ -387,8 +387,10 @@ extension FocusSessionVM {
     }
     
     /// A tile is "completed" iff its index is below the currentSessionChunk (0 or 1).
-       func thisTileIsCompleted(_ tile: TileM) -> Bool {
-           guard let idx = tiles.firstIndex(of: tile) else { return false }
-           return idx < currentSessionChunk
-       }
+    func thisTileIsCompleted(_ tile: TileM) -> Bool {
+        guard let idx = tiles.firstIndex(of: tile) else { return false }
+        //           guard let idx1 = tiles.index(after: idx) else { return false }
+        //           return idx1 < idx < currentSessionChunk
+        return idx < currentSessionChunk
+    }
 }

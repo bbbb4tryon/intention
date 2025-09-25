@@ -12,6 +12,7 @@ struct SettingsV: View {
     @EnvironmentObject var theme: ThemeManager
     @EnvironmentObject var prefs: AppPreferencesVM
     @EnvironmentObject var memVM: MembershipVM
+    @EnvironmentObject var focusVM: FocusSessionVM
     @ObservedObject var statsVM: StatsVM
     @AppStorage(DebugKeys.forceLegalNextLaunch) private var debugShowLegalNextLaunch = false
     
@@ -19,6 +20,7 @@ struct SettingsV: View {
     @State private var showTerms = false
     @State private var showPrivacy = false
     @State private var showMedical = false
+    @State private var isBusy = false
     
     private let screen: ScreenName = .settings
     private var p: ScreenStylePalette { theme.palette(for: screen) }
@@ -29,13 +31,16 @@ struct SettingsV: View {
     var body: some View {
         ScrollView {
             Page(top: 4, alignment: .center) {
+                T("Settings", .header)
+                                        .padding(.bottom, 4)
                 
         #if DEBUG
         Section("Developer") {
-            Button("Reset Debug")           { UserDefaults.standard.removeObject(forKey: "debug.chunkSeconds") }
-            Button("Reset Legal Gate Now")  { LegalConsent.clearForDebug() } .controlSize(.large)
-            Button("Open Recalibration (Test)") { NotificationCenter.default.post(name: .init("dev.openRecalibration"), object: nil) }
+            Button("Clear: Debug")      { UserDefaults.standard.removeObject(forKey: "debug.chunkSeconds"); Task { } }
+            Button("Reset: Legal Gate") { LegalConsent.clearForDebug() } .controlSize(.large)
             Toggle("Show Legal on Next Launch", isOn: $debugShowLegalNextLaunch)
+            Button("Show Recalibration"){ NotificationCenter.default.post(name: .init("dev.openRecalibration"), object: nil) }
+            Button("Reset Session")     { Task {await focusVM.resetSessionStateForNewStart() }
             
             Picker("Timer (debug)", selection: Binding(
                    get: { UserDefaults.standard.integer(forKey: "debug.chunkSeconds") },
