@@ -9,18 +9,17 @@ import Foundation
 
 // Apple Pay: users expect no codes. Just the StoreKit sheet → done.
 // Stripe/web: a simple redeem code screen is the most anonymous and familiar approach without accounts.
-/* Redeem Code Screen:
-
-They pay, see a short code (6–10 chars).
-
-In the app, they go to “Enter Code”, type/paste it.
-
-App unlocks.
-
---Familiar from gift cards and beta programs.
-
--- No email or account but still feels anonymous but valid.
- */
+//Redeem Code Screen:
+//
+//They pay, see a short code (6–10 chars).
+//
+//In the app, they go to “Enter Code”, type/paste it.
+//
+//App unlocks.
+//
+//--Familiar from gift cards and beta programs.
+//
+//-- No email or account but still feels anonymous but valid.
 
 actor MembershipCodeService {
     
@@ -31,7 +30,7 @@ actor MembershipCodeService {
     }
     
     // Replace with backend URL
-    private let verifyEndpoint = URL(string: "https://yourdomain.com/api/verify")!
+    private let verifyEndpoint = URL(string: "https://argonnesoftware.com/api/verify")!
     
     func verify(code: String, deviceID: String) async -> VerificationResult {
         // FIXME: Placeholder - similate network verification

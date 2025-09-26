@@ -155,6 +155,7 @@ struct RootView: View {
             focusVM: focusVM,     // not viewModel:focusVM - focusVM: focusVM matches view's property name
             recalibrationVM: recalVM
         )
+            .scrollDismissesKeyboard(.interactively)
         
         let focusScreen     = FocusShell(screen: .homeActiveIntentions) {
             focusContent

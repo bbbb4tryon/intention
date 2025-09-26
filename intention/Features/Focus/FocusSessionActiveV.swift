@@ -42,7 +42,7 @@ enum ActiveSessionError: Error, Equatable, LocalizedError {
 /// MembershipSheetV modal sheet presentation handling enum
 enum ActiveSheet: Equatable { case none, membership }
 
-/// The main view for running a focus session, accepting two intention tiles of text inpit
+/// The main view for running a focus session, accepting two intention tiles of text input
 /// Displays countdown timer, text input for intention tiles, recalibration sheet
 struct FocusSessionActiveV: View {
     @EnvironmentObject var theme: ThemeManager

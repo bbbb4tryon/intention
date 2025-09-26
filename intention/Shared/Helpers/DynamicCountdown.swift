@@ -19,7 +19,32 @@ struct DynamicCountdown: View {
     let digitSize: CGFloat = 48
 
     private var T: (String, TextRole) -> Text {
-        { key, role in theme.styledText(key, as: role, in: screen) }
+        { key, role in theme.styledText(key, as: role, in: .homeActiveIntentions) }
+    }
+    
+    private var isActive: Bool {
+        fVM.phase == .running ||
+        fVM.phase == .paused  ||
+        (fVM.phase == .finished && fVM.currentSessionChunk == 2)
+    }
+    
+    private var isBetweenChunks: Bool {
+        let oneDone = fVM.phase == .finished && fVM.currentSessionChunk == 1
+        return oneDone
+    }
+    
+    private var isBothChunksDone : Bool {
+        let oneDone = fVM.phase == .finished && fVM.currentSessionChunk == 1
+        let twoDone = fVM.phase == .finished && fVM.currentSessionChunk == 2
+        return oneDone && twoDone
+    }
+
+    private func handleTap() {
+        if fVM.phase == .running {
+            fVM.performAsyncAction { await fVM.pauseCurrent20MinCountdown() }
+        } else if fVM.phase == .paused {
+            fVM.performAsyncAction { try await fVM.resumeCurrent20MinCountdown() }
+        }
     }
     
     var body: some View {
@@ -58,34 +83,27 @@ struct DynamicCountdown: View {
             .animation(.easeInOut(duration: 0.2), value: progress)
             
         } else if isBetweenChunks {
-            ZStack {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(palette.background.opacity(0.1))
-                Text("✓").font(.title).foregroundStyle(palette.primary)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(palette.background.opacity(0.1))
+                    Text("✓").font(.largeTitle).foregroundStyle(palette.primary)
 
-            }
-            .frame(width: compactSize, height: compactSize)
-            .transition(.opacity)
-            .animation(.easeInOut(duration: 0.2), value: isBetweenChunks)
+                }
+                .frame(width: compactSize, height: compactSize)
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.2), value: isBetweenChunks)
+        } else if isBothChunksDone {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(palette.background.opacity(0.1))
+                    Text("✓").font(.largeTitle).foregroundStyle(palette.primary)
+
+                }
+                .frame(width: compactSize, height: compactSize)
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.2), value: isBothChunksDone)
         } else {
             EmptyView()             /// Releases vertical space
-        }
-    }
-    private var isActive: Bool {
-        fVM.phase == .running ||
-        fVM.phase == .paused  ||
-        (fVM.phase == .finished && fVM.currentSessionChunk == 2)
-    }
-    
-    private var isBetweenChunks: Bool {
-        fVM.phase == .finished && fVM.currentSessionChunk == 1
-    }
-
-    private func handleTap() {
-        if fVM.phase == .running {
-            fVM.performAsyncAction { await fVM.pauseCurrent20MinCountdown() }
-        } else if fVM.phase == .paused {
-            fVM.performAsyncAction { try await fVM.resumeCurrent20MinCountdown() }
         }
     }
 }
