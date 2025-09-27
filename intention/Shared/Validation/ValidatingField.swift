@@ -15,12 +15,15 @@ struct ValidatingField: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(12)
-            .background(palette.surface.opacity(0.6))
-            .overlay(
+            .foregroundStyle(palette.text)                          // Always charcoal text
+            .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(state.isInvalid ? palette.danger : palette.border, lineWidth: 1)
+                    .fill(palette.text)        // charcoal-ish box
             )
-            .foregroundStyle(state.isInvalid ? palette.danger : palette.text)
+            .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(state.isInvalid ? palette.danger : palette.text, lineWidth: 1)
+            )
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }

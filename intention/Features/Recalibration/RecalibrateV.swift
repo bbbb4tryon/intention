@@ -82,7 +82,11 @@ struct RecalibrationV: View {
             }
         }
     }
-        .toolbar { ToolbarItem(placement: .cancellationAction ){Button( "Close") { dismiss() }}} // Let people leave
+        .toolbar { // Let people leave
+            ToolbarItem(placement: .topBarTrailing) {
+                Button{ dismiss() }
+                label: { Image(systemName: "xmark").imageScale(.medium).font(.body) }.buttonStyle(.plain).accessibilityLabel("Close")}
+        }
     }
     
     // MARK: Helpers
@@ -125,13 +129,13 @@ struct RecalibrationV: View {
                 if vm.phase == .idle { PresetPicker }   // 2m / 3m / 4m
                 Button {
                     vm.performAsyncAction { try await vm.start(mode: .breathing) }
-                } label: { T("Breathing", .action) }
+                } label: { T("Breathing", .label) }
                     .recalibrationActionStyle(screen: screen)
                 
                 if vm.phase == .idle { PresetPickerBal }   // 2m / 3m / 4m
                 Button {
                     vm.performAsyncAction { try await vm.start(mode: .balancing) }
-                } label: { T("Balancing", .action) }
+                } label: { T("Balancing", .label) }
                     .recalibrationActionStyle(screen: screen)
             }
             

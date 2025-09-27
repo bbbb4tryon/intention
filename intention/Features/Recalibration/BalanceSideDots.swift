@@ -13,8 +13,8 @@ struct BalanceSideDots: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            dot(label: "Left", isActive: activeIndex == 0)
-            dot(label: "Right", isActive: activeIndex == 1)
+            dot(label: "Left Foot", isActive: activeIndex == 0)
+            dot(label: "Right Foot", isActive: activeIndex == 1)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)

@@ -13,148 +13,127 @@ struct MembershipSheetV: View {
     @EnvironmentObject var viewModel: MembershipVM
     @EnvironmentObject var theme: ThemeManager
     
-    @State private var isFavorite = false
-    @State var codeInput: String = ""
     @State private var isBusy = false
     
+    var useDogEmoji: Bool = true
     private let screen: ScreenName = .membership
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
-    
-    // replaces fragile chunk with a validated block
-    private var codeValidation: ValidationState {
-        codeInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        ? .invalid(messages: ["Enter a code"])
-        : .valid
-    }
+    // 1) Place this INSIDE the struct, but OUTSIDE `body`
+    private var tailText: String { "— while helping us keep the lights on, the mortgage paid, and the \(useDogEmoji ? "🐕" : "dog") well-fed. Thank you." }
     
     var body: some View {
         NavigationStack {
-            Page {
-                T("Unlock Unlimited Focus", .section)
+            ScrollView {
+                Page(top: 10, alignment: .center){      // FIXME: top 10 MAY BE SCREWING THIS UP
+                    // Hero
+                    T("You’ve completed your free sessions.", .label).underline()
+                    T("Unlock Unlimited Focus", .section)
                     .friendlyHelper()
-                
-                T("You’ve completed your free sessions. For just 20–30¢ a day, unlock unlimited focus sessions, detailed stats, more categories, and full customization. Build momentum, track progress, and work with intention — while helping us keep the lights on, the mortgage paid, and the dog well-fed. Your focus fuels our future. Thank you.", .body)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(theme.palette(for: .membership).textSecondary)
-                //
-                //                    theme.styledText("By continuing, you agree to our Terms and Privacy.", as: .caption, in: .membership))
-                //                        .font(theme.fontTheme.toFont(.footnote))
-                //                        .foregroundStyle(.secondary)
-                //                        .padding(.bottom, 8)
-                
-                // Primary CTA row (above the fold)
-                if viewModel.isMember {
-                    Label { T("Member!", .label) } icon: { Image(systemName: "star.fill").foregroundStyle(p.primary)
-                    }
-                    .symbolBounceIfAvailable()
-                } else {
-                    Button {
-                        Task {
-                            do { try await viewModel.purchaseMembershipOrPrompt() }
-                            catch { debugPrint("[viewModel.purchaseMembershipOrPrompt] error: ", error); viewModel.setError(error) } }      /// Shows ErrorOverlay
-                    } label: { T("Upgrade Membership", .action) }
-                        .primaryActionStyle(screen: .membership)
-                    
-                    Button {
-                        Task {
-                            do { try await viewModel.restoreMembershipOrPrompt() }
-                            catch { debugPrint("[viewModel.restoreMembershipOrPrompt] error: ", error); viewModel.setError(error) } }        /// Shows ErrorOverlay
-                    } label: { T("Restore Purchases", .label)}
-                        .secondaryActionStyle(screen: .membership)
                     
                     // Price hint (optional, tiny): Signals if a product is loaded + VM bridge (sheet cannot create own PaymentService)
                     if let prod = viewModel.primaryProduct {
                         Text("\(viewModel.perDayBlurb(for: prod)) • \(prod.displayPrice)")
-                            .font(theme.fontTheme.toFont(.footnote))
-                            .foregroundStyle(.secondary)
+                            .font(theme.fontTheme.toFont(.headline))
+                            .background(RoundedRectangle(cornerRadius: 12).fill(p.accent))
+                            .foregroundStyle(Color.intText)
+                            .padding(.bottom, 4)
                     }
                     
-                    // Keep your required long copy, but collapse it
-                    DisclosureGroup {
-                        T("You’ve completed your free sessions. For just 20–30¢ a day, unlock unlimited focus sessions, detailed stats, more categories, and full customization. Build momentum, track progress, and work with intention — while helping us keep the lights on, the mortgage paid, and the dog well-fed. Your focus fuels our future. Thank you.", .body)
-                            .multilineTextAlignment(.leading)
-                            .foregroundStyle(p.textSecondary)
-                    } label: {
-                        T("Why upgrade?", .caption)
-                    }
-                    
-                    
-                    if !AppEnvironment.isAppStoreReviewing {
-                        Divider().padding(.top, 4)
+                    // Primary CTA row (above the fold)
+                    if viewModel.isMember {
+                        Label { T("Member!", .label) } icon: { Image(systemName: "star.fill").foregroundStyle(p.primary)
+                        }
+                        .symbolBounceIfAvailable()
+                    } else {
+                        Button {
+                            Task {
+                                isBusy = true
+                                defer { isBusy = false }
+                                do { try await viewModel.purchaseMembershipOrPrompt() }
+                                catch { debugPrint("[viewModel.purchaseMembershipOrPrompt] error: ", error); viewModel.setError(error) } }      /// Shows ErrorOverlay
+                        } label: { T("For $0.30 a day, upgrade", .action) }
+                            .primaryActionStyle(screen: .membership)
                         
                         Button {
                             Task {
-                                if let url = URL(string: "https://www.argonnesoftware.com/cart/") {
-                                    await UIApplication.shared.open(url)
-                                } else { debugPrint("[MembershipSheetV.isAppStoreReviewing] bad URL"); viewModel.setError(MembershipError.appEnvironmentFail) } }  /// Shows ErrorOverlay
-                        } label: { T("Visit Website", .section) }
-                            .primaryActionStyle(screen: .membership)
-                            .underline()
+                                do { try await viewModel.restoreMembershipOrPrompt() }
+                                catch { debugPrint("[viewModel.restoreMembershipOrPrompt] error: ", error); viewModel.setError(error) } }        /// Shows ErrorOverlay
+                        } label: { T("Restore Purchases", .label)}
+                            .secondaryActionStyle(screen: .membership)
                         
-                        // Code entry: reveal on tap
-                        DisclosureGroup {
-                            VStack(spacing: 8) {
-                                ZStack(alignment: .leading) {
-                                    if codeInput.isEmpty {
-                                        T("Enter code", .placeholder) .padding(.horizontal, 12)
-                                    }
-                                    TextField("", text: $codeInput)
-                                        .textInputAutocapitalization(.characters)
-                                        .disableAutocorrection(true)
-                                        .validatingField(state: codeValidation, palette: p)
-                                }
-                                ValidationCaption(state: codeValidation, palette: p)
-                                
-                                
-                                Button { viewModel.showCodeEntry = true
-                                    Task {
-                                        if let url = URL(string: "https://www.argonnesoftware.com/cart/") {
-                                            await UIApplication.shared.open(url)
-                                        } else { debugPrint("[MembershipSheetV.isAppStoreReviewing] bad URL"); viewModel.setError(MembershipError.appEnvironmentFail) }}   /// Shows ErrorOverlay
-                                } label: { T("Enter Membership Code", .label) }
-                                    .primaryActionStyle(screen: .membership)
-                            }
-                                
-                                if viewModel.showCodeEntry {
-                                    VStack(spacing: 8) {
-                                        ZStack(alignment: .leading) {
-                                            Button {
-                                                Task {
-                                                    do { try await viewModel.verifyCode(codeInput) }
-                                                    catch { debugPrint("[MembershipSheetV.showCodeEntry] error: ", error); viewModel.setError(error) } } /// Shows ErrorOverlay
-                                            } label: { T("Redeem", .label) }
-                                                .primaryActionStyle(screen: .membership)
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        // Apple offer-code redemption (subscription offers)
+                        Button {
+                            Task { await redeemOfferCode() }
+                        } label: { T("Redeem Code (Apple)", .caption) }
+                            .buttonStyle(.plain)
+                            .padding(.top, 4)
                     }
                     
-                    /// Overlay shown if there is a lastError
-                    if let error = viewModel.lastError {
-                        ErrorOverlay(error: error) {
-                            viewModel.setError(nil)  /// Dismiss
+                    Card {
+                        VStack(alignment: .leading, spacing: 2) {
+                            T("Why upgrade?", .title3)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Label("Unlimited focus sessions", systemImage: "infinity")
+                                Label("Detailed stats & categories", systemImage: "chart.bar")
+                                Label("Full customization", systemImage: "paintbrush")
+                            }
+                            .font(theme.fontTheme.toFont(.footnote))
+                            .foregroundStyle(p.textSecondary)
+                            .padding()
+
+                            
+                            T("""
+                                Your focus fuels our future. 
+                                For just ~30¢ a day, unlock unlimited focus sessions, detailed stats, more categories, and full customization.
+                                
+                                Build momentum, track progress, and work with intendly 
+                                """, .body)
+                                .foregroundStyle(p.text)
+                            
+                            T(tailText, .body)
+                                .foregroundStyle(p.textSecondary)
+                                .fontWeight(.semibold)
+                                .accessibilityLabel("— while helping us keep the lights on, the mortgage paid, and the dog well-fed. Thank you.")
+                            
+                            
+                            Text("Apple securely handles your purchase. Cancel anytime in Settings.")
+                                .font(theme.fontTheme.toFont(.caption))
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 2)
                         }
-                        .transition(.opacity.combined(with: .scale))
-                        .zIndex(1)
                     }
+                    .padding(.top, 8)
                 }
-                    .background(p.background.ignoresSafeArea())
-                    .tint(p.primary)
-                    .toolbar { ToolbarItem(placement: .cancellationAction ){
-                        Button( "Close") { dismiss() }}} // Let people leave
+            }
+            .background(p.background.ignoresSafeArea())
+            .tint(p.primary)
+            .toolbar { // Let people leave
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button{ dismiss() }
+                    label: { Image(systemName: "xmark").imageScale(.medium).font(.body) }.buttonStyle(.plain).accessibilityLabel("Close")}
+            }
+        }
+        // Sheet behavior tuned for iPhone
+        .presentationDetents([.fraction(0.55), .large])
+        .presentationDragIndicator(.visible)
+        .interactiveDismissDisabled(false)
+        .overlay {
+            if isBusy { ProgressView().controlSize(.large) }
+        }
+        .overlay {
+            if let error = viewModel.lastError {
+                ErrorOverlay(error: error) { viewModel.setError(nil) }
+                    .transition(.opacity.combined(with: .scale))
+                    .zIndex(1)
             }
         }
     }
-// Sheet behavior tuned for iPhone
-.presentationDetents([.fraction(0.5), .large])
-.presentationDragIndicator(.visible)
-.interactiveDismissDisabled(false)
 }
+
+
 #if DEBUG
 extension MembershipVM {
     @MainActor
@@ -162,7 +141,7 @@ extension MembershipVM {
         // Adjust these lines to match your properties if names differ.
         self.isMember = member
         // Optional: also fake a product if your UI needs it
-        // self.primaryProduct = nil
+         self.primaryProduct = nil
     }
 }
 #endif

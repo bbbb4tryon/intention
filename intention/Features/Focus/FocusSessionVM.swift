@@ -337,15 +337,15 @@ final class FocusSessionVM: ObservableObject {
         }
     }
     
-    /// Button should be enabled when: <2 tiles and trimmed input is non-empty and not running,or exactly 2 tiles and phase is .idle.
-    var canPrimary: Bool {
-        if tiles.count < 2 {
-            let trimmed = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-            return !trimmed.isEmpty && tileText.taskValidationMessages.isEmpty && phase == .idle
-        } else {
-            return phase == .idle
-        }
-    }
+//    /// Button should be enabled when: <2 tiles and trimmed input is non-empty and not running,or exactly 2 tiles and phase is .idle.
+//    var canPrimary: Bool {
+//        if tiles.count < 2 {
+//            let trimmed = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
+//            return !trimmed.isEmpty && tileText.taskValidationMessages.isEmpty
+//        } else {
+//            return phase == .idle
+//        }
+//    }
     
     /// ActiveSessionSnapshot & persistence helpers
     private func makeSnapshot() -> ActiveSessionSnapshot {      //FIXME: rename to makeActiveSnapshot()

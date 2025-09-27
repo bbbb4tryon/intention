@@ -91,7 +91,7 @@ enum AppColorTheme: String, CaseIterable {
                     success: .green,
                     warning: .yellow,
                     danger: .red,
-                    border: .black.opacity(0.12),
+                    border: .intCharcoal,
                     gradientBackground: nil
                 )
                 
@@ -347,7 +347,7 @@ final class ThemeManager: ObservableObject {
         case .secondary, .caption, .placeholder:
             return palette.textSecondary
         case .label:
-            return palette.primary
+            return palette.text
         case .action:
             // ButtonStyles typically color the label; this keeps Action readable elsewhere.
             return palette.accent

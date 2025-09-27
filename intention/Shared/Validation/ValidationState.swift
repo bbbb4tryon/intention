@@ -6,7 +6,7 @@
 //
 
 import Foundation
-
+/// decide when to surface errors in the view (on submit / CTA) instead of by default while the field is empty
 enum ValidationState: Equatable {
     case none
     case valid

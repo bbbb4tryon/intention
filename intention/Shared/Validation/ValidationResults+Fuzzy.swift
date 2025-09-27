@@ -14,7 +14,7 @@ extension String {
     var taskValidationMessages: [String] {
         var messages: [String] = []
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.count > 25 { messages.append("25 character limit.") }        //NOTE: if this works, set it to 250
+        if trimmed.count > 200 { messages.append("200 character limit.") }        //NOTE: if this works, set it to 250
         if trimmed.isEmpty { messages.append("Cannot be empty or just spaces.") }
 
         // NOTE: if ever necessary, uncomment... below are known "bad actor" threat patterns
@@ -36,7 +36,7 @@ extension String {
     var categoryTitleMessages: [String] {
         var messages: [String] = []
         let trimmedTitle = trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedTitle.count > 25 { messages.append("25 character limit.") }
+        if trimmedTitle.count > 15 { messages.append("15 character limit.") }
         if trimmedTitle.isEmpty { messages.append("Please enter a custom category title.") }
 
         // NOTE: if ever necessary, uncomment... below are known "bad actor" threat patterns

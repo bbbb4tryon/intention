@@ -71,11 +71,11 @@ struct FocusSessionActiveV: View {
     }
     
     private var isInputActive: Bool { focusVM.phase != .running && focusVM.tiles.count < 2 }
+    
     private var vState: ValidationState {
         let msgs = focusVM.tileText.taskValidationMessages
         return msgs.isEmpty ? .valid : .invalid(messages: msgs)
     }
-    
     /// Live validation when there’s text and the messages aren’t empty
     private var shouldShowValidation: Bool {
         // Live validation for non-empty text (length, symbols, etc)
@@ -98,6 +98,7 @@ struct FocusSessionActiveV: View {
                             TextField("", text: $focusVM.tileText, prompt: T("Add Your Intended Task", .caption))
                                 .focused($intentionFocused)
                                 .submitLabel(.done)
+
                                 .validatingField(state: vState, palette: p)
                                 .disabled(!isInputActive)  // lock after 2
                                 .autocorrectionDisabled()

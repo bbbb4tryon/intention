@@ -32,27 +32,30 @@ struct SettingsV: View {
         ScrollView {
             Page(top: 4, alignment: .center) {
                 T("Settings", .header)
-                                        .padding(.bottom, 4)
+                    .padding(.bottom, 4)
                 
-        #if DEBUG
-                Section("Developer") {
-                    Button("Clear: Debug")      { UserDefaults.standard.removeObject(forKey: "debug.chunkSeconds"); Task { } }
-                    Button("Reset: Legal Gate") { LegalConsent.clearForDebug() } .controlSize(.large)
-                    Toggle("Show Legal on Next Launch", isOn: $debugShowLegalNextLaunch)
-                    Button("Show Recalibration"){ NotificationCenter.default.post(name: .init("dev.openRecalibration"), object: nil) }
-                    Button("Reset Session")     { Task {await focusVM.resetSessionStateForNewStart() }
-                        
-                        Picker("Timer (debug)", selection: Binding(
-                            get: { UserDefaults.standard.integer(forKey: "debug.chunkSeconds") },
-                            set: { UserDefaults.standard.set($0, forKey: "debug.chunkSeconds") }
-                        )) {
-                            Text("10s").tag(10)
-                            Text("30s").tag(30)
-                            Text("60s").tag(60)
-                            Text("OFF (20m)").tag(0)         // 0 disables override
+#if DEBUG
+                DisclosureGroup( content: {
+                    VStack(alignment: .leading, spacing: 6){
+                        Button("Clear: Debug")      { UserDefaults.standard.removeObject(forKey: "debug.chunkSeconds"); Task { } }
+                        Button("Reset: Legal Gate") { LegalConsent.clearForDebug() } .controlSize(.large)
+                        Toggle("Show Legal on Next Launch", isOn: $debugShowLegalNextLaunch)
+                        Button("Show Recalibration"){ NotificationCenter.default.post(name: .init("dev.openRecalibration"), object: nil) }
+                        Button("Reset Session")     { Task {await focusVM.resetSessionStateForNewStart() }
+                            
+                            Picker("Timer debug", selection: Binding(
+                                get: { UserDefaults.standard.integer(forKey: "debug.chunkSeconds") },
+                                set: { UserDefaults.standard.set($0, forKey: "debug.chunkSeconds") }
+                            )) {
+                                Text("10s").tag(10); Text("30s").tag(30); Text("60s").tag(60)
+                                Text("OFF (20m)").tag(0)         // 0 disables override
+                            }
                         }
-                    }
-                }
+                        .controlSize(.small)
+                        .font(.footnote)
+                        .buttonStyle(.bordered)
+                    }}, label:{ Label("Dev", systemImage: "wrench") }
+                )
         #endif
 
                 Card {
