@@ -45,7 +45,7 @@ final class StatsVM: ObservableObject {
         completedSessions.append(session)
         // Update intention count
         totalCompletedIntentions = completedSessions.flatMap(\.tileTexts).count
-        memVM?.triggerPromptifNeeded(afterSessions: completedSessions.count)
+        memVM?.triggerPromptIfNeeded(afterSessions: completedSessions.count)
         
         /// if user did recalibrate (picked breathing or balancing), type will be non-nil, and count incremented
         if let type = session.recalibration {
@@ -55,7 +55,7 @@ final class StatsVM: ObservableObject {
         
         recalculateStats()
         
-        /// Updates to trigger memberhship prompt ($0.99 then $5.99 for 3 months?)
+        /// Updates to trigger membership prompt ($0.99 then $5.99 for 3 months?)
         /// Keeps onboarding friction at zero: the user never types anything.
         if completedSessions.count == membershipThreshold {
             shouldPromptForMembership = true    // Observe in the RootView and present as alert/sheet

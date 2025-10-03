@@ -35,7 +35,7 @@ final class FocusSessionVM: ObservableObject {
     
     /// UI state of the current 20-min chunk
     enum Phase: String, Codable, Sendable {
-        case idle, running, finished, paused
+        case none, idle, running, finished, paused
     }
     
     // MARK: - Published UI State
@@ -45,11 +45,13 @@ final class FocusSessionVM: ObservableObject {
     @Published var sessionActive: Bool = false      /// Overall session state (two 20-min chunks)
     @Published var showRecalibrate: Bool = false    /// Whether to show recalibration
     @Published var countdownRemaining: Int          /// Secs remaining in 20 minutes for individual tile task - set via config
-    @Published var phase: Phase = .idle       /// State of the *current* 20-min countdown chunk
+    @Published var phase: Phase = .none             /// State of the *current* 20-min countdown chunk
     @Published var currentSessionChunk: Int = 0     /// Index of current chunk (0 or 1): Tracks which 20-min chunk of the session is active
     @Published var sessionHistory: [[TileM]] = []   /// Array of tiles completed in this session of 2 chunks
     @Published var lastError: Error?                /// Used to trigger the UI visual error overlay
     @Published var validationMessages: [String] = []
+    
+    @Published private(set) var completedTileIDs: Set<UUID> = []
     
     // MARK: - Internal Properties
     private static let activeSnapshotKey = "focus.activeSession"
@@ -241,12 +243,12 @@ final class FocusSessionVM: ObservableObject {
     /// Combined Trigger of Chunks Session (via "Begin")
     func beginOverallSession() async throws {
         /// Use the *current* phase for the error payload
-        guard tiles.count == 2, phase == .idle else {
+        guard tiles.count == 2, (phase == .idle || phase == .none) else {
             debugPrint("[FocusSessionVM.beginOverallSession] not triggered; no session created."); throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
         }
         await tileAppendTrigger.startSessionTracking()
         sessionActive = true                                /// Overall session activated
-        try startCurrent20MinCountdown()                    /// First Chunk started
+        try startCurrent20MinCountdown()                    /// Sets phase = .running inside, First Chunk started
     }
     
     /// Adds a tile or starts session, depending on context
@@ -275,20 +277,68 @@ final class FocusSessionVM: ObservableObject {
         canAdd = true
         sessionActive = false
         showRecalibrate = false
+        completedTileIDs.removeAll()
         currentSessionChunk = 0
         await tileAppendTrigger.resetSessionTracking()
         clearSnapshot()
         debugPrint("[FocusVM.resetSessionStateForNewStart] state NOT reset for a new session.")
     }
     
-    func handlePrimaryTap() async {
-        if tiles.count < 2 { try? await addTileAndPrepareForSession(tileText) } else if tiles.count == 2 && phase == .idle { try? await beginOverallSession() }
+    /// Tap handler here, the button widget ilives in the Focus view
+    var primaryCTATile: String {
+        if tiles.count < 2 { return "Add" }
+        switch phase {
+        case .idle, .none:  return "Begin"
+        case .finished where currentSessionChunk == 1: return "Next"
+        default: return "Begin"
+        }
     }
     
+    /// Let the View bind `.disabled(!viewModel.canPrimary)`
+    //FIXME: is this grinding against the Validation version?
+    var canPrimary: Bool {
+        if tiles.count < 2 {
+            let t = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !t.isEmpty && t.taskValidationMessages.isEmpty
+        } else {
+            return phase == .idle || phase == .none
+        }
+    }
+    /// Control funnel for the button
+    enum PrimaryCTAResult { case added, began }
+    
+    /// Single funnel for both the button and the keyboard's "Done"
+    @discardableResult
+    func handlePrimaryTap(validatedInput: String?) async throws -> PrimaryCTAResult {
+        if tiles.count < 2 {
+            // use validatedInput from the View; ball back is own tileText
+            let text = validatedInput ?? tileText
+            try await addTileAndPrepareForSession(text)
+            return .added
+        } else if tiles.count == 2 && (phase == .idle || phase == .none) {
+            try await beginOverallSession()
+            return .began
+        } else {
+            throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
+        }
+    }
+    
+    /// (Part 1) checkmarks + Calls when each 20-min chunk completes:
+    func thisTileIsCompleted(_ tile: TileM) -> Bool {
+        completedTileIDs.contains(tile.id)
+    }
+    
+    /// (Part 2) checkmarks + Calls when each 20-min chunk completes:
+    func markCurrentTileCompleted() {
+        guard currentSessionChunk < tiles.count else { return }
+        completedTileIDs.insert(tiles[currentSessionChunk].id)
+        currentSessionChunk += 1
+    }
     /// Chunks session for completion, triggers recalibration **uses HistoryVM canonical IDs** Flow Control
     private func checkSessionCompletion() {
         if currentSessionChunk >= 2 {                               /// both chunks done
             sessionActive = false                                   /// 40-min overall session done
+            markCurrentTileCompleted()
             showRecalibrate = true                                  /// modal triggered
             debugPrint("Recalibration choice modal should display")
             /// Bounded tile history call, add tiles to category
@@ -316,6 +366,11 @@ final class FocusSessionVM: ObservableObject {
         let minutes = countdownRemaining / 60
         let seconds = countdownRemaining % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+    
+    /// So cases never returns an empty label
+    func enterIdleIfNeeded() {
+        if phase == .none { phase = .idle }
     }
     
     /// Sets flag to trigger recalibration modal
@@ -386,11 +441,11 @@ extension FocusSessionVM {
         return msgs.isEmpty ? .valid : .invalid(messages: msgs)
     }
     
-    /// A tile is "completed" iff its index is below the currentSessionChunk (0 or 1).
-    func thisTileIsCompleted(_ tile: TileM) -> Bool {
-        guard let idx = tiles.firstIndex(of: tile) else { return false }
-        //           guard let idx1 = tiles.index(after: idx) else { return false }
-        //           return idx1 < idx < currentSessionChunk
-        return idx < currentSessionChunk
-    }
+//    /// A tile is "completed" iff its index is below the currentSessionChunk (0 or 1).
+//    func thisTileIsCompleted(_ tile: TileM) -> Bool {
+//        guard let idx = tiles.firstIndex(of: tile) else { return false }
+//        //           guard let idx1 = tiles.index(after: idx) else { return false }
+//        //           return idx1 < idx < currentSessionChunk
+//        return idx < currentSessionChunk
+//    }
 }

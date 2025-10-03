@@ -12,7 +12,7 @@ struct ValidationCaption: View {
     let palette: ScreenStylePalette
 
     var body: some View {
-        if case .invalid(let msgs) = state {
+        if case .invalid (let msgs) = state {
             HStack(spacing: 6) {
                 Image(systemName: "exclamationmark.triangle.fill")
                 Text(msgs.joined(separator: " "))
@@ -21,7 +21,7 @@ struct ValidationCaption: View {
             .foregroundStyle(palette.danger)
             .accessibilityLabel("Validation error")
             .accessibilityHint(msgs.joined(separator: " "))
-            .transition(.opacity.combined(with: .move(edge: .top)))
+            .transition(.opacity.combined(with: .move(edge: .top)))     //TODO: Test this Aim for a 0.2-second transition
         }
     }
 }

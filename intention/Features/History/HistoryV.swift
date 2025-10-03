@@ -8,6 +8,7 @@
 import SwiftUI
 /// content-management screen with an explicit Edit/Done mode
 struct HistoryV: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var theme: ThemeManager
     @ObservedObject var viewModel: HistoryVM
     @Environment(\.editMode) private var editMode
@@ -63,7 +64,7 @@ struct HistoryV: View {
                     HStack {
                         Text("\(move.tile.text) moved").font(.footnote)
                         Spacer()
-                        Button {viewModel.undoLastMove() } label: { T("Undo", .action) }.primaryActionStyle(screen: screen)
+                        Button {viewModel.undoLastMove() } label: { T("Undo", .action) }.primaryActionStyle(screen: screen).frame(maxWidth: .infinity)
                     }
                     .padding(.horizontal, 12)           // Card instead?
                     .padding(.vertical, 10)             // Card instead?
@@ -194,7 +195,7 @@ struct HistoryV: View {
                         .disableAutocorrection(true)
                     
                     Button { Task { viewModel.canAddUserCategory() } } label: { T("Rename Category", .action) }
-                        .primaryActionStyle(screen: screen)
+                        .primaryActionStyle(screen: screen).frame(maxWidth: .infinity)
                 }
             }
             .navigationTitle("Rename")
@@ -252,6 +253,7 @@ private struct CategoryCard: View {
 
 // MARK: - OrganizerOverlayScreen
 private struct OrganizerOverlayScreen: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var theme: ThemeManager
     @Binding var categories: [CategoriesModel]
     var onMoveTile: (TileM, UUID, UUID) -> Void
@@ -274,7 +276,12 @@ private struct OrganizerOverlayScreen: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { onDone() }
+                    Button("Done") { onDone() }.font(.body).controlSize(.large)
+
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button{ dismiss() }
+                    label: { Image(systemName: "xmark").imageScale(.small).font(.body).controlSize(.large) }.buttonStyle(.plain).accessibilityLabel("Close")
                 }
             }
         }

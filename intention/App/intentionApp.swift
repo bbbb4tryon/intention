@@ -9,7 +9,6 @@ import SwiftUI
 
 @main
 struct intentionApp: App {
-    @State private var isBusy = false
     // Theme is the source of truth - and remains here, not in RootView itself
 //    @StateObject var theme = ThemeManager()
     
@@ -17,7 +16,6 @@ struct intentionApp: App {
         WindowGroup {
             RootView()
 //                .environmentObject(theme)
-                .progressOverlay($isBusy, text: "Loading...")
         }
     }
 }

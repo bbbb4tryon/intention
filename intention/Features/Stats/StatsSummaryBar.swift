@@ -15,24 +15,24 @@ struct StatsSummaryBar: View {
         private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 16) {
             StatPill(icon: "flame",
                       value: "\(vm.streak)",
-                      caption: "Streak",
+                      caption: "Your Streak",
                       screen: .settings)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity)         // Not a child -> parent problem: makes equal columns
 
             StatPill(icon: "checkmark",
                       value: String(format: "%.0f%%", vm.averageCompletionRate * 100), // FIXME: value: vm.avgCompletionString, label: "Avg.")
-                      caption: "Avg. completion",
+                      caption: "Completion",
                       screen: .settings)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity)         // Not a child -> parent problem: makes equal columns
 
             StatPill(icon: (vm.lastRecalibrationChoice?.iconName ?? "arrow.triangle.2.circlepath"),
                      value: "\(vm.totalRecalibrations)",
                      caption: "Recalibrations",
                      screen: .settings)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity)         // Not a child -> parent problem: makes equal columns
         }
     }
 }

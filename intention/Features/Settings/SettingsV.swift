@@ -35,35 +35,39 @@ struct SettingsV: View {
                     .padding(.bottom, 4)
                 
 #if DEBUG
-                DisclosureGroup( content: {
-                    VStack(alignment: .leading, spacing: 6){
+                // DisclosureGroup<Label, Content>(label: Label, @ViewBuilder content: () -> Content)
+                // where the label is the first (non-closure) argument, and the content is the trailing closure
+                // use the implicit first and second trailing closures:
+                // The Label argument (mandatory for this initializer with DisclosureGroup)
+                DisclosureGroup {
+                    VStack(alignment: .leading, spacing: 6){    // The LABEL closure
                         Button("Clear: Debug")      { UserDefaults.standard.removeObject(forKey: "debug.chunkSeconds"); Task { } }
                         Button("Reset: Legal Gate") { LegalConsent.clearForDebug() } .controlSize(.large)
                         Toggle("Show Legal on Next Launch", isOn: $debugShowLegalNextLaunch)
                         Button("Show Recalibration"){ NotificationCenter.default.post(name: .init("dev.openRecalibration"), object: nil) }
-                        Button("Reset Session")     { Task {await focusVM.resetSessionStateForNewStart() }
-                            
-                            Picker("Timer debug", selection: Binding(
-                                get: { UserDefaults.standard.integer(forKey: "debug.chunkSeconds") },
-                                set: { UserDefaults.standard.set($0, forKey: "debug.chunkSeconds") }
-                            )) {
-                                Text("10s").tag(10); Text("30s").tag(30); Text("60s").tag(60)
-                                Text("OFF (20m)").tag(0)         // 0 disables override
-                            }
+                        Button("Reset Session")     { Task {await focusVM.resetSessionStateForNewStart() }}
+                        Picker("Timer debug", selection: Binding(
+                            get: { UserDefaults.standard.integer(forKey: "debug.chunkSeconds") },
+                            set: { UserDefaults.standard.set($0, forKey: "debug.chunkSeconds") }
+                        )) {
+                            Text("10s").tag(10); Text("30s").tag(30); Text("60s").tag(60)
+                            Text("OFF (20m)").tag(0)         // 0 disables override
                         }
-                        .controlSize(.small)
-                        .font(.footnote)
-                        .buttonStyle(.bordered)
-                    }}, label:{ Label("Dev", systemImage: "wrench") }
-                )
-        #endif
-
+                    }
+                    .controlSize(.small)
+                    .font(.footnote)
+                    .buttonStyle(.bordered)
+                } label: {
+                    Label("Dev", systemImage: "wrench")         // Dumb words, but this is the CONTENT closure
+                }
+#endif
+                
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
                         T("Membership", .section)
                         //                        .friendlyHelper()
                         (memVM.isMember
-                         ? T("Status: Active", .secondary) : T("Status: Not Active", .secondary)
+                         ? T("Status: Active", .secondary).bold() : T("Status: Not Active", .secondary).bold()
                         )
                         .foregroundStyle(memVM.isMember ? .green : .secondary)
                         
@@ -76,9 +80,10 @@ struct SettingsV: View {
                                     UIApplication.shared.open(url)
                                 }
                             }) {
-                                T("Manage Subscription", .section)
+                                T("Manage Subscription", .action)
                             }
                             .primaryActionStyle(screen: .settings)
+                            .frame(maxWidth: .infinity)
                             .tint(p.accent)
                         }
                     }
@@ -86,27 +91,27 @@ struct SettingsV: View {
                 
                 /// Stats
                 Card {
-                    HStack(spacing: 20) {
+                    HStack(spacing: 16) {
                         StatPill(icon: "list.bullet",
-                                  value: "\(statsVM.totalCompletedIntentions)",
-                                  caption: "Accomplished",
-                                  screen: .settings)
+                                 value: "\(statsVM.totalCompletedIntentions)",
+                                 caption: "Accomplished",
+                                 screen: .settings)
                         
                         StatPill(icon: "rosette",
-                                  value: "\(statsVM.longestStreak)",
-                                  caption: "Streak",
-                                  screen: .settings)
+                                 value: "\(statsVM.longestStreak)",
+                                 caption: "Streak",
+                                 screen: .settings)
                     }
                     Divider()
                     HStack(spacing: 20) {
                         StatPill(icon: "leaf.fill",
-                                  value: "\(statsVM.recalibrationCounts[.breathing, default: 0])",
-                                  caption: "Breathing",
-                                  screen: .settings)
+                                 value: "\(statsVM.recalibrationCounts[.breathing, default: 0])",
+                                 caption: "Breathing",
+                                 screen: .settings)
                         StatPill(icon: "figure.walk",
-                                  value: "\(statsVM.recalibrationCounts[.balancing, default: 0])",
-                                  caption: "Balancing",
-                                  screen: .settings)
+                                 value: "\(statsVM.recalibrationCounts[.balancing, default: 0])",
+                                 caption: "Balancing",
+                                 screen: .settings)
                     }
                     
                 }
@@ -158,21 +163,21 @@ struct SettingsV: View {
                     VStack(alignment: .leading, spacing: 8) {
                         
                         SettingsLegalSection(
-                          onShowTerms: { showTerms = true },
-                          onShowPrivacy: { showPrivacy = true },
-                          onShowMedical: { showMedical = true }
+                            onShowTerms: { showTerms = true },
+                            onShowPrivacy: { showPrivacy = true },
+                            onShowMedical: { showMedical = true }
                         )
                         .sheet(isPresented: $showTerms) {
-                          NavigationStack { LegalDocV(title: "Terms of Use",
-                            markdown: MarkdownLoader.load(named: LegalConfig.termsFile)) }
+                            NavigationStack { LegalDocV(title: "Terms of Use",
+                                                        markdown: MarkdownLoader.load(named: LegalConfig.termsFile)) }
                         }
                         .sheet(isPresented: $showPrivacy) {
-                          NavigationStack { LegalDocV(title: "Privacy Policy",
-                            markdown: MarkdownLoader.load(named: LegalConfig.privacyFile)) }
+                            NavigationStack { LegalDocV(title: "Privacy Policy",
+                                                        markdown: MarkdownLoader.load(named: LegalConfig.privacyFile)) }
                         }
                         .sheet(isPresented: $showMedical) {
-                          NavigationStack { LegalDocV(title: "Wellness Disclaimer",
-                            markdown: MarkdownLoader.load(named: LegalConfig.medicalFile)) }
+                            NavigationStack { LegalDocV(title: "Wellness Disclaimer",
+                                                        markdown: MarkdownLoader.load(named: LegalConfig.medicalFile)) }
                         }
                     }
                 }
@@ -182,11 +187,11 @@ struct SettingsV: View {
         .background(p.background.ignoresSafeArea())
         .tint(p.accent)
         .task {
-        /// Read it directly from your keychain on-demand - actor requires only await, not async here
+            /// Read it directly from your keychain on-demand - actor requires only await, not async here
             userID = await KeychainHelper.shared.getUserIdentifier()
         }
     }
-
+    
     func requestNotificationPermissions() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             if let error = error {
@@ -202,7 +207,7 @@ struct SettingsV: View {
     MainActor.assumeIsolated {
         let stats = PreviewMocks.stats
         stats.logSession(CompletedSession(date: .now, tileTexts: ["By Example", "Analysis checklist"], recalibration: .breathing))
-
+        
         return PreviewWrapper {
             SettingsV(statsVM: PreviewMocks.stats)
                 .previewTheme()

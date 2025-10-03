@@ -10,12 +10,18 @@ import Foundation
 // MARK: - non-fragile assertions and Generic Result Validations
 //count matches the message and gate display via a flag
 extension String {
+    // FIXME: THIS SHOULD RENDER THE HELPERS NIL-SAFE (that is, prevents trying to append `String?` into `[String]`
+    var isEmptyValidationMessage: String? {
+        isEmpty ? "The field cannot be empty or just spaces." : nil
+    }
 
     var taskValidationMessages: [String] {
         var messages: [String] = []
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.count > 200 { messages.append("200 character limit.") }        //NOTE: if this works, set it to 250
-        if trimmed.isEmpty { messages.append("Cannot be empty or just spaces.") }
+        if trimmed.count > 200 { messages.append("200 character limit.") }
+        if trimmed.isEmpty, let m = isEmptyValidationMessage { messages.append(m) }
+        return messages
+    }
 
         // NOTE: if ever necessary, uncomment... below are known "bad actor" threat patterns
 //        let consecutiveCharacterPattern = "(&{3,}|={3,}|<{3,}|>{3,}|\\+{3,}|,{3,}|\\.{4,})"
@@ -29,15 +35,18 @@ extension String {
 //        if invalidCharacterRegex.firstMatch(in: self, options: [], range: NSRange(location: 0, length: self.utf16.count)) != nil {
 //            messages.append("Contains unsupported characters.")
 //        }
-        
-        return messages
-    }
+//        
+//        return messages
+//    }
     
     var categoryTitleMessages: [String] {
         var messages: [String] = []
         let trimmedTitle = trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmedTitle.count > 15 { messages.append("15 character limit.") }
-        if trimmedTitle.isEmpty { messages.append("Please enter a custom category title.") }
+        if trimmedTitle.isEmpty, let m = isEmptyValidationMessage { messages.append(m) }
+        return messages
+    }
+}
 
         // NOTE: if ever necessary, uncomment... below are known "bad actor" threat patterns
 //        let consecutiveCharacterPattern = "([.,?!'#@&-]){3,}"
@@ -50,7 +59,7 @@ extension String {
 //        if invalidCharacterRegex.firstMatch(in: self, options: [], range: NSRange(location: 0, length: self.utf16.count)) != nil {
 //            messages.append("Title contains unsupported characters.")
 //        }
-
-        return messages
-    }
-}
+//
+//        return messages
+//    }
+//}

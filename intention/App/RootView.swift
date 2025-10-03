@@ -109,9 +109,6 @@ struct RootView: View {
         focus.historyVM     = history                               // Focus writes completions into History
         stats.memVM         = membership                            // Stats can query membership state
         
-        //        _theme = StateObject(wrappedValue: ThemeManager())        // FIXME: remove because this is a second init (first is _theme)
-        _memVM = StateObject(wrappedValue: MembershipVM())          // FIXME: remove because this is a second init (first is _memVM)
-        
         // 4) Recalibration completion hook → log + reset
         recal.onCompleted = { [weak stats, weak focus] (mode: RecalibrationMode) in
             guard let stats = stats else { return }
@@ -218,22 +215,36 @@ struct RootView: View {
         
         // MARK: App lifecycle (guardrail: scene handling lives at root)
             .onChange(of: scenePhase) { phase in
-                isBusy = true
-                switch phase {
-                case .inactive, .background:
-                    Task { await focusVM.pauseCurrent20MinCountdown() }
-                    historyVM.flushPendingSaves()
-                case .active:   recalVM.appDidBecomeActive()    // if recalibration is visible
-                @unknown default: break
+                // Only set busy for background/inactive phases where a long-running Task might fire
+                if phase == .inactive || phase == .background {
+                    isBusy = true
+                    Task {
+                        defer { isBusy = false }      // Ensure reset after Task completes
+                        await focusVM.pauseCurrent20MinCountdown()
+                        historyVM.flushPendingSaves()
+                    }
+                }
+                // Active state only calls short synchronous functions
+                if phase == .active {
+                    recalVM.appDidBecomeActive()
                 }
             }
         // MARK: App launch + restore any active session state + legal gate
             .onAppear {
+                // 1) Set isBusy for the main async launch process
                 isBusy = true
-                Task { await focusVM.restoreActiveSessionIfAny();
-                    hapticsEngine.warm();
-                    isBusy = false }
-                if LegalConsent.needsConsent() { activeSheet = .legal }
+                Task {
+                    defer { isBusy = false }      // Ensure reset after All onAppear tasks
+                    
+                    await focusVM.restoreActiveSessionIfAny();
+                    hapticsEngine.warm()                        // Synchronous, but wrapped in the main Task
+                    
+                    if LegalConsent.needsConsent() {
+                        // Keep the legal sheet on the main thread
+                        await MainActor.run { activeSheet = .legal }
+                    }
+                }
+                
                 hapticsEngine.warm()        // implemented as a no-op wrapper than just calls prepare()
                 
                 // Wrapped in #if debug to not affect release

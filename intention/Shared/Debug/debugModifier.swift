@@ -47,8 +47,8 @@ extension View {
      */
 
     // Convenience wrappers
-    func debugBorder(_ color: Color = .red, width: CGFloat = 1) -> some View {
-        debugModifier { $0.border(color, width: width) }
+    func debugBorder(_ on: Bool = true) -> some View {
+        overlay(on ? Rectangle().strokeBorder(.red, lineWidth: 1) : nil )
     }
     
     func debugBackground(_ color: Color = .red) -> some View {

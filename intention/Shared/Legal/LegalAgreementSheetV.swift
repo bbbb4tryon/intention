@@ -12,30 +12,25 @@ struct LegalAgreementSheetV: View {
     let onShowTerms: () -> Void
     let onShowPrivacy: () -> Void
     var onShowMedical: (() -> Void)?   // optional extra link
-
+    
     var body: some View {
         NavigationStack {
-            Page(alignment: .center) {
-Spacer()
-                    Text("Please review the policies below.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    Text("By tapping **Agree & Continue**, you accept them.")
-//                    Text("you accept them.")
-//                    .multilineTextAlignment(.center)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineSpacing(2)
+        VStack(spacing: 14){
+                Text("Please review the policies below. By tapping **Agree & Continue**, you accept them.")
+                .multilineTextAlignment(.leading)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineSpacing(4)
                 
-                    // Links row
+                // Links row
                 HStack(alignment: .center) {
-                        Button("Terms") { onShowTerms() }
-                            .buttonStyle(.plain).underline()
+                    Button("Terms") { onShowTerms() }
+                        .buttonStyle(.plain).underline()
                     Text("•").foregroundStyle(.tertiary)
-                        Button("Privacy Policy") { onShowPrivacy() }
-                            .buttonStyle(.plain).underline()
-                    }
-                    .font(.subheadline)
+                    Button("Privacy Policy") { onShowPrivacy() }
+                        .buttonStyle(.plain).underline()
+                }
+                .font(.subheadline)
                 
                 if let onShowMedical {
                     Button("Wellness Disclaimer") { onShowMedical() }
@@ -45,31 +40,33 @@ Spacer()
                         .foregroundStyle(.secondary)
                 }
                 
-                // spacer before CTA (larger gap)
-                Spacer().frame(height: 100)
-                Button("Agree & Continue", action: onAccept)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    .controlSize(.large)
-//                .frame(maxWidth: .infinity)
-//                .buttonStyle(.borderedProminent)                    // makes it filled
-//                .buttonBorderShape(.roundedRectangle(radius: 14))   // FIXME: remove and only need .controlSize(.large
-//                .tint(.blue)                                        // fill color
-//                .controlSize(.large)
-                
-                // Footnote hint
-                Text("You can review these anytime in **Settings › Legal**.")
-                    .font(.footnote)
-                    .foregroundStyle(.tertiary)
-
-                Spacer(minLength: 0)
+               
+//                Spacer(minLength: 0)
             }
-            .frame(maxWidth: 520)                    // keeps measure pleasant on large screens
+            .frame(maxWidth: 520)
             .navigationTitle("Legal")
             .navigationBarTitleDisplayMode(.inline)
+            .interactiveDismissDisabled(true)
+            // Full-screen style
+            .presentationDetents([.large])
+            .safeAreaInset(edge: .bottom){
+                // Sticky, always-visible CTA area
+                VStack(spacing: 8){
+                    Button("Agree & Continue", action: onAccept)
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        .controlSize(.large)
+
+                    Text("You can review these anytime in **Settings › Legal**.")
+                        .font(.footnote)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 10)
+                .padding(.bottom, 16)
+                .background(.ultraThinMaterial)
+            }
         }
-        .interactiveDismissDisabled(true)
-        .presentationDetents([.medium, .large])
     }
 }
 

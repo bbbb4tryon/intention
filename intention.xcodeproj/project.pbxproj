@@ -145,7 +145,7 @@
 				778786532DF220C5004EDBEF /* Sources */,
 				778786542DF220C5004EDBEF /* Frameworks */,
 				778786552DF220C5004EDBEF /* Resources */,
-				7705D2272E7B3B3C0046B67E /* ShellScript */,
+				7705D2272E7B3B3C0046B67E /* Run Script */,
 			);
 			buildRules = (
 			);
@@ -224,8 +224,9 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		7705D2272E7B3B3C0046B67E /* ShellScript */ = {
+		7705D2272E7B3B3C0046B67E /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -233,6 +234,7 @@
 			);
 			inputPaths = (
 			);
+			name = "Run Script";
 			outputFileListPaths = (
 			);
 			outputPaths = (

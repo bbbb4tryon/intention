@@ -82,9 +82,9 @@ enum AppColorTheme: String, CaseIterable {
             switch screen {
             case .homeActiveIntentions, .history, .settings:
                 return .init(
-                    primary: .intGreen,
+                    primary: .intGreen,             // drives CTA fill
                     background: baseBackground,
-                    surface: .intTan.opacity(0.2),
+                    surface: .intTan.opacity(0.7),
                     accent: accent,
                     text: textPrimary,
                     textSecondary: textSecondary,
@@ -98,12 +98,12 @@ enum AppColorTheme: String, CaseIterable {
             case .recalibrate:
                 // unchanged – this one was fine
                 return .init(
-                    primary: .intSeaGreen,
+                    primary: .intSeaGreen,      // drives CTA fill
                     background: Color.blue.opacity(0.20),
-                    surface: .intTan.opacity(0.2),
+                    surface: .intTan.opacity(0.7),
                     accent: accent,
                     text: .black,
-                    textSecondary: .black.opacity(0.85),
+                    textSecondary: textPrimary,
                     success: .green,
                     warning: .yellow,
                     danger: .red,
@@ -134,7 +134,7 @@ enum AppColorTheme: String, CaseIterable {
             // ---------- SEA ----------
         case .sea:
             let bg = Color(red: 0.02, green: 0.12, blue: 0.28)
-            let tx = Color(red: 0.85, green: 0.92, blue: 1.0)
+            let txt = Color(red: 0.85, green: 0.92, blue: 1.0)
             switch screen {
             case .homeActiveIntentions:
                 return .init(
@@ -142,8 +142,8 @@ enum AppColorTheme: String, CaseIterable {
                     background: bg,
                     surface: .white.opacity(0.08),
                     accent: accent,
-                    text: tx,
-                    textSecondary: tx.opacity(0.85),
+                    text: txt,
+                    textSecondary: txt.opacity(0.85),
                     success: .green,
                     warning: .yellow,
                     danger: .red,
@@ -156,8 +156,8 @@ enum AppColorTheme: String, CaseIterable {
                     background: bg.opacity(0.96),
                     surface: .white.opacity(0.06),
                     accent: accent,
-                    text: tx,
-                    textSecondary: tx.opacity(0.85),
+                    text: txt,
+                    textSecondary: txt.opacity(0.85),
                     success: .green,
                     warning: .yellow,
                     danger: .red,
@@ -170,8 +170,8 @@ enum AppColorTheme: String, CaseIterable {
                     background: bg,
                     surface: .white.opacity(0.08),
                     accent: accent,
-                    text: tx,
-                    textSecondary: tx.opacity(0.85),
+                    text: txt,
+                    textSecondary: txt.opacity(0.85),
                     success: .green,
                     warning: .yellow,
                     danger: .red,
@@ -198,8 +198,8 @@ enum AppColorTheme: String, CaseIterable {
                     background: bg,                                      // dark theme background
                     surface: .white.opacity(0.12),                     // slightly higher for readability
                     accent: accent,
-                    text: tx,
-                    textSecondary: tx.opacity(0.85),
+                    text: txt,
+                    textSecondary: txt.opacity(0.85),
                     success: .green,
                     warning: .yellow,
                     danger: .red,
@@ -210,7 +210,7 @@ enum AppColorTheme: String, CaseIterable {
             // ---------- FIRE ----------
         case .fire:
             let bg = Color(red: 0.16, green: 0.02, blue: 0.00)
-            let tx = Color(red: 1.00, green: 0.90, blue: 0.78)
+            let txt = Color(red: 1.00, green: 0.90, blue: 0.78)
             switch screen {
             case .homeActiveIntentions:
                 return .init(
@@ -218,8 +218,8 @@ enum AppColorTheme: String, CaseIterable {
                     background: bg,
                     surface: .white.opacity(0.07),
                     accent: accent,
-                    text: tx,
-                    textSecondary: tx.opacity(0.85),
+                    text: txt,
+                    textSecondary: txt.opacity(0.85),
                     success: .green,
                     warning: .yellow,
                     danger: .red,
@@ -232,8 +232,8 @@ enum AppColorTheme: String, CaseIterable {
                     background: bg.opacity(0.96),
                     surface: .white.opacity(0.06),
                     accent: accent,
-                    text: tx,
-                    textSecondary: tx.opacity(0.85),
+                    text: txt,
+                    textSecondary: txt.opacity(0.85),
                     success: .green,
                     warning: .yellow,
                     danger: .red,
@@ -246,8 +246,8 @@ enum AppColorTheme: String, CaseIterable {
                     background: bg,
                     surface: .white.opacity(0.07),
                     accent: accent,
-                    text: tx,
-                    textSecondary: tx.opacity(0.85),
+                    text: txt,
+                    textSecondary: txt.opacity(0.85),
                     success: .green,
                     warning: .yellow,
                     danger: .red,
@@ -274,8 +274,8 @@ enum AppColorTheme: String, CaseIterable {
                     background: bg,
                     surface: .white.opacity(0.12),                      // slightly higher for readability
                     accent: accent,
-                    text: tx,
-                    textSecondary: tx.opacity(0.85),
+                    text: txt,
+                    textSecondary: txt.opacity(0.85),
                     success: .green,
                     warning: .yellow,
                     danger: .red,
@@ -350,7 +350,7 @@ final class ThemeManager: ObservableObject {
             return palette.text
         case .action:
             // ButtonStyles typically color the label; this keeps Action readable elsewhere.
-            return palette.accent
+            return .intText
         }
     }
 }

@@ -41,11 +41,12 @@ struct CategoryTileList: View {
                         T("\(tile.text)", .body)
                             .multilineTextAlignment(.leading)
                         Spacer()
-                        if isArchive {
-                            Image(systemName: "archivebox")
-                                .imageScale(.small)
-                                .secondaryActionStyle(screen: screen)
-                        }
+//                        if isArchive {
+//                            Image(systemName: "archivebox")
+//                                .imageScale(.small)
+//                                .secondaryActionStyle(screen: screen)
+//                                .frame(maxWidth: .infinity)
+//                        }
                     }
                     .padding(10)
                     .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 8, style: .continuous))

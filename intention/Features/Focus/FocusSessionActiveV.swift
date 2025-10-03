@@ -56,31 +56,25 @@ struct FocusSessionActiveV: View {
     @ObservedObject var recalibrationVM: RecalibrationVM
     
     // manages both focus to textfield AND return from background
+    //  single flag `showValidation`controls when to show validation checks
     @FocusState private var intentionFocused: Bool
-    @State private var showEmptySubmitError = false
-    
-    //FIXME: showValidation & isBusy needed?
     @State private var showValidation: Bool = false
     @State private var isBusy = false
+    
+    private var isInputActive: Bool { focusVM.phase != .running && focusVM.tiles.count < 2 }
+    
+    private var vState: ValidationState {
+        // Until first submit, stay neutral - charcoal border, no caption)
+        guard showValidation else { return .none }
+        let msgs = focusVM.tileText.taskValidationMessages
+        return msgs.isEmpty ? .valid : .invalid(messages: msgs)
+    }
     
     /// Theme hooks
     private let screen: ScreenName = .homeActiveIntentions
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: screen) }
-    }
-    
-    private var isInputActive: Bool { focusVM.phase != .running && focusVM.tiles.count < 2 }
-    
-    private var vState: ValidationState {
-        let msgs = focusVM.tileText.taskValidationMessages
-        return msgs.isEmpty ? .valid : .invalid(messages: msgs)
-    }
-    /// Live validation when there’s text and the messages aren’t empty
-    private var shouldShowValidation: Bool {
-        // Live validation for non-empty text (length, symbols, etc)
-        let liveIssues = !focusVM.tileText.isEmpty && !focusVM.tileText.taskValidationMessages.isEmpty
-        return (focusVM.phase == .idle) && (liveIssues || showEmptySubmitError)
     }
     
     var body: some View {
@@ -90,32 +84,41 @@ struct FocusSessionActiveV: View {
             ScrollView {
                 // Allows content to breath on small screens
                 Page(top: 6, alignment: .center) {
-                    StatsSummaryBar() .frame(maxWidth: .infinity).padding(.top, 6)
+                    StatsSummaryBar()
+                    // FIXME: Page {} may be controlling sizing, see if .frame( should be dropped
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 6)
                     
                     // Text input + validation
                     VStack(alignment: .leading, spacing: 8) {
                         if isInputActive {
+                            // onSubmit and primaryCTA both call the same VM method handlePrimaryTap() -> "same funnel"
                             TextField("", text: $focusVM.tileText, prompt: T("Add Your Intended Task", .caption))
                                 .focused($intentionFocused)
                                 .submitLabel(.done)
-
-                                .validatingField(state: vState, palette: p)
-                                .disabled(!isInputActive)  // lock after 2
+                                .validatingField(state: vState, palette: p) // charcoal until showValidation == true & invalid
+                                .disabled(!isInputActive)                   // lock after 2
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.sentences)
                                 .onSubmit {
+                                    showValidation = true                   // turn validation on
+                                    guard !vState.isInvalid else { return } // stay focused and show message
+                                    // Valid -> add
                                     let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-                                    guard !trimmed.isEmpty else { showEmptySubmitError = true; return }
-                                    showEmptySubmitError = false
-                                    Task { try? await focusVM.addTileAndPrepareForSession(trimmed) }
+                                    Task { try? await focusVM.handlePrimaryTap(validatedInput: trimmed) }
+                                    focusVM.tileText = ""                   // Clear text field
+                                    intentionFocused = true                 // re-focus immediately after adding a tile
+                                    showValidation = false                  // reset to neutral for next entry
                                 }
-                            if shouldShowValidation {
-                                ValidationCaption(
-                                    state: .invalid(messages: focusVM.tileText.taskValidationMessages.isEmpty && showEmptySubmitError
-                                                    ? ["Please enter a task, what you intend to do."]
-                                                    : focusVM.tileText.taskValidationMessages),
-                                    palette: p
-                                )
+                            // Display ValidationCaption BELOW Textfield
+                            //      Caption only after first submit AND invalid
+                            if showValidation, case .invalid = vState {
+                                // Use VState logic for the correct messages
+                                ValidationCaption( state: vState, palette: p)
+                                //FIXME: USE THIS BELOW, OR KEEP state: vState, palette: p
+                                //                                    state: vState.isInvalid ? vState : .invalid(messages: ["Please enter a task, what you intend to do."]),
+                                //                                    palette: p
+                                
                             }
                         }
                         // Guidance + Messages (no Add/Begin here)
@@ -124,15 +127,16 @@ struct FocusSessionActiveV: View {
                             onRecalibrateNow: { focusVM.showRecalibrate = true }
                         )
                         .environmentObject(theme)
-                        // Centered countdown
-                        if focusVM.phase == .running {
-                            DynamicCountdown(
-                                fVM: focusVM,
-                                palette: p,
-                                progress: Double(focusVM.countdownRemaining) / Double( TimerConfig.current.chunkDuration )
-                            )
-                            .frame(maxWidth: .infinity)  // centers fixed-size content
-                        }
+                        //  Centered countdown (its internal own logic self-selects paused/running visuals
+                        //      inside it, `isActive` includes .running + .paused
+                        //      In .paused, it draws the clipped overlay + "Paused"; in .running, it draws the unwinding pie + time
+                        //      The tap target persists across both states, thanks to .onTapGesture { handleTap() }.
+                        DynamicCountdown(
+                            fVM: focusVM,
+                            palette: p,
+                            progress: Double(focusVM.countdownRemaining) / Double( TimerConfig.current.chunkDuration )
+                        )
+                        .frame(maxWidth: .infinity)  // centers fixed-size content
                     }
                     .padding(.top, 8)
                     // Drops focus when we start running or when we leave the screen
@@ -141,6 +145,8 @@ struct FocusSessionActiveV: View {
                     }
                     .onDisappear { intentionFocused = false }
                     .onAppear {
+                        focusVM.enterIdleIfNeeded()
+                        
                         // Auto-focus on first load, if we still can add text
                         intentionFocused = isInputActive
                     }
@@ -154,21 +160,27 @@ struct FocusSessionActiveV: View {
             // and doesn't interfere with the ScrollView.
             // It will be snug against the bottom of the screen.
         }
+        .onAppear { logCTA("appear") }
+        .onChange(of: focusVM.phase) { _ in logCTA("phase") }
+        .onChange(of: focusVM.tiles.count) { _ in logCTA("tiles") }
+        .onChange(of: focusVM.tileText) { _ in logCTA("tileText") }
+        
+        
         .background(p.background.ignoresSafeArea())
         .tint(p.accent)
         // Single bottom chrome: do NOT add an overlay; this keeps it snug to the tab bar
         .sheet(isPresented: $focusVM.showRecalibrate) {
-          NavigationStack {
-            RecalibrationV(vm: recalibrationVM)
-              .presentationDetents([.fraction(0.4), .medium])
-              .presentationDragIndicator(.visible)
-              .interactiveDismissDisabled(false)
-              .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                  Button("Close") { dismiss() }
-                }
-              }
-          }
+            NavigationStack {
+                RecalibrationV(vm: recalibrationVM)
+                    .presentationDetents([.fraction(0.4), .medium])
+                    .presentationDragIndicator(.visible)
+                    .interactiveDismissDisabled(false)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close") { dismiss() }
+                        }
+                    }
+            }
         }
         .onReceive(
             NotificationCenter.default.publisher(
@@ -177,6 +189,12 @@ struct FocusSessionActiveV: View {
         ) { _ in
             focusVM.showRecalibrate = true
         }
+    }
+    private func logCTA(_ whereFrom: String) {
+        Swift.print("[CTA]", whereFrom,
+                    "canPrimary:", focusVM.canPrimary,
+                    "phase:", focusVM.phase,
+                    "tiles:", focusVM.tiles.count)
     }
     
     // MARK: Bottom composer
@@ -198,24 +216,33 @@ struct FocusSessionActiveV: View {
             
             
             Button {
-                Task { await focusVM.handlePrimaryTap() }
+                showValidation = true
+                guard !vState.isInvalid else { return }
+                let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
+                Task { try? await focusVM.handlePrimaryTap(validatedInput: trimmed) }
+                focusVM.tileText = ""
+                intentionFocused = true
+                showValidation = false
             } label: {
-                T(ctaTitle, .section).monospacedDigit()
+                T(focusVM.primaryCTATile, .action).monospacedDigit()
             }
             .primaryActionStyle(screen: screen)
+            .frame(maxWidth: .infinity)
+            .disabled(!focusVM.canPrimary)
             .accessibilityIdentifier("primaryCTA")
         }
+        
         .padding(.top, 12)
         /// tile and begin/add container controls
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
         .background(.thinMaterial)
-        //        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .animation(.easeInOut(duration: 0.2), value: focusVM.tiles)
     }
     
     // MARK: Slot helpers
-    /// Visual order = [second, first]
+    /// Visual order = [first, second]
     private var slots: [String?] {
         let first = focusVM.tiles.indices.contains(0) ? focusVM.tiles[0].text : nil
         let second = focusVM.tiles.indices.contains(1) ? focusVM.tiles[1].text : nil
@@ -248,13 +275,6 @@ struct FocusSessionActiveV: View {
             return false
         }
     }
-    
-    private var ctaTitle: String {
-        if focusVM.tiles.count < 2 { return "Add" }
-        if focusVM.phase == .idle   { return "Begin" }
-        if focusVM.phase == .finished && focusVM.currentSessionChunk == 1 { return "Next" }
-        return "Begin"
-    }
 }
 
 // MARK: TileSlot view (compact min height; segment-like look, multi-line text wraps fully,)
@@ -276,13 +296,7 @@ private struct TileSlot: View {
     var body: some View {
         let bg = isActive ? palette.surface : palette.surface.opacity(0.35)
         let stroke = palette.border
-        //
-        //        ZStack(alignment: .topLeading) {
-        //            RoundedRectangle(cornerRadius: 10, style: .continuous)
-        //                .fill(bg)
-        //            // interior border line
-        //                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(stroke, lineWidth: 1))
-        //
+        
         // MARK: - tiles container
         VStack {
             if isFilled {
@@ -293,20 +307,21 @@ private struct TileSlot: View {
                         .lineLimit(nil)
                     // This allows the Text view to expand vertically while being constrained horizontally
                         .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    if isCompleted {
-                        Image(systemName: "checkmark.circle")
-                            .foregroundStyle(palette.accent)
+                    // Fills the button width, actually
+                    Spacer(minLength: 8)
+                    
+                    // Always show a checkmark for filled tiles
+                    Image(systemName: isCompleted ? "checkmark.circle.fill" : "checkmark.circle")
+                            .font(.body)                        // slightly increases size
+                            .foregroundStyle(palette.success)   // more vivid than "accent"
                             .accessibilityHidden(true)
                     }
-                }
                 .padding(.horizontal, hPad)
                 .padding(.vertical, vPad)
-                .opacity(isCompleted ? 0.75 : 1.0)
             } else {
-                // Empty state - compact
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                // Empty state - no checkmarks yet
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Image(systemName: "plus").accessibilityHidden(true)
                     Text("").foregroundStyle(palette.textSecondary)
                 }
@@ -314,14 +329,11 @@ private struct TileSlot: View {
                 .padding(.vertical, vPad)
             }
         }
-        // MAYBE A PROBLEM? APPLYING BACKGROUND AND STROKE OR OVERLAY DIRECTLY TO THE CONTAINER?
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(bg)
+            RoundedRectangle(cornerRadius: 10, style: .continuous).fill(bg)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(stroke, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(stroke, lineWidth: 1)
         )
         //        .frame(minHeight: minDesiredHeight, alignment: .center)
         //    }

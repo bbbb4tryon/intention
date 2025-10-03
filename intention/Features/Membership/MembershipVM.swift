@@ -50,7 +50,7 @@ final class MembershipVM: ObservableObject {
             .assign(to: &$primaryProduct)
     }
     
-    func triggerPromptifNeeded(afterSessions sessionCount: Int, threshold: Int = 2) {
+    func triggerPromptIfNeeded(afterSessions sessionCount: Int, threshold: Int = 2) {
         if !isMember && sessionCount >= threshold { shouldPrompt = true }
     }
     

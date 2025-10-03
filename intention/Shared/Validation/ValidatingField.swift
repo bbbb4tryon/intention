@@ -7,22 +7,27 @@
 
 import SwiftUI
 
-/// Visual treatment for validated fields using your ScreenStylePalette tokens
+/// Text always charcoal; change border color when invalid:
+///         Visual treatment for validated fields using your ScreenStylePalette tokens
 struct ValidatingField: ViewModifier {
     let state: ValidationState
     let palette: ScreenStylePalette
-
+    
     func body(content: Content) -> some View {
         content
+            .textFieldStyle(.plain)                                 // no background/box
+            .foregroundStyle(palette.textSecondary)                   // Always charcoal text
+            .tint(palette.text)                                     // selection = charcoal
             .padding(12)
-            .foregroundStyle(palette.text)                          // Always charcoal text
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(palette.text)        // charcoal-ish box
+                // transparent fill, allow parent view background to show throw
+                    .fill(Color.clear)
             )
             .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(state.isInvalid ? palette.danger : palette.text, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                // Set stroke color based on validation state
+                    .stroke(state.isInvalid ? palette.danger : palette.border, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }

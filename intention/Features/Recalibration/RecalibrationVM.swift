@@ -27,9 +27,9 @@ enum RecalibrationError: LocalizedError {
 /// VM is already @MainActor, so the Task {} body runs on the main actor; you can mutate published properties directly (no MainActor.run)
 @MainActor
 final class RecalibrationVM: ObservableObject {
-    enum Phase { case idle, running, finished, pause }
+    enum Phase { case none, idle, running, finished, pause }
     
-    @Published private(set) var phase: Phase = .idle
+    @Published private(set) var phase: Phase = .none
     @Published private(set) var mode: RecalibrationMode?
     @Published private(set) var startedAt: Date?    // part of "snapshotting" the wall-clock to recompute remaining time on re-activation
     @Published var timeRemaining: Int = 0

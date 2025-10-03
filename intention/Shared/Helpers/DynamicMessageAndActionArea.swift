@@ -28,49 +28,52 @@ struct DynamicMessageAndActionArea: View {
             var body: some View {
                 VStack(spacing: 16) {
                     if focusVM.showRecalibrate {
-                        T("Session complete! Ready for recalibration?", .title3)
+                        T("""
+                        Session complete!
+                        Time to Rest and Recalibrate Your Mind.
+                        """, .title3)
                             .foregroundStyle(p.text)
                             .multilineTextAlignment(.center)
 
                         VStack(spacing: 10) {
                             /// Allow wrapping, or text overflowing doesn't function correctly as a VStack ,not HStack
                             Button { onRecalibrateNow() } label: { T("Recalibrate Now", .action) }
-                                .primaryActionStyle(screen: screen)
+                                .primaryActionStyle(screen: screen).frame(maxWidth: .infinity)
 
                             Button { focusVM.performAsyncAction { try focusVM.startCurrent20MinCountdown() } }
-                            label: { T("Start Intention", .action) }
-                                .primaryActionStyle(screen: screen)
+                            label: { T("Start", .action) }
+                                .primaryActionStyle(screen: screen).frame(maxWidth: .infinity)
 
                             Button(role: .destructive) {
                                 focusVM.performAsyncAction { await focusVM.resetSessionStateForNewStart() }
-                            } label: { T("End Early", .label) }
+                            } label: { T("End Early", .action) }
                         }
                     } else if focusVM.currentSessionChunk == 1 && focusVM.phase == .finished {
-                        T("First 20 minutes done, start next one?", .title3)
+                        T("Done, Continue Your Streak to the Next One?", .title3)
                             .foregroundStyle(p.text)
                             .multilineTextAlignment(.center)
 
                         Button { focusVM.performAsyncAction { try focusVM.startCurrent20MinCountdown() } }
-                        label: { T("Start Next Intention", .action) }
-                            .primaryActionStyle(screen: screen)
+                        label: { T("Start Next", .action) }
+                            .primaryActionStyle(screen: screen).frame(maxWidth: .infinity)
 
                         Button(role: .destructive) {
                             focusVM.performAsyncAction { await focusVM.resetSessionStateForNewStart() }
-                        } label: { T("End Session Early", .label) }
-                    } else if focusVM.phase == .running {
+                        } label: { T("End Early", .action) }
+//                    } else if focusVM.phase == .running {
 //                        T("Session in progress…", .body)
 //                            .foregroundStyle(p.textSecondary)
 //                            .multilineTextAlignment(.center)
-                    } else if focusVM.tiles.count < 2 {
-                        T("", .body)
-                            .foregroundStyle(p.textSecondary)
-                            .multilineTextAlignment(.center)
+                    } else if focusVM.tiles.count < 2, focusVM.phase == .running {
+//                        T("", .body)
+//                            .foregroundStyle(p.textSecondary)
+//                            .multilineTextAlignment(.center)
                     } else if focusVM.phase == .idle {
-                        T("Press Begin below to start your 20-minute focus.", .caption)
+                        T("To Activate Focus, Press the Button Below", .caption)
                             .foregroundStyle(p.textSecondary)
                             .multilineTextAlignment(.center)
                     } else if focusVM.phase == .paused {
-                        T("Paused", .caption).foregroundStyle(.secondary)
+                        // no text needed - handled in DynamicCountdown()
                     }
                 }
                 .padding(.vertical, 8)

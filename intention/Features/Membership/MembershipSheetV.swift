@@ -22,16 +22,23 @@ struct MembershipSheetV: View {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
     // 1) Place this INSIDE the struct, but OUTSIDE `body`
-    private var tailText: String { "— while helping us keep the lights on, the mortgage paid, and the \(useDogEmoji ? "🐕" : "dog") well-fed. Thank you." }
+    private var tailText: String { "All while helping us keep the lights on, the mortgage paid, and the \(useDogEmoji ? "🐕" : "dog") fed & happy!" }
     
     var body: some View {
         NavigationStack {
             ScrollView {
-                Page(top: 10, alignment: .center){      // FIXME: top 10 MAY BE SCREWING THIS UP
+                VStack {
                     // Hero
-                    T("You’ve completed your free sessions.", .label).underline()
-                    T("Unlock Unlimited Focus", .section)
-                    .friendlyHelper()
+                    T("You’ve completed your free sessions.", .label)
+                    T("""
+For $0.30 Per Day, 
+Unlock Unlimited Focus
+""", .section).underline().padding(.top, 2)
+                        .lineLimit(2)
+                }
+                .multilineTextAlignment(.center)
+                .friendlyHelper()
+                Page(top: 10, alignment: .center){      // FIXME: top 10 MAY BE SCREWING THIS UP
                     
                     // Price hint (optional, tiny): Signals if a product is loaded + VM bridge (sheet cannot create own PaymentService)
                     if let prod = viewModel.primaryProduct {
@@ -54,15 +61,15 @@ struct MembershipSheetV: View {
                                 defer { isBusy = false }
                                 do { try await viewModel.purchaseMembershipOrPrompt() }
                                 catch { debugPrint("[viewModel.purchaseMembershipOrPrompt] error: ", error); viewModel.setError(error) } }      /// Shows ErrorOverlay
-                        } label: { T("For $0.30 a day, upgrade", .action) }
-                            .primaryActionStyle(screen: .membership)
+                        } label: { T("Upgrade", .label) }
+                            .primaryActionStyle(screen: .membership).frame(maxWidth: .infinity)
                         
                         Button {
                             Task {
                                 do { try await viewModel.restoreMembershipOrPrompt() }
                                 catch { debugPrint("[viewModel.restoreMembershipOrPrompt] error: ", error); viewModel.setError(error) } }        /// Shows ErrorOverlay
-                        } label: { T("Restore Purchases", .label)}
-                            .secondaryActionStyle(screen: .membership)
+                        } label: { T("Restore Purchases", .action)}
+                            .secondaryActionStyle(screen: .membership).frame(maxWidth: .infinity)
                         
                         // Apple offer-code redemption (subscription offers)
                         Button {
@@ -75,34 +82,27 @@ struct MembershipSheetV: View {
                     Card {
                         VStack(alignment: .leading, spacing: 2) {
                             T("Why upgrade?", .title3)
+                            T("Your focus fuels our future.", .title3).underline()
                             VStack(alignment: .leading, spacing: 4) {
                                 Label("Unlimited focus sessions", systemImage: "infinity")
                                 Label("Detailed stats & categories", systemImage: "chart.bar")
                                 Label("Full customization", systemImage: "paintbrush")
+                                Divider().padding()
+                                Label("Build momentum", systemImage: "bolt")
+                                Label("Track progress", systemImage: "chart.line.uptrend.xyaxis")
+                                Label("\(tailText)", systemImage: "house")
+                                Label("Thank you.", systemImage: "heart")
                             }
                             .font(theme.fontTheme.toFont(.footnote))
                             .foregroundStyle(p.textSecondary)
-                            .padding()
-
+                            .symbolRenderingMode(.hierarchical)
                             
-                            T("""
-                                Your focus fuels our future. 
-                                For just ~30¢ a day, unlock unlimited focus sessions, detailed stats, more categories, and full customization.
-                                
-                                Build momentum, track progress, and work with intendly 
-                                """, .body)
-                                .foregroundStyle(p.text)
-                            
-                            T(tailText, .body)
-                                .foregroundStyle(p.textSecondary)
-                                .fontWeight(.semibold)
-                                .accessibilityLabel("— while helping us keep the lights on, the mortgage paid, and the dog well-fed. Thank you.")
-                            
-                            
-                            Text("Apple securely handles your purchase. Cancel anytime in Settings.")
-                                .font(theme.fontTheme.toFont(.caption))
-                                .foregroundStyle(.secondary)
-                                .padding(.top, 2)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Apple securely handles your purchase. Cancel anytime in **Settings › Manage Subscription.**")
+                                    .font(theme.fontTheme.toFont(.caption))
+                                    .foregroundStyle(.secondary)
+                                    .padding(.top)
+                            }
                         }
                     }
                     .padding(.top, 8)
@@ -110,10 +110,11 @@ struct MembershipSheetV: View {
             }
             .background(p.background.ignoresSafeArea())
             .tint(p.primary)
-            .toolbar { // Let people leave
+            // Let people leave
+            .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button{ dismiss() }
-                    label: { Image(systemName: "xmark").imageScale(.medium).font(.body) }.buttonStyle(.plain).accessibilityLabel("Close")}
+                    label: { Image(systemName: "xmark").imageScale(.small).font(.body).controlSize(.large) }.buttonStyle(.plain).accessibilityLabel("Close")}
             }
         }
         // Sheet behavior tuned for iPhone
@@ -137,28 +138,28 @@ struct MembershipSheetV: View {
 #if DEBUG
 extension MembershipVM {
     @MainActor
-    func _previewSet(member: Bool) {
+    func _previewSet(inActive: Bool) {
         // Adjust these lines to match your properties if names differ.
-        self.isMember = member
+        self.isMember = inActive
         // Optional: also fake a product if your UI needs it
-         self.primaryProduct = nil
+        self.primaryProduct = nil
     }
 }
 #endif
 
 #if DEBUG
-#Preview("Membership — Non-Member") {
-    // Uses your PreviewWrapper + default mocks
-    PreviewWrapper {
-        MembershipSheetV()
-    }
-}
+//#Preview("Membership — Not Active") {
+//    // Uses your PreviewWrapper + default mocks
+//    PreviewWrapper {
+//        MembershipSheetV()
+//    }
+//}
 
-#Preview("Membership — Member") {
+#Preview("Membership — Not Active") {
     MainActor.assumeIsolated {
         // Create an isolated VM so we don’t mutate shared PreviewMocks.membershipVM
         let memberVM = MembershipVM()
-        memberVM._previewSet(member: true)
+        memberVM._previewSet(inActive: true)
         
         return MembershipSheetV()
         // Inject the exact env objects MembershipSheetV expects
