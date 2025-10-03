@@ -15,7 +15,7 @@ struct StatsSummaryBar: View {
         private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             StatPill(icon: "flame",
                       value: "\(vm.streak)",
                       caption: "Your Streak",
