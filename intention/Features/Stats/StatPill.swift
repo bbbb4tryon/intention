@@ -24,24 +24,12 @@ struct StatPill: View {
             Image(systemName: icon)
                 .font(.title2)
                 .foregroundStyle(p.primary)
-                .minimumScaleFactor(0.8)
+            
             // Top Row: the number (scales, doesn't wrap)
             T(value, .title3)
-//            Text("StatPill")
-                .bold()
-                .foregroundStyle(p.text)
-                .monospacedDigit()
-                .lineLimit(1)                           // never wrap
-                .minimumScaleFactor(0.6)                // shrink, instead
-                .allowsTightening(true)
-                .layoutPriority(2)
+                .statNumberStyle(p)
             T(caption, .caption)
-//            Text("caption")
-                .foregroundStyle(p.textSecondary)
-                .lineLimit(1)                           // never wrap
-                .minimumScaleFactor(0.6)                // shrink, instead
-                .allowsTightening(true)
-                .layoutPriority(1)
+                .statCaptionStyle(p)
         }
         .multilineTextAlignment(.center)
         .accessibilityElement(children: .combine)

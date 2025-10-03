@@ -13,6 +13,8 @@ import SwiftUI
 struct FocusShell<Content: View>: View {
     @EnvironmentObject var theme: ThemeManager
     let screen: ScreenName
+    
+    
     @ViewBuilder var content: Content
     
     var body: some View {

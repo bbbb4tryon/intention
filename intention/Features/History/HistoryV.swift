@@ -64,7 +64,7 @@ struct HistoryV: View {
                     HStack {
                         Text("\(move.tile.text) moved").font(.footnote)
                         Spacer()
-                        Button {viewModel.undoLastMove() } label: { T("Undo", .action) }.primaryActionStyle(screen: screen).frame(maxWidth: .infinity)
+                        Button {viewModel.undoLastMove() } label: { T("Undo", .action) }.primaryActionStyle(screen: screen)
                     }
                     .padding(.horizontal, 12)           // Card instead?
                     .padding(.vertical, 10)             // Card instead?
@@ -195,7 +195,7 @@ struct HistoryV: View {
                         .disableAutocorrection(true)
                     
                     Button { Task { viewModel.canAddUserCategory() } } label: { T("Rename Category", .action) }
-                        .primaryActionStyle(screen: screen).frame(maxWidth: .infinity)
+                        .primaryActionStyle(screen: screen)
                 }
             }
             .navigationTitle("Rename")

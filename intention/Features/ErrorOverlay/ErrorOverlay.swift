@@ -24,7 +24,7 @@ struct ErrorOverlay: View {
             Button("Dismiss", action: dismissAction)
         }
         .padding()
-        .background(.ultraThinMaterial)
+        .background(.ultraThinMaterial)         //FIXME: Remove since background is at FocusShell and Root?
         .cornerRadius(16)
         .shadow(radius: 10)
         .padding()

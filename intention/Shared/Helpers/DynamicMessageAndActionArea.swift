@@ -38,11 +38,11 @@ struct DynamicMessageAndActionArea: View {
                         VStack(spacing: 10) {
                             /// Allow wrapping, or text overflowing doesn't function correctly as a VStack ,not HStack
                             Button { onRecalibrateNow() } label: { T("Recalibrate Now", .action) }
-                                .primaryActionStyle(screen: screen).frame(maxWidth: .infinity)
+                                .primaryActionStyle(screen: screen)
 
                             Button { focusVM.performAsyncAction { try focusVM.startCurrent20MinCountdown() } }
                             label: { T("Start", .action) }
-                                .primaryActionStyle(screen: screen).frame(maxWidth: .infinity)
+                                .primaryActionStyle(screen: screen)
 
                             Button(role: .destructive) {
                                 focusVM.performAsyncAction { await focusVM.resetSessionStateForNewStart() }
@@ -55,7 +55,7 @@ struct DynamicMessageAndActionArea: View {
 
                         Button { focusVM.performAsyncAction { try focusVM.startCurrent20MinCountdown() } }
                         label: { T("Start Next", .action) }
-                            .primaryActionStyle(screen: screen).frame(maxWidth: .infinity)
+                            .primaryActionStyle(screen: screen)
 
                         Button(role: .destructive) {
                             focusVM.performAsyncAction { await focusVM.resetSessionStateForNewStart() }
