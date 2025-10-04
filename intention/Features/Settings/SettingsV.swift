@@ -91,27 +91,31 @@ struct SettingsV: View {
                 
                 /// Stats
                 Card {
-                    
-                        StatPill(icon: "list.bullet",
-                                 value: "\(statsVM.totalCompletedIntentions)",
-                                 caption: "Accomplished",
-                                 screen: .settings)
-                        
-                        StatPill(icon: "rosette",
-                                 value: "\(statsVM.longestStreak)",
-                                 caption: "Streak",
-                                 screen: .settings)
-
-                        StatPill(icon: "leaf.fill",
-                                 value: "\(statsVM.recalibrationCounts[.breathing, default: 0])",
-                                 caption: "Breathing",
-                                 screen: .settings)
-                        StatPill(icon: "figure.walk",
-                                 value: "\(statsVM.recalibrationCounts[.balancing, default: 0])",
-                                 caption: "Balancing",
-                                 screen: .settings)
-                        
-                    
+                    Grid(horizontalSpacing: 12, verticalSpacing: 12){
+                        GridRow {
+                            StatPill(icon: "list.bullet",
+                                     value: "\(statsVM.totalCompletedIntentions)",
+                                     caption: "Accomplished",
+                                     screen: .settings)
+                            
+                            StatPill(icon: "rosette",
+                                     value: "\(statsVM.longestStreak)",
+                                     caption: "Streak",
+                                     screen: .settings)
+//                        }
+//                        GridRow {
+                            StatPill(icon: "leaf.fill",
+                                     value: "\(statsVM.recalibrationCounts[.breathing, default: 0])",
+                                     caption: "Breathing",
+                                     screen: .settings)
+                            StatPill(icon: "figure.walk",
+                                     value: "\(statsVM.recalibrationCounts[.balancing, default: 0])",
+                                     caption: "Balancing",
+                                     screen: .settings)
+                            
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
                 }
                 
                 Divider()
