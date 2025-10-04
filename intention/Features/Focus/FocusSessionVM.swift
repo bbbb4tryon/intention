@@ -113,7 +113,11 @@ final class FocusSessionVM: ObservableObject {
     
     /// Starts the 20-min countdown for the current focus session.
     func startCurrent20MinCountdown() throws {
+        debugPrint("[FocusSessionVM.startCurrent20MinCountdown] ENTER tiles=\(tiles.count) phase=\(phase) remaining=\(countdownRemaining)")
+        
+        
         guard tiles.count == 2, phase != .running else {
+            debugPrint("[FocusSessionVM.startCurrent20MinCountdown] BLOCKED tiles=\(tiles.count) phase=\(phase)")
             throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
         }
         stopCurrent20MinCountdown()         /// cancels any existing timers
@@ -125,12 +129,20 @@ final class FocusSessionVM: ObservableObject {
         let clock = ContinuousClock()
         let deadline = clock.now.advanced(by: .seconds(seconds))
         
-        //        countdownRemaining = chunkDuration  /// resets to 20 minutes
+        // countdownRemaining = chunkDuration  /// resets to 20 minutes
+        debugPrint("[FocusSessionVM.startCurrent20MinCountdown] INIT countdownRemaining=\(countdownRemaining)")
         chunkCountdown = Task { [weak self] in
             guard let self else { return }
+            debugPrint("[FocusSessionVM.startCurrent20MinCountdown] TASK STARTED")
+            
             while !Task.isCancelled {
                 let remaining = max(0, Int(clock.now.duration(to: deadline).components.seconds))
                 await MainActor.run { self.countdownRemaining = remaining }
+                
+                // FIXME: print once per minute for debug purposes
+                if remaining % 60 == 0 {
+                    debugPrint("[FocusSessionVM.startCurrent20MinCountdown] tick remaining=\(remaining)")
+                }
                 if remaining == 0 { break }
                 try? await clock.sleep(for: .seconds(1))
             }
@@ -140,6 +152,7 @@ final class FocusSessionVM: ObservableObject {
             //        guard !Task.isCancelled else { return }     //FIXME: what's this?
             /// >>> All post-finish work happens INSIDE the Task <<<
             await MainActor.run {
+                debugPrint("[FocusSessionVM.startCurrent20MinCountdown] FINISHED phase=\(self.phase)")
                 guard self.phase == .running else { return }
                 self.phase = .finished
                 self.haptics.notifyDone()
@@ -151,6 +164,7 @@ final class FocusSessionVM: ObservableObject {
             await MainActor.run { self.chunkCountdown = nil }
         }
     }
+    
     
     //            if self.countdownRemaining <= 0 && self.phase == .running {
     //                self.phase = .finished
@@ -167,7 +181,7 @@ final class FocusSessionVM: ObservableObject {
     //                if countdownRemaining > 0 { countdownRemaining -= 1; debugPrint("Session countdown: \(formattedTime)")
     //                } else {    debugPrint("40 min session completed"); break   }
     //            }
-    //            
+    //
     //            /// Block executes when countdownRemaining reaches 0 or is cancelled
     //            if self.countdownRemaining <= 0 && self.phase == .running {
     //                await MainActor.run {
@@ -242,12 +256,15 @@ final class FocusSessionVM: ObservableObject {
     
     /// Combined Trigger of Chunks Session (via "Begin")
     func beginOverallSession() async throws {
+        debugPrint(debugPhaseSummary("beginOverallSession ENTER"))
+        debugPrint("[FocusSessionVM.beginOverallSession] ENTER tiles=\(tiles.count) phase=\(phase)")
         /// Use the *current* phase for the error payload
         guard tiles.count == 2, (phase == .idle || phase == .none) else {
-            debugPrint("[FocusSessionVM.beginOverallSession] not triggered; no session created."); throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
+            debugPrint("[FocusSessionVM.beginOverallSession] BLOCKED tiles=\(tiles.count) phase=\(phase)"); throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
         }
         await tileAppendTrigger.startSessionTracking()
         sessionActive = true                                /// Overall session activated
+        debugPrint("[FocusSessionVM.beginOverallSession] OK → starting first 20-min chunk")
         try startCurrent20MinCountdown()                    /// Sets phase = .running inside, First Chunk started
     }
     
@@ -392,15 +409,15 @@ final class FocusSessionVM: ObservableObject {
         }
     }
     
-//    /// Button should be enabled when: <2 tiles and trimmed input is non-empty and not running,or exactly 2 tiles and phase is .idle.
-//    var canPrimary: Bool {
-//        if tiles.count < 2 {
-//            let trimmed = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-//            return !trimmed.isEmpty && tileText.taskValidationMessages.isEmpty
-//        } else {
-//            return phase == .idle
-//        }
-//    }
+    //    /// Button should be enabled when: <2 tiles and trimmed input is non-empty and not running,or exactly 2 tiles and phase is .idle.
+    //    var canPrimary: Bool {
+    //        if tiles.count < 2 {
+    //            let trimmed = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
+    //            return !trimmed.isEmpty && tileText.taskValidationMessages.isEmpty
+    //        } else {
+    //            return phase == .idle
+    //        }
+    //    }
     
     /// ActiveSessionSnapshot & persistence helpers
     private func makeSnapshot() -> ActiveSessionSnapshot {      //FIXME: rename to makeActiveSnapshot()
@@ -440,12 +457,15 @@ extension FocusSessionVM {
         let msgs = tileText.taskValidationMessages
         return msgs.isEmpty ? .valid : .invalid(messages: msgs)
     }
+    func debugPhaseSummary(_ tag: String = "") -> String {
+        "[VM] \(tag) tiles=\(tiles.count) phase=\(phase) remaining=\(countdownRemaining) active=\(sessionActive)"
+    }
     
-//    /// A tile is "completed" iff its index is below the currentSessionChunk (0 or 1).
-//    func thisTileIsCompleted(_ tile: TileM) -> Bool {
-//        guard let idx = tiles.firstIndex(of: tile) else { return false }
-//        //           guard let idx1 = tiles.index(after: idx) else { return false }
-//        //           return idx1 < idx < currentSessionChunk
-//        return idx < currentSessionChunk
-//    }
+    //    /// A tile is "completed" iff its index is below the currentSessionChunk (0 or 1).
+    //    func thisTileIsCompleted(_ tile: TileM) -> Bool {
+    //        guard let idx = tiles.firstIndex(of: tile) else { return false }
+    //        //           guard let idx1 = tiles.index(after: idx) else { return false }
+    //        //           return idx1 < idx < currentSessionChunk
+    //        return idx < currentSessionChunk
+    //    }
 }

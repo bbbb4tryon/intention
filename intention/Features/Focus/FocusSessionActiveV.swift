@@ -159,11 +159,9 @@ struct FocusSessionActiveV: View {
             // and doesn't interfere with the ScrollView.
             // It will be snug against the bottom of the screen.
         }
-        .onAppear { logCTA("appear") }
-        .onChange(of: focusVM.phase) { _ in logCTA("phase") }
-        .onChange(of: focusVM.tiles.count) { _ in logCTA("tiles") }
-        .onChange(of: focusVM.tileText) { _ in logCTA("tileText") }
-        
+        .onChange(of: focusVM.phase) { _ in
+            print(focusVM.debugPhaseSummary("phase change"))
+        }
         
         .background(p.background.ignoresSafeArea())
         .tint(p.accent)
@@ -188,12 +186,6 @@ struct FocusSessionActiveV: View {
         ) { _ in
             focusVM.showRecalibrate = true
         }
-    }
-    private func logCTA(_ whereFrom: String) {
-        Swift.print("[CTA]", whereFrom,
-                    "canPrimary:", focusVM.canPrimary,
-                    "phase:", focusVM.phase,
-                    "tiles:", focusVM.tiles.count)
     }
     
     // MARK: Bottom composer
