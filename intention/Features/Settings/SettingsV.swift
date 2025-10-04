@@ -15,25 +15,25 @@ struct SettingsV: View {
     @EnvironmentObject var focusVM: FocusSessionVM
     @ObservedObject var statsVM: StatsVM
     @AppStorage(DebugKeys.forceLegalNextLaunch) private var debugShowLegalNextLaunch = false
-    
+
     @State private var userID: String = ""      /// aka deviceID
     @State private var showTerms = false
     @State private var showPrivacy = false
     @State private var showMedical = false
     @State private var isBusy = false
-    
+
     private let screen: ScreenName = .settings
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
-    
+
     var body: some View {
         ScrollView {
             Page(top: 4, alignment: .center) {
                 T("Settings", .header)
                     .padding(.bottom, 4)
-                
+
 #if DEBUG
                 // DisclosureGroup<Label, Content>(label: Label, @ViewBuilder content: () -> Content)
                 // where the label is the first (non-closure) argument, and the content is the trailing closure
@@ -61,7 +61,7 @@ struct SettingsV: View {
                     Label("Dev", systemImage: "wrench")         // Dumb words, but this is the CONTENT closure
                 }
 #endif
-                
+
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
                         T("Membership", .section)
@@ -70,7 +70,7 @@ struct SettingsV: View {
                          ? T("Status: Active", .secondary).bold() : T("Status: Not Active", .secondary).bold()
                         )
                         .foregroundStyle(memVM.isMember ? .green : .secondary)
-                        
+
                         T("Your user ID/device ID: \(userID)", .caption)
                             .foregroundStyle(p.textSecondary)
                         HStack(spacing: 12) {
@@ -88,7 +88,7 @@ struct SettingsV: View {
                         }
                     }
                 }
-                
+
                 /// Stats
                 Card {
                     Grid(horizontalSpacing: 12, verticalSpacing: 12){
@@ -97,7 +97,7 @@ struct SettingsV: View {
                                      value: "\(statsVM.totalCompletedIntentions)",
                                      caption: "Accomplished",
                                      screen: .settings)
-                            
+
                             StatPill(icon: "rosette",
                                      value: "\(statsVM.longestStreak)",
                                      caption: "Streak",
@@ -112,14 +112,14 @@ struct SettingsV: View {
                                      value: "\(statsVM.recalibrationCounts[.balancing, default: 0])",
                                      caption: "Balancing",
                                      screen: .settings)
-                            
+
                         }
                         .frame(maxWidth: .infinity)
                     }
                 }
-                
+
                 Divider()
-                
+
                 /// Preferences Section
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
@@ -133,12 +133,12 @@ struct SettingsV: View {
                     }
                     .friendlyAnimatedHelper("hapticsOnly-\(prefs.hapticsOnly ? "on" : "off")")
                 }
-                
+
                 /// Color Theme Picker
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
                         T("Personalization", .section)
-                        
+
                         // Color Theme Picker
                         Picker(selection: $theme.colorTheme) {
                             ForEach(AppColorTheme.allCases, id: \.self) { option in Text(option.displayName).tag(option) }
@@ -147,7 +147,7 @@ struct SettingsV: View {
                         }
                         .pickerStyle(SegmentedPickerStyle())
                         .tint(p.accent)                 // segment highlight color
-                        
+
                         // Font Theme Picker
                         Picker(selection: $theme.fontTheme) {
                             ForEach(AppFontTheme.allCases, id: \.self) { option in Text(option.displayName).tag(option) }
@@ -159,11 +159,11 @@ struct SettingsV: View {
                         .friendlyAnimatedHelper(theme.fontTheme.rawValue)
                     }
                 }
-                
+
                 /// Legal (reprise)
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
-                        
+
                         SettingsLegalSection(
                             onShowTerms: { showTerms = true },
                             onShowPrivacy: { showPrivacy = true },
@@ -183,7 +183,7 @@ struct SettingsV: View {
                         }
                     }
                 }
-                
+
             }
         }
         .background(p.background.ignoresSafeArea())
@@ -193,7 +193,7 @@ struct SettingsV: View {
             userID = await KeychainHelper.shared.getUserIdentifier()
         }
     }
-    
+
     func requestNotificationPermissions() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             if let error = error {
@@ -209,7 +209,7 @@ struct SettingsV: View {
     MainActor.assumeIsolated {
         let stats = PreviewMocks.stats
         stats.logSession(CompletedSession(date: .now, tileTexts: ["By Example", "Analysis checklist"], recalibration: .breathing))
-        
+
         return PreviewWrapper {
             SettingsV(statsVM: PreviewMocks.stats)
                 .previewTheme()

@@ -86,8 +86,7 @@ struct FocusSessionActiveV: View {
                 Page(top: 6, alignment: .center) {
                         StatsSummaryBar()
                         // FIXME: Page {} may be controlling sizing, see if .frame( should be dropped
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 6)
+
                     
                     // Text input + validation
                     VStack(alignment: .leading, spacing: 8) {
