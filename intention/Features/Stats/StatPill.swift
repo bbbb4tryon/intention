@@ -24,12 +24,15 @@ struct StatPill: View {
             Image(systemName: icon)
                 .font(.title2)
                 .foregroundStyle(p.primary)
+                .frame(height: 24)
             
             // Top Row: the number (scales, doesn't wrap)
             T(value, .title3)
                 .statNumberStyle(p)
+                .frame(height: 22)
             T(caption, .caption)
                 .statCaptionStyle(p)
+                .frame(height: 16)
         }
         .multilineTextAlignment(.center)
         .accessibilityElement(children: .combine)

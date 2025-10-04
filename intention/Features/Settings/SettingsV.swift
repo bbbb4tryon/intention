@@ -91,7 +91,7 @@ struct SettingsV: View {
                 
                 /// Stats
                 Card {
-                    HStack(spacing: 16) {
+                    
                         StatPill(icon: "list.bullet",
                                  value: "\(statsVM.totalCompletedIntentions)",
                                  caption: "Accomplished",
@@ -101,9 +101,7 @@ struct SettingsV: View {
                                  value: "\(statsVM.longestStreak)",
                                  caption: "Streak",
                                  screen: .settings)
-                    }
-                    Divider()
-                    HStack(spacing: 20) {
+
                         StatPill(icon: "leaf.fill",
                                  value: "\(statsVM.recalibrationCounts[.breathing, default: 0])",
                                  caption: "Breathing",
@@ -112,7 +110,7 @@ struct SettingsV: View {
                                  value: "\(statsVM.recalibrationCounts[.balancing, default: 0])",
                                  caption: "Balancing",
                                  screen: .settings)
-                    }
+                        
                     
                 }
                 
