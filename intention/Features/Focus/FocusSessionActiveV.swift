@@ -101,12 +101,18 @@ struct FocusSessionActiveV: View {
                                 .textInputAutocapitalization(.sentences)
                                 .onSubmit {
                                     showValidation = true                   // turn validation on
-                                    guard !vState.isInvalid else { return } // stay focused and show message
+                                    guard vState.isInvalid == false else { return } // stay focused and show message
                                     // Valid -> add
                                     let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-                                    Task { try? await focusVM.handlePrimaryTap(validatedInput: trimmed) }
+                                    Task {
+                                        do {
+                                            _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed)
+                                        } catch {
+                                            FocusSessionError.unexpected
+                                        }
+                                    }
                                     focusVM.tileText = ""                   // Clear text field
-                                    intentionFocused = true                 // re-focus immediately after adding a tile
+                                    intentionFocused = (focusVM.tiles.count < 2) // re-focus UNTIL two tiles
                                     showValidation = false                  // reset to neutral for next entry
                                 }
                             // Display ValidationCaption BELOW Textfield
