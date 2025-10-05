@@ -113,32 +113,24 @@ final class FocusSessionVM: ObservableObject {
     
     /// Starts the 20-min countdown for the current focus session.
     func startCurrent20MinCountdown() throws {
-        debugPrint("[FocusSessionVM.startCurrent20MinCountdown] ENTER tiles=\(tiles.count) phase=\(phase) remaining=\(countdownRemaining)")
-        
-        
-        guard tiles.count == 2, phase != .running else {
-            debugPrint("[FocusSessionVM.startCurrent20MinCountdown] BLOCKED tiles=\(tiles.count) phase=\(phase)")
-            throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
+        guard hasTwoTiles, phase != .running else {
+          throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
         }
-        stopCurrent20MinCountdown()         /// cancels any existing timers
-        
+        // cancels any existing timers
+        stopCurrent20MinCountdown()
         // ContinuousClock avoids wall-clock jumps from time/date changes
         phase = .running
         saveSnapshot()
+        
         let seconds = chunkDuration
         let clock = ContinuousClock()
         let deadline = clock.now.advanced(by: .seconds(seconds))
         
-        // countdownRemaining = chunkDuration  /// resets to 20 minutes
-        debugPrint("[FocusSessionVM.startCurrent20MinCountdown] INIT countdownRemaining=\(countdownRemaining)")
         chunkCountdown = Task { [weak self] in
             guard let self else { return }
-            debugPrint("[FocusSessionVM.startCurrent20MinCountdown] TASK STARTED")
-            
             while !Task.isCancelled {
                 let remaining = max(0, Int(clock.now.duration(to: deadline).components.seconds))
                 await MainActor.run { self.countdownRemaining = remaining }
-                
                 // FIXME: print once per minute for debug purposes
                 if remaining % 60 == 0 {
                     debugPrint("[FocusSessionVM.startCurrent20MinCountdown] tick remaining=\(remaining)")
@@ -146,17 +138,13 @@ final class FocusSessionVM: ObservableObject {
                 if remaining == 0 { break }
                 try? await clock.sleep(for: .seconds(1))
             }
-            //            try? await clock.sleep(for: .seconds(1))
-            //            await MainActor.run { self.countdownRemaining -= 1 }
             
-            //        guard !Task.isCancelled else { return }     //FIXME: what's this?
             /// >>> All post-finish work happens INSIDE the Task <<<
             await MainActor.run {
-                debugPrint("[FocusSessionVM.startCurrent20MinCountdown] FINISHED phase=\(self.phase)")
                 guard self.phase == .running else { return }
-                self.phase = .finished
                 self.haptics.notifyDone()
-                self.naturallyAdvanceSessionChunk()
+                // >>> Single place that advances and decides
+                self.finishCurrentChunk()
                 self.saveSnapshot()
             }
             //        await MainActor.run { self.naturallyAdvanceSessionChunk() }
@@ -206,17 +194,15 @@ final class FocusSessionVM: ObservableObject {
         guard phase == .paused else { throw FocusSessionError.unexpected }
         let seconds = countdownRemaining
         guard seconds > 0 else {
-            // Nothing to resume; treat as finished
-            phase = .finished
-            naturallyAdvanceSessionChunk()
+            // Nothing to resume; treat as finished-same finisher as startCurrent...()
+            finishCurrentChunk()
             return
         }
-        
         phase = .running
         saveSnapshot()
+        
         let clock = ContinuousClock()
         let deadline = clock.now.advanced(by: .seconds(seconds))
-        
         chunkCountdown = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
@@ -225,13 +211,12 @@ final class FocusSessionVM: ObservableObject {
                 if remaining == 0 { break }
                 try? await clock.sleep(for: .seconds(1))
             }
-            
             await MainActor.run {
-                // Only mark finished if we actually were running when the task ended
                 guard self.phase == .running else { return }
                 self.phase = .finished
                 self.haptics.notifyDone()
-                self.naturallyAdvanceSessionChunk()
+                // >>> Single place that advances and decides
+                self.finishCurrentChunk()
                 self.chunkCountdown = nil
             }
         }
@@ -250,16 +235,12 @@ final class FocusSessionVM: ObservableObject {
     
     /// Combined Trigger of Chunks Session (via "Begin")
     func beginOverallSession() async throws {
-        debugPrint(debugPhaseSummary("beginOverallSession ENTER"))
-        debugPrint("[FocusSessionVM.beginOverallSession] ENTER tiles=\(tiles.count) phase=\(phase)")
-        /// Use the *current* phase for the error payload
-        guard tiles.count == 2, (phase == .idle || phase == .none) else {
-            debugPrint("[FocusSessionVM.beginOverallSession] BLOCKED tiles=\(tiles.count) phase=\(phase)"); throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
+        guard hasTwoTiles, (phase == .idle || phase == .none || (phase == .finished && currentSessionChunk == 1)) else {
+          throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
         }
         await tileAppendTrigger.startSessionTracking()
-        sessionActive = true                                /// Overall session activated
-        debugPrint("[FocusSessionVM.beginOverallSession] OK → starting first 20-min chunk")
-        try startCurrent20MinCountdown()                    /// Sets phase = .running inside, First Chunk started
+        sessionActive = true
+        try startCurrent20MinCountdown()
     }
     
     /// Adds a tile or starts session, depending on context
@@ -366,7 +347,7 @@ final class FocusSessionVM: ObservableObject {
     private func checkSessionCompletion() {
         if currentSessionChunk >= 2 {                               /// both chunks done
             sessionActive = false                                   /// 40-min overall session done
-            markCurrentTileCompleted()
+//            markCurrentTileCompleted()
             showRecalibrate = true                                  /// modal triggered
             debugPrint("Recalibration choice modal should display")
             /// Bounded tile history call, add tiles to category

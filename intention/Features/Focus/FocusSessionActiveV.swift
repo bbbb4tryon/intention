@@ -138,17 +138,17 @@ struct FocusSessionActiveV: View {
                         .frame(maxWidth: .infinity)  // centers fixed-size content
                     }
                     .padding(.top, 8)
+                    .onDisappear { intentionFocused = false }
+                    .onAppear {
+                        focusVM.enterIdleIfNeeded()
+                        // Auto-focus on first load, if we still can add text
+                        intentionFocused = (focusVM.phase != .running && focusVM.tiles.count < 2)
+                    }
                     // Drops focus when we start running or when we leave the screen
                     .onChange(of: focusVM.phase) { phase in
                         if phase == .running { intentionFocused = false }
                     }
-                    .onDisappear { intentionFocused = false }
-                    .onAppear {
-                        focusVM.enterIdleIfNeeded()
-                        
-                        // Auto-focus on first load, if we still can add text
-                        intentionFocused = isInputActive
-                    }
+
                 }
             }
             // This spacer pushes the scrollable content to the top,
