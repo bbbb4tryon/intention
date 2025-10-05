@@ -322,11 +322,12 @@ final class FocusSessionVM: ObservableObject {
     /// Let the View bind `.disabled(!viewModel.canPrimary)`
     //FIXME: is this grinding against the Validation version?
     var canPrimary: Bool {
-        if tiles.count < 2 {
-            let t = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-            return !t.isEmpty && t.taskValidationMessages.isEmpty
+        if !hasTwoTiles {
+            // Only allow "Add" when the current input is valid AND you’re not running
+            return inputIsValid && phase != .running
         } else {
-            return phase == .idle || phase == .none
+            // Only allow "Begin" when not running (fresh or between chunks)
+            return phase == .idle || phase == .none || (phase == .finished && currentSessionChunk == 1)
         }
     }
     /// Control funnel for the button
