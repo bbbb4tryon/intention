@@ -311,6 +311,14 @@ final class FocusSessionVM: ObservableObject {
         }
     }
     
+    /// Guard for phases -> canPrimary for flipping to the "Add" button
+    private var inputIsValid: Bool {
+      let t = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
+      return !t.isEmpty && t.taskValidationMessages.isEmpty
+    }
+    
+    private var hasTwoTiles: Bool { tiles.count == 2 }
+    
     /// Let the View bind `.disabled(!viewModel.canPrimary)`
     //FIXME: is this grinding against the Validation version?
     var canPrimary: Bool {
