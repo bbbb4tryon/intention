@@ -164,40 +164,34 @@ final class FocusSessionVM: ObservableObject {
             await MainActor.run { self.chunkCountdown = nil }
         }
     }
-    
-    
-    //            if self.countdownRemaining <= 0 && self.phase == .running {
-    //                self.phase = .finished
-    //                self.haptics.notifyDone()
-    //            }
-    //        }
-    //        self.chunkCountdown = nil
-    //        await MainActor.run { self.naturallyAdvanceSessionChunk() }
-    //    }
-    
-    //        chunkCountdown = Task {
-    //            for await _ in Timer.publish(every: 1, on: .main, in: .common).autoconnect().values {
-    //                guard !Task.isCancelled else {  debugPrint("Countdown task cancelled"); return  }
-    //                if countdownRemaining > 0 { countdownRemaining -= 1; debugPrint("Session countdown: \(formattedTime)")
-    //                } else {    debugPrint("40 min session completed"); break   }
-    //            }
-    //
-    //            /// Block executes when countdownRemaining reaches 0 or is cancelled
-    //            if self.countdownRemaining <= 0 && self.phase == .running {
-    //                await MainActor.run {
-    //                    self.phase = .finished
-    //                    self.haptics.notifyDone()
-    //                    debugPrint("`Haptic.notifyDone()` triggered? Current 20-min chunk completed")
-    //                }
-    //                self.chunkCountdown?.cancel()
-    //                self.chunkCountdown = nil
-    //                naturallyAdvanceSessionChunk()
-    //            }
-    
-    /// State Mutation - Advances chunk index and checks session completion
-    func naturallyAdvanceSessionChunk() {
-        currentSessionChunk += 1
-        self.checkSessionCompletion()   /// check if chunks session is completed
+
+    /// Marks current tile complete, advances chunk index, and decides if session is done.
+    private func finishCurrentChunk() {
+      // Mark completion for the *current* chunk tile (if within bounds)
+      if currentSessionChunk < tiles.count {
+        completedTileIDs.insert(tiles[currentSessionChunk].id)
+      }
+
+      currentSessionChunk += 1
+
+      if currentSessionChunk >= 2 {
+        // Entire 40-min session complete
+        sessionActive = false
+        phase = .finished
+        showRecalibrate = true
+
+        // Persist to History
+        if let targetCategoryID = historyVM?.generalCategoryID {
+          for tile in tiles.prefix(2) {
+            historyVM?.addToHistory(tile, to: targetCategoryID)
+          }
+        }
+      } else {
+        // One chunk done; wait in finished state for “Next”
+        phase = .finished
+      }
+
+      saveSnapshot()
     }
     
     func pauseCurrent20MinCountdown() async {
@@ -363,11 +357,11 @@ final class FocusSessionVM: ObservableObject {
     }
     
     /// (Part 2) checkmarks + Calls when each 20-min chunk completes:
-    func markCurrentTileCompleted() {
-        guard currentSessionChunk < tiles.count else { return }
-        completedTileIDs.insert(tiles[currentSessionChunk].id)
-        currentSessionChunk += 1
-    }
+//    func markCurrentTileCompleted() {
+//        guard currentSessionChunk < tiles.count else { return }
+//        completedTileIDs.insert(tiles[currentSessionChunk].id)
+//        currentSessionChunk += 1
+//    }
     /// Chunks session for completion, triggers recalibration **uses HistoryVM canonical IDs** Flow Control
     private func checkSessionCompletion() {
         if currentSessionChunk >= 2 {                               /// both chunks done
