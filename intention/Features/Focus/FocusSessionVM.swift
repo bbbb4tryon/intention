@@ -301,20 +301,10 @@ final class FocusSessionVM: ObservableObject {
         debugPrint("[FocusVM.resetSessionStateForNewStart] state NOT reset for a new session.")
     }
     
-    /// Tap handler here, the button widget ilives in the Focus view
-    var primaryCTATile: String {
-        if tiles.count < 2 { return "Add" }
-        switch phase {
-        case .idle, .none:  return "Begin"
-        case .finished where currentSessionChunk == 1: return "Next"
-        default: return "Begin"
-        }
-    }
-    
     /// Guard for phases -> canPrimary for flipping to the "Add" button
     private var inputIsValid: Bool {
-      let t = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-      return !t.isEmpty && t.taskValidationMessages.isEmpty
+        let t = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !t.isEmpty && t.taskValidationMessages.isEmpty
     }
     
     private var hasTwoTiles: Bool { tiles.count == 2 }
@@ -330,22 +320,40 @@ final class FocusSessionVM: ObservableObject {
             return phase == .idle || phase == .none || (phase == .finished && currentSessionChunk == 1)
         }
     }
+    
+    /// Tap handler here, the button widget ilives in the Focus view
+    var primaryCTATile: String {
+        if !hasTwoTiles { return "Add" }
+        if phase == .finished && currentSessionChunk == 1 { return "Next" }
+        return "Begin"
+    }
+    
+    /// Enter idle early and consistently; cases never returns an empty label
+    func enterIdleIfNeeded() {
+        if phase == .none { phase = .idle }
+    }
+    
     /// Control funnel for the button
     enum PrimaryCTAResult { case added, began }
     
-    /// Single funnel for both the button and the keyboard's "Done"
+    /// The one funnel both TextField.onSubmit and the bottom CTA should use.
     @discardableResult
     func handlePrimaryTap(validatedInput: String?) async throws -> PrimaryCTAResult {
-        if tiles.count < 2 {
-            // use validatedInput from the View; ball back is own tileText
-            let text = validatedInput ?? tileText
+        if !hasTwoTiles {
+            // the ADDED path
+            let text = (validatedInput ?? tileText).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty, text.taskValidationMessages.isEmpty else {
+                throw FocusSessionError.emptyInput
+            }
             try await addTileAndPrepareForSession(text)
             return .added
-        } else if tiles.count == 2 && (phase == .idle || phase == .none) {
+        } else {
+            // the BEGIN / NEXT path
+            guard phase == .idle || phase == .none || (phase == .finished && currentSessionChunk == 1) else {
+                throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
+            }
             try await beginOverallSession()
             return .began
-        } else {
-            throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
         }
     }
     
@@ -392,11 +400,6 @@ final class FocusSessionVM: ObservableObject {
         let minutes = countdownRemaining / 60
         let seconds = countdownRemaining % 60
         return String(format: "%02d:%02d", minutes, seconds)
-    }
-    
-    /// So cases never returns an empty label
-    func enterIdleIfNeeded() {
-        if phase == .none { phase = .idle }
     }
     
     /// Sets flag to trigger recalibration modal
