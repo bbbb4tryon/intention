@@ -40,8 +40,9 @@ struct DynamicMessageAndActionArea: View {
                             Button { onRecalibrateNow() } label: { T("Recalibrate Now", .action) }
                                 .primaryActionStyle(screen: screen)
 
-                            Button { focusVM.performAsyncAction { try focusVM.startCurrent20MinCountdown() } }
+                            Button { focusVM.performAsyncAction { try await focusVM.beginOverallSession() } }
                             label: { T("Start", .action) }
+                                .primaryActionStyle(screen: screen)
                                 .primaryActionStyle(screen: screen)
 
                             Button(role: .destructive) {
@@ -53,7 +54,7 @@ struct DynamicMessageAndActionArea: View {
                             .foregroundStyle(p.text)
                             .multilineTextAlignment(.center)
 
-                        Button { focusVM.performAsyncAction { try focusVM.startCurrent20MinCountdown() } }
+                        Button { focusVM.performAsyncAction { try await focusVM.beginOverallSession() } }
                         label: { T("Start Next", .action) }
                             .primaryActionStyle(screen: screen)
 

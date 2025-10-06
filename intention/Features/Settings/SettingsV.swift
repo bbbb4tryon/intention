@@ -141,7 +141,7 @@ struct SettingsV: View {
 
                         // Color Theme Picker
                         Picker(selection: $theme.colorTheme) {
-                            ForEach(AppColorTheme.allCases, id: \.self) { option in Text(option.displayName).tag(option) }
+                            ForEach(AppColorTheme.publicCases, id: \.self) { option in Text(option.displayName).tag(option) }
                         } label: {
                             T("Color", .label)          // themed label
                         }

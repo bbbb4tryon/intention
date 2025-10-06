@@ -61,6 +61,11 @@ enum AppColorTheme: String, CaseIterable {
     var displayName: String {
         switch self { case .default: "Default"; case .sea: "Sea"; case .fire: "Fire" }
     }
+    
+    // Show fewer choices in Settings without deleting anything.
+    // Change this list whenever you want to expose more/less.
+    static var publicCases : [AppColorTheme] { [.default, .sea] }
+    
     /// One accent per theme for consistency
     private var accent: Color {
         switch self {

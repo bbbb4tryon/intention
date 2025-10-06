@@ -84,9 +84,9 @@ struct FocusSessionActiveV: View {
             ScrollView {
                 // Allows content to breath on small screens
                 Page(top: 6, alignment: .center) {
-                        StatsSummaryBar()
-                        // FIXME: Page {} may be controlling sizing, see if .frame( should be dropped
-
+                    StatsSummaryBar()
+                    // FIXME: Page {} may be controlling sizing, see if .frame( should be dropped
+                    
                     
                     // Text input + validation
                     VStack(alignment: .leading, spacing: 8) {
@@ -154,7 +154,7 @@ struct FocusSessionActiveV: View {
                     .onChange(of: focusVM.phase) { phase in
                         if phase == .running { intentionFocused = false }
                     }
-
+                    
                 }
             }
             // This spacer pushes the scrollable content to the top,
@@ -214,11 +214,15 @@ struct FocusSessionActiveV: View {
             
             Button {
                 showValidation = true
-                guard !vState.isInvalid else { return }
+                // For Add flow, enforce validation first; for Begin flow canPrimary already handles phase/tiles.
+                if focusVM.tiles.count < 2 && vState.isInvalid { return }
                 let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-                Task { try? await focusVM.handlePrimaryTap(validatedInput: trimmed) }
+                Task {
+                    do { _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed) }
+                    catch { /* show error overlay if desired */ }
+                }
                 focusVM.tileText = ""
-                intentionFocused = true
+                intentionFocused = (focusVM.tiles.count < 2)
                 showValidation = false
             } label: {
                 T(focusVM.primaryCTATile, .action).monospacedDigit()
@@ -234,7 +238,7 @@ struct FocusSessionActiveV: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
         .background(.thinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .animation(.easeInOut(duration: 0.2), value: focusVM.tiles)
     }
     
@@ -310,10 +314,10 @@ private struct TileSlot: View {
                     
                     // Always show a checkmark for filled tiles
                     Image(systemName: isCompleted ? "checkmark.circle.fill" : "checkmark.circle")
-                            .font(.body)                        // slightly increases size
-                            .foregroundStyle(palette.success)   // more vivid than "accent"
-                            .accessibilityHidden(true)
-                    }
+                        .font(.body)                        // slightly increases size
+                        .foregroundStyle(palette.success)   // more vivid than "accent"
+                        .accessibilityHidden(true)
+                }
                 .padding(.horizontal, hPad)
                 .padding(.vertical, vPad)
             } else {
@@ -339,406 +343,8 @@ private struct TileSlot: View {
         .accessibilityHint(isFilled ? "" : "Add an intention above, then press Add.")
     }
 }
-//    //KEEP "vm" so type checker isn't tripped up as it might be with 'focusVM' naming
-//   @ViewBuilder
-//   private func tileCell(for slot: Int) -> some View {
-//       if let t = tile(at: slot) {  // FIXME: rename t to cellContents
-//           let vm = focusVM
-//           TileCell(tile: t)
-//               .opacity(vm.thisTileIsCompleted(t) ? 0.55 : 1.0)
-//               .overlay(alignment: .topLeading) {
-//                   if vm.thisTileIsCompleted(t) {
-//                       Image(systemName: "checkmark.circle")
-//                           .symbolRenderingMode(.palette)
-//                           .foregroundStyle(.green)
-//                           .imageScale(.large)
-//                           .padding(6)
-//                   }
-//               }
-//       } else {
-//           EmptyView()
-//       }
-//   }
-
-//                let txt = slots[idx]
-//                let filled = (txt?.isEmpty == false)
-//                let tileIsCompleted = (completedSlotIndex == idx)
-//                let slotBg =
-//                    filled ? p.accent.opacity(0.9) : p.accent.opacity(0.35)
-
-//                ZStack {
-// card
-//                RoundedRectangle(cornerRadius: 10, style: .continuous)
-//                        .fill(slotBg)
-//                        .overlay(
-//                            RoundedRectangle(
-//                                cornerRadius: 1,
-//                                style: .continuous
-//                            )
-////                            .debugBackground(.green)
-//                            .stroke(p.border, lineWidth: 10)
-//                        )
-//                        .frame(height: 50)
-//                        .contentShape(
-//                            RoundedRectangle(
-//                                cornerRadius: 1,
-//                                style: .continuous
-//                            )
-//
-//                        )
-////                        .debugBackground(.green)
-//                    // Handles color and checkmark icon within the tiles
-//                        .overlay {
-//                            if diffNoColor && !filled {
-//                                RoundedRectangle(
-//                                    cornerRadius: 10,
-//                                    style: .continuous
-//                                )
-//
-//                                .stroke(
-//                                    style: StrokeStyle(lineWidth: 10, dash: [5])
-//                                )
-//                                .foregroundStyle(p.border)
-//                            }
-//                        }
-//
-//
-//                    // Tile 2, Tile 2 text
-//                    if let text = txt, !text.isEmpty {
-//                        HStack{
-//                            Text(text)
-//                                .lineLimit(1)
-//                                .minimumScaleFactor(0.9)
-//                                .foregroundStyle(
-//                                    tileIsCompleted
-//                                        ? p.text.opacity(0.55) : p.text
-//                                )
-//
-//                            if tileIsCompleted {
-//                                Image(systemName: "checkmark.circle")
-//                                    .foregroundStyle(p.accent)
-//                                    .accessibilityHidden(true)
-//                            }
-//                        }
-//                        .padding(.horizontal, 8)
-//                        .frame(alignment: .leading)
-//
-//
-//                    } else {
-//                        Image(systemName: "plus")
-//                            .font(.headline)
-//                            .foregroundStyle(p.accent.opacity(0.6))
-//                            .accessibilityHidden(true)
-//                    }
-////                }
-////                .opacity(tileIsCompleted ? 0.7 : 1.0)
-////                .accessibilityElement(children: .combine)
-////                .accessibilityLabel(
-////                    filled
-////                        ? (tileIsCompleted
-////                            ? "Intention completed" : "Intention")
-////                        : "Empty slot"
-////                )
-////                .accessibilityHint(
-////                    filled ? "" : "Add an intention above, then press Add."
-////                )
-//            }
-//
-//            Button {
-//                Task { await focusVM.handlePrimaryTap() }
-//            } label: {
-//                T(ctaTitle, .section).monospacedDigit()
-//            }
-//            .primaryActionStyle(screen: screen)
-//            .accessibilityIdentifier("primaryCTA")
-//        }
-//        /// tile and begin/add container controls
-//        .padding(.horizontal, 16)
-//        .padding(.bottom, 12)
-//        .background(.thinMaterial)
-//        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-//        .animation(.easeInOut(duration: 0.2), value: focusVM.tiles)
-//    }
 
 
-
-
-
-
-//                            if focusVM.tileText.isEmpty {
-//                                T("Add intention", .caption)
-////                                    .disabled(focusVM.phase != .idle)  // FIXME: does this block editing while running?
-////                                    .focused($intentionFocused)
-//                                    .onSubmit { intentionFocused = false }  // Allows dismiss on return
-//                                    .scrollDismissesKeyboard(.immediately)  // NOTE: scrollview dismiss
-//                                    //  .submitLabel(.done)
-//                                    //  .allowsHitTesting(false)                    // so taps go into the TextField
-//
-//                                /*
-//                                 possible modifiers:
-//                                 .disabled(focusVM.phase != .idle)  // FIXME: does this block editing while running?
-//                                 .submitLabel(.done)
-//                                 .validatingState(state: vState, palette: p)    // FIXME: if shouldShowValidation instead?
-//                                 */
-////                                    .toolbar {
-////                                        ToolbarItemGroup(placement: .keyboard) {
-////                                            Spacer()
-////                                            Button("Done") {
-////                                                intentionFocused = false
-////                                            }
-////                                        }
-////                                    }
-//                                // if shouldShowValidation {
-//                                //  ValidationCaption(state: .invalid(messages: focusVM.tileText.taskValidationMessages), palette: p)
-//                                // }
-//                            }
-//
-//                        TextField("", text: $focusVM.tileText, prompt: T("Add intention", .caption))
-//                                .focused($intentionFocused)
-//                                .submitLabel(.done)
-//                                .validatingField(state: vState, palette: p)
-//                                .disabled(!isInputActive)
-//                                .autocorrectionDisabled()
-//                                .textInputAutocapitalization(.sentences)
-//
-//                                // only shows the “empty/spaces” error when the user actually taps Done with blank input
-//                                .onSubmit {
-//                                    let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-//                                    guard !trimmed.isEmpty else { showEmptySubmitError = true; return }
-//                                    showEmptySubmitError = false
-//                                    Task { try? await focusVM
-//                                        .addTileAndPrepareForSession(trimmed) }
-//                                    }
-//
-//                            if shouldShowValidation {
-//                                ValidationCaption(
-//                                    state: .invalid( messages: focusVM.tileText .taskValidationMessages),
-//                                    palette: p
-//                                )
-//                            }
-
-//                            // Guidance + Messages (no Add/Begin here)
-//                            DynamicMessageAndActionArea(
-//                                focusVM: focusVM,
-//                                onRecalibrateNow: { focusVM.showRecalibrate = true }
-//                            )
-//                            .environmentObject(theme)
-
-//                            // Centered countdown
-//                            if focusVM.phase == .running {
-//                                DynamicCountdown(
-//                                    fVM: focusVM,
-//                                    palette: p,
-//                                    progress: Double(focusVM.countdownRemaining) / Double( TimerConfig.current.chunkDuration )
-//                                )
-//                                .frame(maxWidth: .infinity)  // centers fixed-size content
-//                            }
-//                    }
-//                    .padding(.top, 8)
-//                    // Drop focus when we start running or when we leave the screen
-//                    .onChange(of: focusVM.phase) { phase in
-//                        if phase == .running { intentionFocused = false }
-//                    }
-//                    .onDisappear { intentionFocused = false }
-//                    .background(p.background.ignoresSafeArea())
-//                    //                    .ignoresSafeArea(.keyboard, edges: .bottom)         //FIXME: Remove this if keyboard gets weird lifting content
-//                    .disabled(focusVM.phase != .idle)  //FIXME: Remove this if keyboard toolbar becomes inert // Text field inactive once running
-//                }
-
-// Sheets
-//            .sheet(isPresented: $focusVM.showRecalibrate) {
-//                RecalibrationV(vm: recalibrationVM)
-//                // FIXME: which looks better:
-//                    .presentationDetents([.large])  // avoids "medium" overlap
-//                    .presentationDragIndicator(.visible)
-//                    .ignoresSafeArea()              // if the sheet edges are tight
-//                // FIXME: or this at line 150, replacing current:
-//                // Bottom inset: only when sheet is NOT showing
-////                    .safeAreaInset(edge: .bottom) {
-////                        if !focusVM.showRecalibrate { BottomComposer }
-////                    }
-//            }
-// FIXME: or this option is a "no overlap at all" look
-//                .fullScreenCover(isPresented: $focusVM.showRecalibrate) {
-//                    RecalibrationV(vm: recalibrationVM)
-//                }
-
-// Bottom inset: slots + single CTA
-//                .safeAreaInset(edge: .bottom, spacing: 10) { BottomComposer }
-//                //  .safeAreaInset(edge: .bottom) {  if !focusVM.showRecalibrate { BottomComposer }}
-//
-//                .overlay(alignment: .bottom) {
-//                    BottomComposer
-//                        .padding(.horizontal, 16)
-//                        .padding(.top, 16)
-//                        .padding(.bottom, 16)        // adjust here to clear the tab bar
-//                        .background(.thinMaterial)
-//                        .ignoresSafeArea(edges: .bottom)
-//                }
-//            }
-////        }
-//        .onReceive(
-//            NotificationCenter.default.publisher(
-//                for: .init("dev.openRecalibration")
-//            )
-//        ) { _ in
-//            focusVM.showRecalibrate = true
-//        }
-//    }
-
-//    // MARK: Bottom composer
-//    @ViewBuilder
-//    private var BottomComposer: some View {
-//        let completedSlotIndex: Int? =
-//            (focusVM.currentSessionChunk >= 1) ? 1 : nil  // slots = [second, first]
-//        VStack {
-//            // two rows, bottom fills first
-//            ForEach(0..<slots.count, id: \.self) { idx in
-//                let txt = slots[idx]
-//                let filled = (txt?.isEmpty == false)
-//                let tileIsCompleted = (completedSlotIndex == idx)
-//                let slotBg =
-//                    filled ? p.accent.opacity(0.9) : p.accent.opacity(0.35)
-//
-////                ZStack {
-//                    // card
-//                RoundedRectangle(cornerRadius: 10, style: .continuous)
-//                        .fill(slotBg)
-//                        .overlay(
-//                            RoundedRectangle(
-//                                cornerRadius: 1,
-//                                style: .continuous
-//                            )
-////                            .debugBackground(.green)
-//                            .stroke(p.border, lineWidth: 10)
-//                        )
-//                        .frame(height: 50)
-//                        .contentShape(
-//                            RoundedRectangle(
-//                                cornerRadius: 1,
-//                                style: .continuous
-//                            )
-//
-//                        )
-////                        .debugBackground(.green)
-//                    // Handles color and checkmark icon within the tiles
-//                        .overlay {
-//                            if diffNoColor && !filled {
-//                                RoundedRectangle(
-//                                    cornerRadius: 10,
-//                                    style: .continuous
-//                                )
-//
-//                                .stroke(
-//                                    style: StrokeStyle(lineWidth: 10, dash: [5])
-//                                )
-//                                .foregroundStyle(p.border)
-//                            }
-//                        }
-//
-//
-//                    // Tile 2, Tile 2 text
-//                    if let text = txt, !text.isEmpty {
-//                        HStack{
-//                            Text(text)
-//                                .lineLimit(1)
-//                                .minimumScaleFactor(0.9)
-//                                .foregroundStyle(
-//                                    tileIsCompleted
-//                                        ? p.text.opacity(0.55) : p.text
-//                                )
-//
-//                            if tileIsCompleted {
-//                                Image(systemName: "checkmark.circle")
-//                                    .foregroundStyle(p.accent)
-//                                    .accessibilityHidden(true)
-//                            }
-//                        }
-//                        .padding(.horizontal, 8)
-//                        .frame(alignment: .leading)
-//
-//
-//                    } else {
-//                        Image(systemName: "plus")
-//                            .font(.headline)
-//                            .foregroundStyle(p.accent.opacity(0.6))
-//                            .accessibilityHidden(true)
-//                    }
-////                }
-////                .opacity(tileIsCompleted ? 0.7 : 1.0)
-////                .accessibilityElement(children: .combine)
-////                .accessibilityLabel(
-////                    filled
-////                        ? (tileIsCompleted
-////                            ? "Intention completed" : "Intention")
-////                        : "Empty slot"
-////                )
-////                .accessibilityHint(
-////                    filled ? "" : "Add an intention above, then press Add."
-////                )
-//            }
-//
-//            Button {
-//                Task { await focusVM.handlePrimaryTap() }
-//            } label: {
-//                T(ctaTitle, .section).monospacedDigit()
-//            }
-//            .primaryActionStyle(screen: screen)
-//            .accessibilityIdentifier("primaryCTA")
-//        }
-//        /// tile and begin/add container controls
-//        .padding(.horizontal, 10)
-//        .padding(.bottom, 10)
-//        .background(.thinMaterial)
-//        .cornerRadius(10)
-//        .animation(.easeInOut(duration: 0.2), value: focusVM.tiles)
-//    }
-
-//     KEEP "vm" so type checker isn't tripped up as it might be with 'focusVM' naming
-//    @ViewBuilder
-//    private func tileCell(for slot: Int) -> some View {
-//        if let t = tile(at: slot) {  // FIXME: rename t to cellContents
-//            let vm = focusVM
-//            TileCell(tile: t)
-//                .opacity(vm.thisTileIsCompleted(t) ? 0.55 : 1.0)
-//                .overlay(alignment: .topLeading) {
-//                    if vm.thisTileIsCompleted(t) {
-//                        Image(systemName: "checkmark.circle")
-//                            .symbolRenderingMode(.palette)
-//                            .foregroundStyle(.green)
-//                            .imageScale(.large)
-//                            .padding(6)
-//                    }
-//                }
-//        } else {
-//            EmptyView()
-//        }
-//    }
-//
-//    private var ctaTitle: String {
-//        if focusVM.tiles.count < 2 { return "Add" }
-//        if focusVM.phase == .idle { return "Begin" }
-//        if focusVM.phase == .finished && focusVM.currentSessionChunk == 1 {
-//            return "Next"
-//        }
-//        return "Begin"
-//    }
-//
-//    private var slots: [String?] {
-//        let first =
-//            focusVM.tiles.indices.contains(1) ? focusVM.tiles[0].text : nil
-//        let second =
-//            focusVM.tiles.indices.contains(2) ? focusVM.tiles[1].text : nil
-//        return [first, second]
-//    }
-//
-//    private func tile(at slot: Int) -> TileM? {
-//        let tileInto = focusVM.tiles
-//        guard (0..<tileInto.count).contains(slot) else { return nil }
-//        return tileInto[slot]
-//    }
-//}
-//// Hydrate the VM: tiles, phase, chunk index, and remaining time
 
 // MARK: - Preview
 #if DEBUG
