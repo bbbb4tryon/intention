@@ -71,7 +71,7 @@ struct FocusSessionActiveV: View {
     }
     
     /// Theme hooks
-    private let screen: ScreenName = .homeActiveIntentions
+    private let screen: ScreenName = .focus
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: screen) }
@@ -302,7 +302,7 @@ private struct TileSlot: View {
         VStack {
             if isFilled {
                 HStack(alignment: .top, spacing: 8) {
-                    theme.styledText(text, as: .tile, in: .homeActiveIntentions)
+                    theme.styledText(text, as: .tile, in: .focus)
                         .foregroundStyle(palette.text)
                     // Allow text to wrap to as many lines as needed
                         .lineLimit(nil)
@@ -322,8 +322,8 @@ private struct TileSlot: View {
                 .padding(.vertical, vPad)
             } else {
                 // Empty state - no checkmarks yet
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Image(systemName: "plus").accessibilityHidden(true)
+                HStack(alignment: .firstTextBaseline, spacing: 20) {
+                    Image(systemName: "text.alignleft").font(.body).accessibilityHidden(true)
                     Text("").foregroundStyle(palette.textSecondary)
                 }
                 .padding(.horizontal, hPad)
