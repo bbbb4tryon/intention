@@ -138,9 +138,9 @@ Unlock Unlimited Focus
 #if DEBUG
 extension MembershipVM {
     @MainActor
-    func _previewSet(inActive: Bool) {
+    func _previewSet(notActive: Bool) {
         // Adjust these lines to match your properties if names differ.
-        self.isMember = inActive
+        self.isMember = notActive
         // Optional: also fake a product if your UI needs it
         self.primaryProduct = nil
     }
@@ -159,7 +159,7 @@ extension MembershipVM {
     MainActor.assumeIsolated {
         // Create an isolated VM so we don’t mutate shared PreviewMocks.membershipVM
         let memberVM = MembershipVM()
-        memberVM._previewSet(inActive: true)
+        memberVM._previewSet(notActive: true)
         
         return MembershipSheetV()
         // Inject the exact env objects MembershipSheetV expects

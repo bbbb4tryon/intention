@@ -29,10 +29,17 @@ final class HapticsService: ObservableObject {
     func added() {      impact.impactOccurred(intensity: 0.8) }
     func warn() {       notify.notificationOccurred(.warning) }
     func notifyDone() {
+        // Pattern: heavy, tiny pause (10ms), heavy, tiny pause (10ms), heavy
+        heavy.impactOccurred()                      // 1st heavy
+        
+        Task {
+            let shortPause: UInt64 = 20_000_000     // 20 million nanoseconds - 20 milisecdons
+            // wait; second heavy
+            try? await Task.sleep(nanoseconds: shortPause); heavy.impactOccurred()
+            // wait; third heavy
+            try? await Task.sleep(nanoseconds: shortPause); heavy.impactOccurred()
+        }
         notify.notificationOccurred(.success)
-        heavy.impactOccurred()
-        Task { try? await Task.sleep(nanoseconds: 500_000_000); heavy.impactOccurred()
-        try? await Task.sleep(nanoseconds: 250_000_000); heavy.impactOccurred() }
     }
     
 //        light.impactOccurred()

@@ -31,8 +31,8 @@ final class RecalibrationVM: ObservableObject {
     
     @Published private(set) var phase: Phase = .none
     @Published private(set) var mode: RecalibrationMode?
-    @Published private(set) var startedAt: Date?    // part of "snapshotting" the wall-clock to recompute remaining time on re-activation
-    @Published var timeRemaining: Int = 0
+//    @Published private(set) var startedAt: Date?    // part of "snapshotting" the wall-clock to recompute remaining time on re-activation
+    @Published private(set) var timeRemaining: Int = 0
     @Published var lastError: Error?
     @Published var breathingPhaseIndex: Int = 0     // 0:Inhale, 1:Hold, 2:Exhale, 3:Hold
     @Published var promptText: String = ""          // “Switch feet” pulses EMOM
@@ -62,9 +62,11 @@ final class RecalibrationVM: ObservableObject {
 
     private let haptics: HapticsClient
     private var task: Task<Void, Never>?
+    @Published private(set) var didHaptic: Set<Int> = []
     
     // Related to time the user backgrounded/spent time outside the app
-    private var intendedDuration: Int = 0       // seconds (for .current mode)
+    private var recalDeadline: Date?
+//    private var intendedDuration: Int = 0       // seconds (for .current mode)
 
 
     init(haptics: HapticsClient, breathingMinutes: Int = 2, balancingMinutes: Int = 4) {
@@ -81,10 +83,12 @@ final class RecalibrationVM: ObservableObject {
         cancel()
         self.mode = mode
         self.phase = .running
+        
         let mins = (mode == .breathing ? breathingMinutes : balancingMinutes)
-        self.intendedDuration = mins * 60
-        self.timeRemaining = intendedDuration
-        self.startedAt = Date()
+        let seconds = mins * 60
+        self.timeRemaining = seconds
+        self.recalDeadline = Date().addingTimeInterval(TimeInterval(seconds))
+        
         switch mode { case .balancing: runBalancing(); case .breathing: runBreathing() }
     }
     
@@ -98,6 +102,7 @@ final class RecalibrationVM: ObservableObject {
     private func cancel() {
         task?.cancel()
         task = nil
+        recalDeadline = nil
     }
     
     func setBreathingMinutes(_ minutes: Int) throws {
@@ -118,9 +123,9 @@ final class RecalibrationVM: ObservableObject {
     // Resuming when re-activated after leaving, see `start(mode:)`
     // is called un RootView when scene becomes active:
     func appDidBecomeActive() {
-        guard phase == .running, let started = startedAt else { return }
-        let elapsed = Int(Date().timeIntervalSince(started))
-        let remain = max(0, intendedDuration - elapsed)
+        guard phase == .running, let returned = recalDeadline else { return }
+        let remain = max(0, Int(returned.timeIntervalSinceNow))
+        
         if remain != timeRemaining { timeRemaining = remain }
         if remain == 0 {
             // finish immediately
@@ -128,12 +133,18 @@ final class RecalibrationVM: ObservableObject {
             let finished = mode
             mode = nil
             promptText = ""
-            if let aMode = finished { onCompleted?(aMode) }
-            notifiedDoneByHaptics()
+            if let m = finished { onCompleted?(m) }
+            fireHapticsNotifyDone()
         }
     }
     
-    private func notifiedDoneByHaptics() { haptics.notifyDone() }
+    // Pattern to call haptic once per completion
+//    private func fireDoneHapticOnce() {
+//        guard !didHapticForChunk.contains(currentSessionChunk) else { return }
+//        didHapticForChunk.insert(currentSessionChunk)
+//        haptics.notifyDone()
+//    }
+    private func fireHapticsNotifyDone() { haptics.notifyDone() }
     
     
     // MARK: Balancing - short-short every min; long-long-short on done

@@ -19,7 +19,7 @@ struct DynamicCountdown: View {
     let digitSize: CGFloat = 48
     
     private var T: (String, TextRole) -> Text {
-        { key, role in theme.styledText(key, as: role, in: .homeActiveIntentions) }
+        { key, role in theme.styledText(key, as: role, in: .focus) }
     }
     
     private var isActive: Bool {

@@ -97,7 +97,8 @@ struct RootView: View {
         
         // 2) Plain instances (no self)
         let theme           = ThemeManager()
-        let membership      = MembershipVM()
+        let payments        = PaymentService()
+        let membership      = MembershipVM(payments: payments)
         let prefs           = AppPreferencesVM()
         let engine          = HapticsService()
         let liveHaptics     = LiveHapticsClient(prefs: prefs, engine: engine)
@@ -137,14 +138,10 @@ struct RootView: View {
     // MARK: - body
     var body: some View {
         // shared palette locals help calm the swift type-checker
-        let palFocus        = theme.palette(for: .homeActiveIntentions)
-        //      let _palHist        = theme.palette(for: .history)
+        let palFocus        = theme.palette(for: .focus)
         let _               = theme.palette(for: .history)
-        //      let _palSettings    = theme.palette(for: .settings)
         let _               = theme.palette(for: .settings)
-        //        let _palRecal     = theme.palette(for: .recalibrate)
         let _               = theme.palette(for: .recalibrate)
-        //      let _palMem         = theme.palette(for: .membership)
         let _               = theme.palette(for: .membership)
         let tabBG           = palFocus.background.opacity(0.88)          // Makes tab bar match app theme (iOS 16+)
         
@@ -156,7 +153,7 @@ struct RootView: View {
         )
             .scrollDismissesKeyboard(.interactively)
         
-        let focusScreen     = FocusShell(screen: .homeActiveIntentions) {
+        let focusScreen     = FocusShell(screen: .focus) {
             focusContent
         }
         
@@ -217,18 +214,28 @@ struct RootView: View {
         
         // MARK: App lifecycle (guardrail: scene handling lives at root)
             .onChange(of: scenePhase) { phase in
-                // Only set busy for background/inactive phases where a long-running Task might fire
-                if phase == .inactive || phase == .background {
+                // Only set busy for background/notActive phases where a long-running Task might fire
+                switch phase {
+                case .notActive, .background:
                     isBusy = true
                     Task {
                         defer { isBusy = false }      // Ensure reset after Task completes
-                        await focusVM.pauseCurrent20MinCountdown()
+                        // 1) coalesce + persist any pending History saves now
                         historyVM.flushPendingSaves()
+                        // 2) snapshot focus session state (not a pause)
+                        await focusVM.suspendTickingForBackground()
+                        isBusy = false
                     }
-                }
+                
                 // Active state only calls short synchronous functions
-                if phase == .active {
+                case .active:
+                    isBusy = true
+                    // 3) recompute remaining (time) from snapshot & resume UI ticking if needed
                     recalVM.appDidBecomeActive()
+                    Task {
+                        await focusVM.resumeTickingAfterForeground(); isBusy = false
+                    }
+                default: break
                 }
             }
         // MARK: App launch + restore any active session state + legal gate
@@ -257,18 +264,7 @@ struct RootView: View {
                     activeSheet = .legal
                 }
 #endif
-                
-                //            /// First-run categories
-                //            if !hasInitializedGeneralCategory {
-                //                historyVM.ensureGeneralCategory()
-                //                hasInitializedGeneralCategory = true
-                //                debugPrint("Default category initialized from RootView")
-                //            }
-                //            if !hasInitializedArchiveCategory {
-                //                historyVM.ensureArchiveCategory()
-                //                hasInitializedArchiveCategory = true
-                //                debugPrint("Archive category initialized from RootView")
-                //            }
+
             }
         
         // Membership prompt choreography
@@ -331,137 +327,6 @@ struct RootView: View {
     }
 }
 
-//        
-//        
-//        TabView {
-//            /// allows `RootView` supply navigation via `NavigationStack`, pass in VMs
-//            NavigationStack {
-//                FocusSessionActiveV(viewModel: focusVM, recalibrationVM: recalVM)
-//                    .navigationTitle("Focus")
-//                    .navigationBarTitleDisplayMode(.inline)
-//                    .toolbarBackground(theme.palette(for: .homeActiveIntentions).background, for: .navigationBar)
-//                    .toolbarBackground(tabBG, for: .tabBar)
-//                    .toolbarBackground(.visible, for: .tabBar)
-//                    .toolbarBackground(tabBG, for: .navigationBar)
-//                    .toolbarBackground(.visible, for: .navigationBar)
-//                    .friendlyHelper()
-//            }
-//            .tabItem { Image(systemName: "house.fill") }
-//            
-//            NavigationStack {
-//                HistoryV(viewModel: historyVM)
-//                    .navigationTitle("History")
-//                    .navigationBarTitleDisplayMode(.inline)
-//            }
-//            .tabItem {  Image(systemName: "book.fill").accessibilityAddTraits(.isHeader)  }
-//            
-//            NavigationStack {
-//                SettingsV(viewModel: statsVM)
-//                    .navigationTitle("Settings")
-//                    .navigationBarTitleDisplayMode(.inline)
-//            }
-//            .tabItem {  Image(systemName: "gearshape.fill").accessibilityAddTraits(.isHeader) }
-//        }
-//
-//        /// consistent color schemes for app tab bar
-//        .toolbarBackground(tabBG, for: .tabBar)
-//        .toolbarBackground(.visible, for: .tabBar)
-//        /// consistent color schemes for nav bars
-//        .toolbarBackground(tabBG, for: .navigationBar)
-//
-//        // MARK: App launch + legal gate
-//        .onAppear {
-//            
-//            
-//            private var ifLegalGateNeeded: Bool { LegalConsent.needsConsent() }
-//            if ifLegalGateNeeded { activeSheet = .legal }
-//            
-//            // Wrapped in #if debug to not affect release
-//            #if DEBUG
-//            if ProcessInfo.processInfo.environment["RESET_LEGAL_ON_LAUNCH"] == "1" {
-//                UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedVersion)
-//                UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedAtEpoch)
-//                activeSheet = .legal
-//            }
-//            #endif
-//            
-////            /// First-run categories
-////            if !hasInitializedGeneralCategory {
-////                historyVM.ensureGeneralCategory()
-////                hasInitializedGeneralCategory = true
-////                debugPrint("Default category initialized from RootView")
-////            }
-////            if !hasInitializedArchiveCategory {
-////                historyVM.ensureArchiveCategory()
-////                hasInitializedArchiveCategory = true
-////                debugPrint("Archive category initialized from RootView")
-////            }
-//        }
-//        .onChange(of: scenePhase ) { phase in
-//            if phase == .inactive || phase == .background {
-//                historyVM.flushPendingSaves()
-//            }
-//        }
-//        .onChange(of: memVM.shouldPrompt) { show in
-//            // Queue membership only if nothing else (e.g., Legal) is showing.
-//            if show, activeSheet == nil { activeSheet = .membership }
-//        }
-//        .onChange(of: activeSheet) { sheet in
-//            // If Legal just dismissed and membership is pending, present it next.
-//            if sheet == nil, memVM.shouldPrompt { activeSheet = .membership }
-//        }
-//        
-//        .sheet(item: $activeSheet) { sheet in
-//            switch sheet {
-//            case .legal:
-//                LegalAgreementSheetV(
-//                    onAccept: {
-//                        LegalConsent.recordAcceptance()
-//                        acceptedVersion = LegalConfig.currentVersion
-//                        acceptedAtEpoch = Date().timeIntervalSince1970
-//                        activeSheet = nil
-//                    },
-//                    onShowTerms:   { activeSheet = .terms },
-//                    onShowPrivacy: { activeSheet = .privacy },
-//                    onShowMedical: { activeSheet = .medical }
-//                )
-//                
-//            case .membership:
-//                NavigationStack {
-//                    MembershipSheetV()
-//                        .environmentObject(memVM)
-//                        .environmentObject(theme)
-//                }
-//                    .onDisappear { memVM.shouldPrompt = false }
-//                
-//            case .terms:
-//                NavigationStack {
-//                    LegalDocV(title: "Terms of Use",
-//                              markdown: MarkdownLoader.load(named: LegalConfig.termsFile))
-//                }
-//                
-//            case .privacy:
-//                NavigationStack {
-//                    LegalDocV(title: "Privacy Policy",
-//                              markdown: MarkdownLoader.load(named: LegalConfig.privacyFile))
-//                }
-//                
-//            case .medical:
-//                NavigationStack {
-//                    LegalDocV(title: "Wellness Disclaimer",
-//                              markdown: MarkdownLoader.load(named: LegalConfig.medicalFile))
-//                }
-//            }
-//        }
-//        /// Provide shared environment objects once, from the root/ so SwiftUI views can call it easily if they want to.
-//        .environmentObject(theme)
-//        .environmentObject(statsVM)
-//        .environmentObject(memVM)
-//        .environmentObject(historyVM)
-//        .environmentObject(prefs)
-//        .environmentObject(haptics)
-//    }
-// }
 
 #if DEBUG
 #Preview {

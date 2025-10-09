@@ -25,21 +25,24 @@ enum MembershipError: Error, Equatable, LocalizedError {
 /// pure async/await for purchase/restore paths, one paywall, stable entitlement refresh
 @MainActor
 final class MembershipVM: ObservableObject {
-    @Published var isMember: Bool = false
+    // UI state mirrored from PaymentService
+    @Published private(set) var isMember: Bool = false
     @Published var shouldPrompt: Bool = false
     @Published var showCodeEntry: Bool = false
     @Published var primaryProduct: Product?         /// Shows "¢/day • $X.XX"
     @Published var lastError: Error?                /// Used to trigger the UI visual error overlay
     
-    private let paymentService = PaymentService()
+    private let payment: PaymentService
     private let codeService = MembershipCodeService()
     
-    init() {
+    init(payment: PaymentService) {
         // Ensures MembershipVM initializes PaymentService and calls loadMembershipState() on init
         /// Mirror enitlement + first product for UI
         //        paymentService.loadMembershipState()
         //        isMember = paymentService.isMember
-
+        
+        self.paymentService = payment
+        Task { await payment.configure() }
         paymentService.$isMember
             .receive(on: RunLoop.main)
             .assign(to: &$isMember)
@@ -48,6 +51,19 @@ final class MembershipVM: ObservableObject {
             .map { $0.first }   // FIXME: not $0, what is 0 made of?
             .receive(on: RunLoop.main)
             .assign(to: &$primaryProduct)
+    }
+    func buy() async {
+        do {
+            let paid = try await paymentService.purchaseMembership()
+            if !paid { await paymentService.refreshEntitlementStatus() }
+        } catch { lastError = error }
+    }
+
+    func restore() async { await paymentService.restorePurchases(); await refreshEntitlementStatus(); if !isMember { lastError = MembershipError.restoreFailed }
+    }
+
+        private func refreshEntitlement() async {
+            isMember = await paymentService.active
     }
     
     func triggerPromptIfNeeded(afterSessions sessionCount: Int, threshold: Int = 2) {

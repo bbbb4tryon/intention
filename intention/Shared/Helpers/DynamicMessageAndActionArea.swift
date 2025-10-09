@@ -14,7 +14,7 @@ struct DynamicMessageAndActionArea: View {
 //    let palette: ScreenStylePalette   // Pass directly, is an AppStorage value
     let onRecalibrateNow: () -> Void    // Define sheet closure property, from parent (FocusSessionActiveV) to trigger logic
     
-    private let screen: ScreenName = .homeActiveIntentions
+    private let screen: ScreenName = .focus
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: screen) }
@@ -70,9 +70,9 @@ struct DynamicMessageAndActionArea: View {
 //                            .foregroundStyle(p.textSecondary)
 //                            .multilineTextAlignment(.center)
                     } else if focusVM.phase == .idle {
-                        T("To Activate Focus, Press the Button Below", .caption)
-                            .foregroundStyle(p.textSecondary)
-                            .multilineTextAlignment(.center)
+//                        T("To Activate Focus, Press the Button Below", .caption)
+//                            .foregroundStyle(p.textSecondary)
+//                            .multilineTextAlignment(.center)
                     } else if focusVM.phase == .paused {
                         // no text needed - handled in DynamicCountdown()
                     }

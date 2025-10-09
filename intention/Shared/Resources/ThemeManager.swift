@@ -15,7 +15,7 @@ import SwiftUI
 // Shim: keep code compiling that expects ThemePalette, if any still refer to it!
 typealias ThemePalette = ScreenStylePalette
 // MARK: - Screens
-enum ScreenName { case homeActiveIntentions, history, settings, recalibrate, membership } // FIXME: rename homeActiveIntentions to focus
+enum ScreenName { case focus, history, settings, recalibrate, membership } // FIXME: rename focus to focus
 // MARK: - Text roles
 enum TextRole {
     case largeTitle, header, section, title3, label, body, tile, secondary, caption, action, placeholder
@@ -85,7 +85,7 @@ enum AppColorTheme: String, CaseIterable {
             let textSecondary: Color = .intCharcoal.opacity(0.85)
             
             switch screen {
-            case .homeActiveIntentions, .history, .settings:
+            case .focus, .history, .settings:
                 return .init(
                     primary: .intGreen,             // drives CTA fill
                     background: baseBackground,
@@ -141,7 +141,7 @@ enum AppColorTheme: String, CaseIterable {
             let bg = Color(red: 0.02, green: 0.12, blue: 0.28)
             let txt = Color(red: 0.85, green: 0.92, blue: 1.0)
             switch screen {
-            case .homeActiveIntentions:
+            case .focus:
                 return .init(
                     primary: Color(red: 0.00, green: 0.30, blue: 0.70),
                     background: bg,
@@ -217,7 +217,7 @@ enum AppColorTheme: String, CaseIterable {
             let bg = Color(red: 0.16, green: 0.02, blue: 0.00)
             let txt = Color(red: 1.00, green: 0.90, blue: 0.78)
             switch screen {
-            case .homeActiveIntentions:
+            case .focus:
                 return .init(
                     primary: Color(red: 0.80, green: 0.22, blue: 0.02),
                     background: bg,

@@ -25,7 +25,7 @@ struct ValidationDebugPreview: View {
     // Use the ThemeManager to get the current palette, just like FocusSessionActiveV
     private var p: ScreenStylePalette { 
         // Assuming you have a ScreenName for this preview, or use a known one
-        theme.palette(for: .homeActiveIntentions) 
+        theme.palette(for: .focus) 
     }
     
     // Mimics the vState computed property from FocusSessionActiveV

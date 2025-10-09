@@ -17,7 +17,7 @@ struct PulsingBorderModifier: ViewModifier {
             .overlay(
                 Capsule()
                     .stroke(
-                        isSelected ? Color.clear : (pulse ? Color.purple.opacity(0.8) : Color.purple.opacity(0.4)), /// Pulsing effect for INACTIVE
+                        isSelected ? Color.clear : (pulse ? Color.purple.opacity(0.8) : Color.purple.opacity(0.4)), /// Pulsing effect for notActive
                         lineWidth: isSelected ? 0 : (pulse ? 4 : 2)     /// Pulse
                     )
                     .shadow(
@@ -46,7 +46,7 @@ struct PulsingBorderModifier: ViewModifier {
 }
 
 extension View {
-    func inactivePulsingEffect(isSelected: Bool) -> some View {
+    func notActivePulsingEffect(isSelected: Bool) -> some View {
         self.modifier(PulsingBorderModifier(isSelected: isSelected))
     }
 }
