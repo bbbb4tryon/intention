@@ -97,8 +97,8 @@ struct RootView: View {
         
         // 2) Plain instances (no self)
         let theme           = ThemeManager()
-        let payments        = PaymentService()
-        let membership      = MembershipVM(payments: payments)
+        let payments        = PaymentService(productIDs: ["com.argonnesoftware.intention"])
+        let membership      = MembershipVM(payment: payments)
         let prefs           = AppPreferencesVM()
         let engine          = HapticsService()
         let liveHaptics     = LiveHapticsClient(prefs: prefs, engine: engine)
@@ -213,10 +213,10 @@ struct RootView: View {
             .toolbarBackground(tabBG, for: .navigationBar)
         
         // MARK: App lifecycle (guardrail: scene handling lives at root)
-            .onChange(of: scenePhase) { phase in
-                // Only set busy for background/notActive phases where a long-running Task might fire
+            .onChange(of: scenePhase, perform: { phase in
+                // Only set busy for background/inactive phases where a long-running Task might fire
                 switch phase {
-                case .notActive, .background:
+                case .inactive, .background:
                     isBusy = true
                     Task {
                         defer { isBusy = false }      // Ensure reset after Task completes
@@ -237,7 +237,7 @@ struct RootView: View {
                     }
                 default: break
                 }
-            }
+            })
         // MARK: App launch + restore any active session state + legal gate
             .onAppear {
                 // 1) Set isBusy for the main async launch process

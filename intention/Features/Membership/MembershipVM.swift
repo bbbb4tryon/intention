@@ -32,66 +32,74 @@ final class MembershipVM: ObservableObject {
     @Published var primaryProduct: Product?         /// Shows "¢/day • $X.XX"
     @Published var lastError: Error?                /// Used to trigger the UI visual error overlay
     
-    private let payment: PaymentService
+    let payment: PaymentService             //FIXME: only use the injected instance, and not p let paymentService = PaymentService()?
     private let codeService = MembershipCodeService()
     
     init(payment: PaymentService) {
-        // Ensures MembershipVM initializes PaymentService and calls loadMembershipState() on init
-        /// Mirror enitlement + first product for UI
-        //        paymentService.loadMembershipState()
-        //        isMember = paymentService.isMember
-        
-        self.paymentService = payment
+        self.payment = payment
+        // Observe payment service state
+        Task {
+            for await state in await payment.updates(){
+                self.isMember = state.isMember
+                self.primaryProduct = state.products.first
+            }
+        }
+        // Initial configuration
         Task { await payment.configure() }
-        paymentService.$isMember
-            .receive(on: RunLoop.main)
-            .assign(to: &$isMember)
-        
-        paymentService.$products
-            .map { $0.first }   // FIXME: not $0, what is 0 made of?
-            .receive(on: RunLoop.main)
-            .assign(to: &$primaryProduct)
     }
+        
+//        paymentService.$isMember
+//            .receive(on: RunLoop.main)
+//            .assign(to: &$isMember)
+//        
+//        paymentService.$products
+//            .map { $0.first }   // FIXME: not $0, what is 0 made of?
+//            .receive(on: RunLoop.main)
+//            .assign(to: &$primaryProduct)
+//    }
+
     func buy() async {
         do {
-            let paid = try await paymentService.purchaseMembership()
-            if !paid { await paymentService.refreshEntitlementStatus() }
-        } catch { lastError = error }
-    }
-
-    func restore() async { await paymentService.restorePurchases(); await refreshEntitlementStatus(); if !isMember { lastError = MembershipError.restoreFailed }
-    }
-
-        private func refreshEntitlement() async {
-            isMember = await paymentService.active
-    }
-    
-    func triggerPromptIfNeeded(afterSessions sessionCount: Int, threshold: Int = 2) {
-        if !isMember && sessionCount >= threshold { shouldPrompt = true }
+            let paid = try await payment.purchaseMembership()
+            if !paid { await payment.refreshEntitlementStatus() }
+        } catch {
+            lastError = error
+        }
     }
     
     /// Trigger helper to reopen form anywhere (starts in RootView, can be in a banner, Settings, locked feature)
     @MainActor func presentPaywall() { shouldPrompt = true }
-    
-    /// Core remains async throws. UI calls inside Task { do/try/catch }
+
+    func restore() async {
+        do {
+            try await payment.restorePurchases()
+            if !isMember { lastError = MembershipError.restoreFailed }
+        } catch {
+            lastError = error
+        }
+    }
+
     func purchaseMembershipOrPrompt() async throws {
-        try await paymentService.purchaseMembership()
-        isMember = paymentService.isMember
-        shouldPrompt = !isMember
-        guard isMember else {
-            let err = MembershipError.purchaseFailed
-            setError(err)
-            throw err
+        let before = isMember
+        do {
+            let paid = try await payment.purchaseMembership()
+            await payment.refreshEntitlementStatus()
+            shouldPrompt = !(paid || isMember)
+            if !(paid || isMember) { throw MembershipError.purchaseFailed }
+        } catch {
+            shouldPrompt = !before
+            lastError = error
+            throw error
         }
     }
     
     func restoreMembershipOrPrompt() async throws {
-        try await paymentService.restorePurchases()
-        isMember = paymentService.isMember
-        guard isMember else {
-            let err = MembershipError.restoreFailed
-            setError(err)
-            throw err
+        do {
+            try await payment.restorePurchases()
+            shouldPrompt = !isMember
+            if !isMember { throw MembershipError.restoreFailed }
+            } catch {
+                let err = MembershipError.restoreFailed; setError(err); throw err
         }
     }
     
@@ -101,18 +109,19 @@ final class MembershipVM: ObservableObject {
         let result = await codeService.verify(code: code, deviceID: deviceID)
         switch result {
         case .success:
+            // Treat as an unlocked entitlement
             isMember = true
             shouldPrompt = false
             showCodeEntry = false
         case .invalid:
-            let err = MembershipError.invalidCode
-            setError(err)
-            throw err
+            let err = MembershipError.invalidCode; setError(err); throw err
         case .networkError:
-            let err = MembershipError.networkError
-            setError(err)
-            throw err
+            let err = MembershipError.networkError; setError(err); throw err
         }
+    }
+    
+    func triggerPromptIfNeeded(afterSessions sessionCount: Int, threshold: Int = 2) {
+        if !isMember && sessionCount >= threshold { shouldPrompt = true }
     }
     
     func setError(_ error: Error?) { lastError = error }
@@ -138,7 +147,13 @@ final class MembershipVM: ObservableObject {
         Binding(
             get: { self.shouldPrompt },
             set: { newVal in self.shouldPrompt = newVal  }
-            // or self.shouldPrompt = $0
+            // ^ aka, self.shouldPrompt = $0
         )
     }
+    
+    #if DEBUG
+    // Preview/testing hook to flip membership without touching StoreKit
+    // because this method is inside the type, it can write to the private(set) property
+    func _debugSetIsMember(_ value: Bool) { self.isMember = value }
+    #endif
 }

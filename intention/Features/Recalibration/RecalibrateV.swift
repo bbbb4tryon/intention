@@ -247,7 +247,7 @@ struct RecalibrationV: View {
 //                        }
 //                    }
 //                    
-//                    /// When notActive, show simple, obvious choices
+//                    /// When inactive, show simple, obvious choices
 //                    if vm.phase != .running {
 //                        VStack(spacing: 12) {
 //                            if vm.mode == nil {

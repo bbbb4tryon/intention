@@ -256,7 +256,7 @@ struct FocusSessionActiveV: View {
         return focusVM.thisTileIsCompleted(focusVM.tiles[slot])
     }
     
-    /// Active = white; notActive = brown/gray (segment look)
+    /// Active = white; inactive = brown/gray (segment look)
     private func isActiveSlot(_ slot: Int) -> Bool {
         // 1) Before any tiles exist, guide the user by highlighting Tile 1
         if slot == 0 && !focusVM.tiles.indices.contains(0) { return true }

@@ -5,14 +5,11 @@
 //  Created by Benjamin Tryon on 8/3/25.
 //
 
-import Foundation
 import StoreKit
 
 // Service = "how". Actor is concurrency-safe and long-term correct.
 // Owns StoreKit logic of products, entitlement refresh, refunds/cancellations
 /// Apple processes payment; app never sees card info; Only reads entitlements (transactions) and set isMember; keeping app "anonymous" (device-scoped)
-//final class PaymentService: ObservableObject {
-
 public struct PaymentState: Sendable, Equatable {
     public var isMember: Bool
     public var products: [Product]
@@ -22,154 +19,163 @@ public actor PaymentService {
     private let productIDs: [String]
     private var productsCache: [Product] = []
     private var isMemberCache: Bool = false
-//    @Published private(set) var isMember: Bool = false
     
     // Async plumbing
-    private var continuations: [AsyncStream<PaymentState>.Continuation] = []
+    private var continuations: [UUID: AsyncStream<PaymentState>.Continuation] = [:]
+    private var updatesTask: Task<Void, Never>?
     
     public init(productIDs: [String]) {
         self.productIDs = productIDs
     }
     
+    // RootView calls this once, at launch
     public func configure() async {
-        await listenForTransactions()
+        await refreshProducts()
         await refreshEntitlementStatus()
         // Start listening for transaction updates
-        Task.detached { [weak self] in
-            guard let self else { return }
-            for await _ in Transaction.updates {
-                await self.refreshEntitlementStatus()
-            }
-        }
+        updatesTask?.cancel()
+        updatesTask = listenForTransactions()
     }
+    
+    deinit { updatesTask?.cancel() }
+    
+    //
+    //    public func updates() -> AsyncStream<PaymentState> {
+    //        AsyncStream { cont in
+    //            continuations.append(cont)
+    //            // Immediately emit current snapshot
+    //            cont.yield(.init(isMember: isMemberCache, products: productsCache))
+    //            cont.onTermination = { [weak self] _ in
+    //                guard let self else { return }
+    //                self.continuations.removeAll { $0 === cont }
+    //            }
+    //        }
+    //    }
     
     public func updates() -> AsyncStream<PaymentState> {
         AsyncStream { cont in
-            continuations.append(cont)
+            let id = UUID()
+            continuations[id] = cont
             // Immediately emit current snapshot
             cont.yield(.init(isMember: isMemberCache, products: productsCache))
             cont.onTermination = { [weak self] _ in
-                guard let self else { return }
-                self.continuations.removeAll { $0 === cont }
+                Task { await self?.removeContinuation(id) }
             }
         }
     }
     
-    //   MARK: Queries
+    // MARK: Queries
     public func products() -> [Product] { productsCache }
     public func isMember() -> Bool { isMemberCache }
-    
-    
-    private func listenForTransactions() -> Task<Void, Never> {
-        Task {
-            for await update in Transaction.updates {
-                do {
-                    let t = try checkVerified(update)
-                    if t.productID == membershipProductID {
-                        await refreshEntitlementStatus()
-                    }
-                    await t.finish()
-                } catch {
-                    debugPrint("[PaymentService] update error: ", error)
-                }
-            }
-        }
-    }
     
     // MARK: Entitlement hydration
     public func refreshEntitlementStatus() async {
         var active = false
         for await entitlement in Transaction.currentEntitlements {
             guard case .verified(let t) = entitlement else { continue }
-            if t.productID == membershipProductID, t.revocationDate == nil {
+            if t.productID == productIDs.first, t.revocationDate == nil {
                 active = true
             }
         }
-    isMemberCache = active
+        isMemberCache = active
         notify()
     }
     
-    private let membershipProductID = "com.argonnesoftware.intention"
-    private var updatesTask: Task<Void, Never>?
-//    
-//    init() {
-//        /// Start updates (refunds/cancellation)  listener and hydrate state
-//        updatesTask = listenForTransactions()
-//        Task { await loadProducts(); await refreshEntitlementStatus() }
-//    }
-  
-    deinit { updatesTask?.cancel() }
-    
-    // MARK: Purchasing
-    /// Verifies and finishes Purchase via call sites; returns true only when a verified entitlement exists
-    @discardableResult
-    public func purchaseMembership() async throws -> Bool {
-        guard let product = productsCache.first else {
-            // Ensure products are loaded at least once
-            //            await refreshProducts()
-            guard let prod = productsCache.first else { throw StoreKitError.unknown }
-            return try await purchase(prod: prod)
+    // MARK: Products
+    public func refreshProducts() async {
+        do {
+            let prods = try await Product.products(for: productIDs)
+            productsCache = prods.sorted(by: { $0.price < $1.price })
+            notify()
+        } catch {
+            // leave cache as-is
         }
-        return try await purchase(prod: product)
     }
     
-    private func purchase(prod: Product) async throws -> Bool {
-            let result = try await prod.purchase()
-            switch result {
-            case .success(let verification):
-                switch verification {
-                case .verified(let transaction):
-                    // Finish and refresh entitlements
-                    await transaction.finish()                                        /// No `try` - it's async, not throws
-                    await refreshEntitlementStatus()
-                    return true
-                case .unverified:
-                    return false
-                }
-//                if case .verified = verification {
-//                    isMember = true
-//                    UserDefaults.standard.set(true, forKey: "isMember")
-//                }
-            case .userCancelled, .pending:
-                // FIXME: overlay
-                debugPrint("[PaymentService] user cancelled")
+    // MARK: Purchase/Restore
+    @discardableResult
+    public func purchaseMembership() async throws -> Bool {
+        let product: Product
+        if let first = productsCache.first {
+            product = first
+        } else {
+            await refreshProducts()
+            guard let loaded = productsCache.first else { throw StoreKitError.unknown }
+            product = loaded
+        }
+        
+        let result = try await product.purchase()
+        switch result {
+        case .success(let verification):
+            switch verification {
+            case .verified(let transaction):
+                await transaction.finish()
+                await refreshEntitlementStatus()
+                return true
+            case .unverified:
                 return false
-                @unknown default:
-                // FIXME: overlay
-                debugPrint("[PaymentService] Purchase failed")
-                return false
+            }
+        case .userCancelled, .pending:
+            return false
+        @unknown default:
+            return false
         }
     }
     
     public func restorePurchases() async throws {
-        do {
-            try await AppStore.sync()
-            await refreshEntitlementStatus()
-        } catch {
-            debugPrint("[PaymentService] Restore failed: ", error)
+        try await AppStore.sync()
+        await refreshEntitlementStatus()
+    }
+    
+    
+    // MARK: internally, close-scoped
+    private func listenForTransactions() -> Task<Void, Never> {
+        // Capture while on the actor
+        let targetID = self.productIDs.first
+        
+        return Task { [weak self] in
+            guard let self else { return }
+            for await result in Transaction.updates {
+                do {
+                    // Pure helper, no actor state involved
+                    let transaction = try checkVerified(result)
+                    
+                    if transaction.productID == targetID {
+                        await self.refreshEntitlementStatus()
+                    }
+                    await transaction.finish()
+                } catch {
+                    // ignore unverified
+                }
+            }
         }
     }
     
-
-    
-    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
+    private nonisolated func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
         switch result {
-        case .verified(let safe): return safe
+        case .verified(let value): return value
         case .unverified(_, let err): throw err
         }
     }
     
-    func loadMembershipState() {
-        isMember = UserDefaults.standard.bool(forKey: "isMember")
-    }
-    
     private func notify() {
         let snapshot = PaymentState(isMember: isMemberCache, products: productsCache)
-        continuations.forEach { $0.yield(snapshot) }
+        for cont in continuations.values { cont.yield(snapshot) }
     }
+    
+    private func removeContinuation(_ id: UUID) {
+        continuations.removeValue(forKey: id)
+    }
+    
+    
+    
+    private let membershipProductID = "com.argonnesoftware.intention"
+    //
+    //    init() {
+    //        /// Start updates (refunds/cancellation)  listener and hydrate state
+    //        updatesTask = listenForTransactions()
+    //        Task { await loadProducts(); await refreshEntitlementStatus() }
+    //    }
+    
+
 }
-// #if DEBUG
-// #Preview {
-//    PaymentService()
-// }
-// #endIf

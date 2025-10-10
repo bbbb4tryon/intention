@@ -55,21 +55,26 @@ Unlock Unlimited Focus
                         }
                         .symbolBounceIfAvailable()
                     } else {
+                        // Upgrade
                         Button {
                             Task {
-                                isBusy = true
-                                defer { isBusy = false }
+                                isBusy = true; defer { isBusy = false }
                                 do { try await viewModel.purchaseMembershipOrPrompt() }
-                                catch { debugPrint("[viewModel.purchaseMembershipOrPrompt] error: ", error); viewModel.setError(error) } }      /// Shows ErrorOverlay
-                        } label: { T("Upgrade", .label) }
-                            .primaryActionStyle(screen: .membership).frame(maxWidth: .infinity)
+                                catch { viewModel.setError(error) }      /// Shows ErrorOverlay
+                            }
+                        } label: { T("Upgrade", .action) }
+                            .primaryActionStyle(screen: .membership)
+                            .frame(maxWidth: .infinity)
                         
+                        // Restore
                         Button {
                             Task {
                                 do { try await viewModel.restoreMembershipOrPrompt() }
-                                catch { debugPrint("[viewModel.restoreMembershipOrPrompt] error: ", error); viewModel.setError(error) } }        /// Shows ErrorOverlay
-                        } label: { T("Restore Purchases", .action)}
-                            .secondaryActionStyle(screen: .membership).frame(maxWidth: .infinity)
+                                catch { viewModel.setError(error) }
+                            }        /// Shows ErrorOverlay
+                        } label: { T("Restore Purchases", .label) }
+                            .secondaryActionStyle(screen: .membership)
+                            .frame(maxWidth: .infinity)
                         
                         // Apple offer-code redemption (subscription offers)
                         Button {
@@ -134,41 +139,24 @@ Unlock Unlimited Focus
     }
 }
 
-
 #if DEBUG
-extension MembershipVM {
-    @MainActor
-    func _previewSet(notActive: Bool) {
-        // Adjust these lines to match your properties if names differ.
-        self.isMember = notActive
-        // Optional: also fake a product if your UI needs it
-        self.primaryProduct = nil
-    }
-}
-#endif
-
-#if DEBUG
-//#Preview("Membership — Not Active") {
-//    // Uses your PreviewWrapper + default mocks
-//    PreviewWrapper {
-//        MembershipSheetV()
-//    }
-//}
-
 #Preview("Membership — Not Active") {
     MainActor.assumeIsolated {
-        // Create an isolated VM so we don’t mutate shared PreviewMocks.membershipVM
-        let memberVM = MembershipVM()
-        memberVM._previewSet(notActive: true)
-        
+        // Dedicated, isolated VM for this preview
+        let memberVM = MembershipVM(
+            payment: PaymentService(productIDs: ["com.argonnesoftware.intention"])
+        )
+        memberVM._debugSetIsMember(false)    // Preview the non-member state
+
         return MembershipSheetV()
-        // Inject the exact env objects MembershipSheetV expects
+            // Inject the exact env objects MembershipSheetV expects
             .environmentObject(PreviewMocks.theme)
             .environmentObject(memberVM)
-        // The rest are harmless and keep parity with app environment
+            // These keep parity with your app environment
             .environmentObject(PreviewMocks.prefs)
             .environmentObject(PreviewMocks.history)
             .environmentObject(PreviewMocks.stats)
     }
 }
 #endif
+
