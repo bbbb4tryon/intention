@@ -48,4 +48,3 @@ enum RecalibrationMode: String, Hashable, Codable, CaseIterable {
         }
 }
 
-// enum RecalibrationMode: String, CaseIterable, Hashable, Codable {

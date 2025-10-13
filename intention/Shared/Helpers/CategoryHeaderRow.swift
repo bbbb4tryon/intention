@@ -28,10 +28,10 @@ struct CategoryHeaderRow: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: isArchive ? "archivebox.fill" : "folder.fill")
-                .imageScale(.medium)
+                .imageScale(.small)
                 .foregroundStyle(isArchive ? p.textSecondary : p.accent)
             
-            T("\(title)", .header)
+            T("\(title)", .label)
                 .lineLimit(1)
             
             Spacer()

@@ -84,11 +84,11 @@ struct RecalibrationV: View {
         // Fill-height sheet so users don’t have to expand it first
         .presentationDetents([.large])
         // Sticky bottom chrome
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            BottomInset
-                .background(.ultraThinMaterial)
-                .readHeight($insetHeight)   // helper below to measure height
-        }
+//        .safeAreaInset(edge: .bottom, spacing: 0) {
+//            BottomInset
+//                .background(.ultraThinMaterial)
+//                .readHeight($insetHeight)   // helper below to measure height
+//        }
         .overlay {
             if let err = vm.lastError {
                 ErrorOverlay(error: err) { vm.lastError = nil }
@@ -171,26 +171,27 @@ struct RecalibrationV: View {
         }
     }
     // Sticky chrome above the Home indicator (keep it simple; no refactor of actionArea)
-    @ViewBuilder
-    private var BottomInset: some View {
-        VStack(spacing: 8) {
-            // a subtle handle/status—tweak as you like
-            HStack {
-                Text(vm.phase == .running || vm.phase == .pause ? "Recalibration in progress" : "Ready")
-                    .font(.footnote).foregroundStyle(.secondary)
-                Spacer()
-                if vm.phase == .running || vm.phase == .pause {
-                    Text(vm.formattedTime)
-                        .font(.title3.bold()).monospacedDigit()
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 10)
-            
-            // keep a comfortable tap zone above the home indicator
-            Color.clear.frame(height: 16)
-        }
-    }
+//    @ViewBuilder
+//    private var BottomInset: some View {
+//        VStack(spacing: 8) {
+//            // a subtle handle/status—tweak as you like
+//            HStack {
+////                Text(vm.phase == .running || vm.phase == .pause ? "Recalibration in progress" : "Ready")
+//                Text(vm.phase == .running || vm.phase == .pause ? "" : "")
+//                    .font(.footnote).foregroundStyle(.secondary)
+//                Spacer()
+//                if vm.phase == .running || vm.phase == .pause {
+//                    Text(vm.formattedTime)
+//                        .font(.title3.bold()).monospacedDigit()
+//                }
+//            }
+//            .padding(.horizontal, 16)
+//            .padding(.top, 10)
+//            
+//            // keep a comfortable tap zone above the home indicator
+//            Color.clear.frame(height: 16)
+//        }
+//    }
 }
     // Tiny, reusable instruction list (keeps body tidy)
     private struct InstructionList: View {
@@ -225,7 +226,6 @@ struct RecalibrationV: View {
                 .onPreferenceChange(HeightKey.self) { binding.wrappedValue = $0 }
         }
     }
-
 //
 //                    
 //                    /// users tap a length first (2/3/4), then “Breathe.”

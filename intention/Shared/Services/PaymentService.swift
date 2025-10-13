@@ -69,6 +69,7 @@ public actor PaymentService {
     public func isMember() -> Bool { isMemberCache }
     
     // MARK: Entitlement hydration
+    // ➳ this is where membership flips as verified
     public func refreshEntitlementStatus() async {
         var active = false
         for await entitlement in Transaction.currentEntitlements {
@@ -93,6 +94,7 @@ public actor PaymentService {
     }
     
     // MARK: Purchase/Restore
+    // Does NOT set isMember diretly (good)
     @discardableResult
     public func purchaseMembership() async throws -> Bool {
         let product: Product
@@ -110,7 +112,7 @@ public actor PaymentService {
             switch verification {
             case .verified(let transaction):
                 await transaction.finish()
-                await refreshEntitlementStatus()
+                await refreshEntitlementStatus()        // ✅ flip driven by entitlement re-read
                 return true
             case .unverified:
                 return false
@@ -124,11 +126,11 @@ public actor PaymentService {
     
     public func restorePurchases() async throws {
         try await AppStore.sync()
-        await refreshEntitlementStatus()
+        await refreshEntitlementStatus()             // ✅ flip driven by entitlement re-read
     }
     
     
-    // MARK: internally, close-scoped
+    // MARK: Dependencies
     private func listenForTransactions() -> Task<Void, Never> {
         // Capture while on the actor
         let targetID = self.productIDs.first
@@ -141,7 +143,7 @@ public actor PaymentService {
                     let transaction = try checkVerified(result)
                     
                     if transaction.productID == targetID {
-                        await self.refreshEntitlementStatus()
+                        await self.refreshEntitlementStatus()       // ✅ flip driven by entitlement re-read
                     }
                     await transaction.finish()
                 } catch {

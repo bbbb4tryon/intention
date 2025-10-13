@@ -4,6 +4,8 @@
 //
 //  Created by Benjamin Tryon on 6/19/25.
 //
+//What’s happening (why it “finishes”)
+
 
 import SwiftUI
 

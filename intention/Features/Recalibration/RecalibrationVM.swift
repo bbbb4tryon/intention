@@ -124,7 +124,7 @@ final class RecalibrationVM: ObservableObject {
     // is called un RootView when scene becomes active:
     func appDidBecomeActive() {
         guard phase == .running, let returned = recalDeadline else { return }
-        let remain = max(0, Int(returned.timeIntervalSinceNow))
+        let remain = max(0, Int(returned.timeIntervalSinceNow))         // "clamps": UI never shows -00:01
         
         if remain != timeRemaining { timeRemaining = remain }
         if remain == 0 {
@@ -216,7 +216,7 @@ final class RecalibrationVM: ObservableObject {
                         guard !Task.isCancelled else { return }
                         try? await Task.sleep(nanoseconds: 1_000_000_000)
 //                        await MainActor.run { self.timeRemaining = max(0, self.timeRemaining - 1) }
-                        self.timeRemaining = max(0, self.timeRemaining - 1)
+                        self.timeRemaining = max(0, self.timeRemaining - 1) // "clamps": UI never shows -00:01
                         if self.timeRemaining == 0 { break }
                     }
                     if self.timeRemaining == 0 { break }
@@ -240,7 +240,7 @@ final class RecalibrationVM: ObservableObject {
            for _ in 0..<seconds {
                guard !Task.isCancelled else { return }
                try? await Task.sleep(nanoseconds: 1_000_000_000)
-               await MainActor.run { self.timeRemaining = max(0, self.timeRemaining - 1) }
+               await MainActor.run { self.timeRemaining = max(0, self.timeRemaining - 1) }  // "clamps": UI never shows -00:01
            }
        }
     

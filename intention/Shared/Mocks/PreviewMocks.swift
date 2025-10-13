@@ -25,8 +25,14 @@ enum PreviewMocks {
         StatsVM(persistence: persistence)
     }()
 
+// inject PaymentService(productIDs:) and use the VM’s debug setter
     @MainActor static let membershipVM: MembershipVM = {
-        MembershipVM()
+        let svc = PaymentService(productIDs: ["com.argonnesoftware.intention"])
+        let vm  = MembershipVM(payment: svc)
+        #if DEBUG
+        vm._debugSetIsMember(false)   // Preview non-member state; flip to true if needed
+        #endif
+        return vm
     }()
 
     @MainActor static let prefs: AppPreferencesVM = {

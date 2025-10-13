@@ -23,6 +23,7 @@ enum MembershipError: Error, Equatable, LocalizedError {
 }
 
 /// pure async/await for purchase/restore paths, one paywall, stable entitlement refresh
+/// `isMember` flips only from verified entitlements in PaymentService.refreshEntitlementStatus(), and the VM just mirrors that via updates()
 @MainActor
 final class MembershipVM: ObservableObject {
     // UI state mirrored from PaymentService
@@ -38,6 +39,7 @@ final class MembershipVM: ObservableObject {
     init(payment: PaymentService) {
         self.payment = payment
         // Observe payment service state
+        // "Mirror service state" (✅ this is how VM learns membership)
         Task {
             for await state in await payment.updates(){
                 self.isMember = state.isMember
@@ -79,6 +81,7 @@ final class MembershipVM: ObservableObject {
         }
     }
 
+    // Public UI API (never sets isMember directly)
     func purchaseMembershipOrPrompt() async throws {
         let before = isMember
         do {
