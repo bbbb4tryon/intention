@@ -165,41 +165,27 @@ struct FocusSessionActiveV: View {
             // and doesn't interfere with the ScrollView.
             // It will be snug against the bottom of the screen.
         }
-//        .onChange(of: focusVM.phase) { _ in
-//            print(focusVM.debugPhaseSummary("phase change"))
-//        }
+        //        .onChange(of: focusVM.phase) { _ in
+        //            print(focusVM.debugPhaseSummary("phase change"))
+        //        }
         
         .background(p.background.ignoresSafeArea())
         .tint(p.accent)
         // Single bottom chrome: do NOT add an overlay; this keeps it snug to the tab bar
         //      if user taps Close or swipes down, this stops a running recalibration
         .sheet(isPresented: $focusVM.showRecalibrate) {
-            NavigationStack {
-                RecalibrationV(vm: recalibrationVM)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button {
-                                // Clean stop if user closes sheet mid-run
-                                recalibrationVM.performAsyncAction { try await recalibrationVM.stop() }
-                                dismiss()
-                            } label: {
-                                Image(systemName: "xmark").imageScale(.small).font(.body).controlSize(.large)
-                            }
-                            .buttonStyle(.plain).accessibilityLabel("Close")
-                        }
-                    }
-                    .presentationDetents([.fraction(0.4), .medium, .large])
-                    .presentationDragIndicator(.visible)
-                // Blocks accidental swipe-to-dismiss
-                    .interactiveDismissDisabled(false)
-                    .onDisappear {
-                        // Cleanup if user intentionally swipes down to dismiss
-                        recalibrationVM.performAsyncAction { try await recalibrationVM.stop() }
-                        // reflects ^ action to the parent
-                        focusVM.showRecalibrate = false
-                        }
-                    }
+            RecalibrationSheetChrome(
+                onClose: {
+                    recalibrationVM.performAsyncAction { try await recalibrationVM.stop() }
+                    focusVM.showRecalibrate = false
+                }
+            ) {
+                NavigationStack {
+                    RecalibrationV(vm: recalibrationVM)
+                        .navigationBarHidden(true)          // render our own close in chrome
+                }
             }
+        }
         .onReceive(
             NotificationCenter.default.publisher(
                 for: .init("dev.openRecalibration")
@@ -208,6 +194,10 @@ struct FocusSessionActiveV: View {
             focusVM.showRecalibrate = true
         }
     }
+    
+    
+//    b) Theme changes in AppThemeManager.swift
+    
     
     // MARK: Bottom composer
     @ViewBuilder
