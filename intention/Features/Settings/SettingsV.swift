@@ -62,6 +62,29 @@ struct SettingsV: View {
                 }
 #endif
 
+                // MARK: Support
+                Card {
+                    VStack(alignment: .leading, spacing: 8) {
+                        T("Support", .section)
+                        NavigationLink {
+                            FeedbackV()
+                        } label: {
+                            HStack {
+                                Image(systemName: "paperplane.fill")
+                                T("Send Feedback", .action)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .edgesIgnoringSafeArea(.bottom)
+                }
+
+                // MARK: Membership
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
                         T("Membership", .section)
@@ -89,7 +112,7 @@ struct SettingsV: View {
                     }
                 }
 
-                /// Stats
+                // MARK: Stats
                 Card {
                     Grid(horizontalSpacing: 12, verticalSpacing: 12){
                         GridRow {
@@ -120,7 +143,7 @@ struct SettingsV: View {
 
                 Divider()
 
-                /// Preferences Section
+                // MARK: Preferences
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
                         T("Preferences", .section)
@@ -134,7 +157,7 @@ struct SettingsV: View {
                     .friendlyAnimatedHelper("hapticsOnly-\(prefs.hapticsOnly ? "on" : "off")")
                 }
 
-                /// Color Theme Picker
+                // MARK: Customization
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
                         T("Personalization", .section)
@@ -160,7 +183,7 @@ struct SettingsV: View {
                     }
                 }
 
-                /// Legal (reprise)
+                // MARK: Legal (reprise)
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
 
@@ -183,7 +206,6 @@ struct SettingsV: View {
                         }
                     }
                 }
-
             }
         }
         .background(p.background.ignoresSafeArea())

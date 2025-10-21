@@ -6,25 +6,7 @@
 //
 
 // FocusSessionActiveV <--> ContentView
-// MARK: - Folder Layout (Feature-Based, SwiftUI + UIKit + Actors)
 
-/* Handle, not crash unless app is in danger;
- - fast, well-isolated unit tests
- - performance tests to provide regression coverage of performance-critical regions of code
- - create a test plan to run only the unit tests for a module while developing and debugging that module,
- - a second test plan to run all unit, integration, and UI tests before submitting your app to the App Store
- git commit -m "feat: Add SwiftLint and improve documentation style" -m "This commit adds SwiftLint with a missing_docs rule to enforce documentation standards.
- It also refactors existing comments and documentation to a new, standardized style:
- - Use /// for one-liners.
- - Only use @param and @throws where necessary.
- - Preserve existing clean MARK structures.
- "
- 
- 
- 1. Where are resources for quickly getting up to speed EXCEPT apple documentation, which is not my favorite resource to start anything on?
- 2. I think a generic test result is best, that is, instead of the test requiring the specific text, I'd rather have test require not empty, not gobbledegook, not malicious and with character and string-length limits or other limits.
- 
- */
 import SwiftUI
 
 /// Error types specific to the active session/chunk
@@ -42,9 +24,11 @@ enum ActiveSessionError: Error, Equatable, LocalizedError {
 /// MembershipSheetV modal sheet presentation handling enum
 enum ActiveSheet: Equatable { case none, membership }
 
-/// The main view for running a focus session, accepting two intention tiles of text input
-/// Displays countdown timer, text input for intention tiles, recalibration sheet
+/// Primary screen. Accepts two intention tiles and runs a 20-min countdown.
+/// Hosts validation UI, dynamic messages and the recalibration sheet
 struct FocusSessionActiveV: View {
+    
+    // MARK: Environment
     @EnvironmentObject var theme: ThemeManager
     @EnvironmentObject var statsVM: StatsVM
     @EnvironmentObject var memVM: MembershipVM
@@ -52,11 +36,13 @@ struct FocusSessionActiveV: View {
     @Environment(\.scenePhase) private var phase
     @Environment(\.accessibilityDifferentiateWithoutColor) private var diffNoColor
     
+    // MARK: View Models
     @ObservedObject var focusVM: FocusSessionVM
     @ObservedObject var recalibrationVM: RecalibrationVM
     
-    // manages both focus to textfield AND return from background
-    //  single flag `showValidation`controls when to show validation checks
+    // MARK: Local UI State
+    /// manages both focus to textfield AND return from background
+    /// single flag `showValidation`controls when to show validation checks
     @FocusState private var intentionFocused: Bool
     @State private var showValidation: Bool = false
     @State private var isBusy = false
@@ -173,16 +159,30 @@ struct FocusSessionActiveV: View {
         .tint(p.accent)
         // Single bottom chrome: do NOT add an overlay; this keeps it snug to the tab bar
         //      if user taps Close or swipes down, this stops a running recalibration
-        .sheet(isPresented: $focusVM.showRecalibrate) {
+        .fullScreenCover(isPresented: $focusVM.showRecalibrate) {
             RecalibrationSheetChrome(
                 onClose: {
-                    recalibrationVM.performAsyncAction { try await recalibrationVM.stop() }
+                    recalibrationVM.performAsyncAction {
+                        if recalibrationVM.phase == .running || recalibrationVM.phase == .pause {
+                        try await recalibrationVM.stop()
+                    }
+                }
                     focusVM.showRecalibrate = false
                 }
             ) {
                 NavigationStack {
                     RecalibrationV(vm: recalibrationVM)
-                        .navigationBarHidden(true)          // render our own close in chrome
+                        .navigationBarHidden(true)          // own chrome owns the close
+                }
+            }
+        }
+        .onDisappear {
+            
+            if focusVM.showRecalibrate == false {
+                recalibrationVM.performAsyncAction {
+                    if recalibrationVM.phase == .running || recalibrationVM.phase == .pause {
+                        try await recalibrationVM.stop()
+                    }
                 }
             }
         }
@@ -194,9 +194,6 @@ struct FocusSessionActiveV: View {
             focusVM.showRecalibrate = true
         }
     }
-    
-    
-//    b) Theme changes in AppThemeManager.swift
     
     
     // MARK: Bottom composer

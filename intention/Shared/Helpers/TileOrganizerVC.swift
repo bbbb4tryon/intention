@@ -11,6 +11,12 @@ import UIKit
 final class TileOrganizerVC: UICollectionViewController {
     var onMoveTile: (TileM, UUID, UUID) -> Void = { _, _, _ in }
     var onReorder: (([TileM], UUID) -> Void)?
+    
+    // injected from wrapper
+    var textColor: UIColor = .label
+    var tileSeparatorColor: UIColor = .separator
+    var sectionSeparatorColor: UIColor = .separator
+    var headerTextColor: UIColor = .label
 
     private var categories: [CategoriesModel] = []
     private var dragSourceIndexPath: IndexPath?
@@ -55,20 +61,55 @@ final class TileOrganizerVC: UICollectionViewController {
 
         var config = UIListContentConfiguration.cell()
         config.text = tile.text
+        config.textProperties.color = textColor             // accent label from struct TileOrganizerWrapper
         cell.contentConfiguration = config
-        cell.backgroundColor = UIColor.systemGray6
+        cell.backgroundColor = UIColor.secondarySystemBackground
         cell.layer.cornerRadius = 8
         cell.clipsToBounds = true
+        
+        // add/remove bottom separator (tan) except for the last row in the section
+        cell.contentView.subviews.filter { $0.tag == 999 }.forEach { $0.removeFromSuperview() }
+        let isLast = indexPath.row == collectionView.numberOfItems(inSection: indexPath.section) - 1
+        if !isLast {
+            let sep = UIView()
+            sep.tag = 999
+            sep.backgroundColor = tileSeparatorColor
+            sep.translatesAutoresizingMaskIntoConstraints = false
+            cell.contentView.addSubview(sep)
+            NSLayoutConstraint.activate([
+                sep.heightAnchor.constraint(equalToConstant: 1.0 / UIScreen.main.scale),
+                sep.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 6),
+                sep.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor, constant: -6),
+                sep.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor)
+        ])
+        }
 
         return cell
     }
+    
     // reordering within a single category, but prevents dragging into a different category via reorder
     override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         guard kind == UICollectionView.elementKindSectionHeader else { return UICollectionReusableView() }
         let header = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "Header", for: indexPath) as! HeaderView
         header.label.text = categories[indexPath.section].persistedInput
+        header.label.textColor = headerTextColor
+
+                // bottom line between categories using "history" border
+                header.subviews.filter { $0.tag == 777 }.forEach { $0.removeFromSuperview() }
+                let line = UIView()
+                line.tag = 777
+                line.backgroundColor = sectionSeparatorColor
+                line.translatesAutoresizingMaskIntoConstraints = false
+                header.addSubview(line)
+                NSLayoutConstraint.activate([
+                    line.heightAnchor.constraint(equalToConstant: 1.0 / UIScreen.main.scale),
+                    line.leadingAnchor.constraint(equalTo: header.leadingAnchor),
+                    line.trailingAnchor.constraint(equalTo: header.trailingAnchor),
+                    line.bottomAnchor.constraint(equalTo: header.bottomAnchor)
+                ])
         return header
     }
+    
     // reorders within a same section/ category persist with `moveItemAt()
     override func collectionView(_ collectionView: UICollectionView, moveItemAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
         guard sourceIndexPath.section == destinationIndexPath.section else {

@@ -31,6 +31,3 @@ questions@argonnesoftware.com
 
 ### 9. License
 This app is licensed under Apple’s [Standard EULA](https://www.apple.com/legal/internet-services/itunes/dev/stdeula/).
-
-
-

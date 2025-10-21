@@ -10,23 +10,25 @@
 import SwiftUI
 
 // MARK: - FocusShell
-/// Tiny shell that centralizes shared chrome per screen (backgrounds, overlays).
-/// Keep it intentionally small so it composes well and doesn't re-introduce big chains.
+
+/// Centralizes per-screen chrome (backgrounds, overlays, sheets)
+/// Keep it under 15 lines: Swift won't yell and this avoids deep view chains
 struct FocusShell<Content: View>: View {
     @EnvironmentObject var theme: ThemeManager
     let screen: ScreenName
-    
     
     @ViewBuilder var content: Content
     
     var body: some View {
         let pal = theme.palette(for: screen)
-        //        let base = content
-        let backgrounded = content.background(pal.surface)    // card/surface under widgets
+        // card/surface under widgets
+        let backgrounded = content.background(pal.surface)
         
         ZStack {
             if let g = pal.gradientBackground {
-                LinearGradient(colors: g.colors, startPoint: g.start, endPoint: g.end)
+                LinearGradient(
+                    colors: g.colors, startPoint: g.start, endPoint: g.end
+                )
                     .ignoresSafeArea()
             } else {
                 pal.background.ignoresSafeArea()
@@ -36,9 +38,12 @@ struct FocusShell<Content: View>: View {
     }
 }
 
-// MARK: - sheets presented from the root
+// MARK: - RootSheet
+
+/// sheets presented from the root - Swift won't yell and this avoids deep view chains
 enum RootSheet: Identifiable, Equatable {
     case legal, membership, terms, privacy, medical
+    
     var id: String {
         switch self {
         case .legal: return "legal"
@@ -60,28 +65,27 @@ extension RootView {
 }
 #endif
 
-/// App entry content. Owns and wires shared VMs/actors; hosts the single paywall/legal sheets.
-/// - Keeps VMs at the root (single source of truth)
-/// - Centralizes scene-phase handling and background chrome via `FocusShell`
+/// App entry. Owns and wires shared VMs/actors. Presents paywall and legal.
+/// Keeps single sources of truth at the root and centralizes scene handling.
 struct RootView: View {
     
-    // MARK: AppStorage – legal gate
-    /// Last accepted legal version.
+    // MARK: AppStorage (legal gate)
+    // Last accepted legal version.
     @AppStorage(LegalKeys.acceptedVersion) private var acceptedVersion: Int = 0
-    /// Acceptance timestamp (epoch seconds).
+    // Acceptance timestamp (epoch seconds).
     @AppStorage(LegalKeys.acceptedAtEpoch) private var acceptedAtEpoch: Double = 0
     
     // MARK: presentation
-    /// Which root-level sheet is visible (legal, membership, etc).
+    // Which root-level sheet is visible (legal, membership, etc).
     @State private var activeSheet: RootSheet?
-    /// Global busy overlay.
+    // Global "busy, Loading" overlay.
     @State private var isBusy = false
     
     // MARK: Scene
-    /// Scene phase guardrail: pause timers, flush history, warm haptics.
+    /// Scene phase guardrail: pause timers, flush history, warms haptics.
     @Environment(\.scenePhase) private var scenePhase
     
-    // MARK: Single source of truth (owned here, injected downward)
+    // MARK: Single sources of truth (owned here, injected downward)
     @StateObject private var theme: ThemeManager
     @StateObject private var memVM: MembershipVM
     @StateObject private var historyVM: HistoryVM
@@ -89,32 +93,30 @@ struct RootView: View {
     @StateObject private var recalVM: RecalibrationVM
     @StateObject private var statsVM: StatsVM
     @StateObject private var prefs: AppPreferencesVM
-    @StateObject private var hapticsEngine: HapticsService            // warmed generators (UI object)
+    @StateObject private var hapticsEngine: HapticsService // warmed generators (UI object)
     
-    /// Build once: create actors/services, wire VMs, and assign to `@StateObject` wrappers.
+    /// Builds once: create infrastructure: actors/services, wire VM for "when", actors for "how", and assign to `@StateObject` wrappers.
     init() {
-        // 1) Infra actors/services
+        // Infra actors/services
         let persistence     = PersistenceActor()
         let config          = TimerConfig.current
         
-        // 2) Plain instances (no self)
+        // Plain instances (no self) of Services / VMs
         let theme           = ThemeManager()
         let payments        = PaymentService(productIDs: ["com.argonnesoftware.intention"])
         let membership      = MembershipVM(payment: payments)
         let prefs           = AppPreferencesVM()
         let engine          = HapticsService()
         let liveHaptics     = LiveHapticsClient(prefs: prefs, engine: engine)
-        
         let history         = HistoryVM(persistence: persistence)
         let focus           = FocusSessionVM(previewMode: false, haptics: liveHaptics, config: config)
         let recal           = RecalibrationVM(haptics: liveHaptics)
         let stats           = StatsVM(persistence: persistence)
         
-        // 3) Cross-VM wiring (focus→history, stats→membership)
-        focus.historyVM     = history                               // Focus writes completions into History
-        stats.memVM         = membership                            // Stats can query membership state
-        
-        // 4) Recalibration completion hook → log + reset
+        // Wiring
+        focus.historyVM     = history    // Focus writes completions into History
+        stats.memVM         = membership // Stats can query membership state
+
         recal.onCompleted = { [weak stats, weak focus] (mode: RecalibrationMode) in
             guard let stats = stats else { return }
             let texts = focus?.tiles.map(\.text) ?? []
@@ -126,7 +128,7 @@ struct RootView: View {
             Task { @MainActor in await focus?.resetSessionStateForNewStart() }
         }
         
-        // 5) Assign to `_StateObject` backing vars aka "wrappers"
+        // Assign "wrappers" `_StateObject` backing vars
         _theme          = StateObject(wrappedValue: theme)
         _memVM          = StateObject(wrappedValue: membership)
         _historyVM      = StateObject(wrappedValue: history)
@@ -137,7 +139,7 @@ struct RootView: View {
         _hapticsEngine  = StateObject(wrappedValue: engine)
     }
     
-    // MARK: - body
+    // MARK: Body
     var body: some View {
         // shared palette locals help calm the swift type-checker
         let palFocus        = theme.palette(for: .focus)
@@ -145,10 +147,10 @@ struct RootView: View {
         let _               = theme.palette(for: .settings)
         let _               = theme.palette(for: .recalibrate)
         let _               = theme.palette(for: .membership)
-        let tabBG           = palFocus.background.opacity(0.88)          // Makes tab bar match app theme (iOS 16+)
+        let tabBG           = palFocus.background.opacity(0.88) // Makes tab bar match app theme (iOS 16+)
         
         
-        // Focus tab
+        // Focus Tab
         let focusContent    = FocusSessionActiveV(
             focusVM: focusVM,     // not viewModel:focusVM - focusVM: focusVM matches view's property name
             recalibrationVM: recalVM
@@ -166,7 +168,7 @@ struct RootView: View {
         }
             .tabItem { Image(systemName: "timer") }
         
-        // History tab
+        // History Tab
         let historyContent  = HistoryV(viewModel: historyVM)
         let historyScreen   = FocusShell(screen: .history) { historyContent }
         let historyNav      = NavigationStack {
@@ -176,7 +178,7 @@ struct RootView: View {
         }
             .tabItem { Image(systemName: "clock") }
         
-        // Settings tab (drives stats, membership, ...)
+        // Settings Tab (drives stats, membership, ...)
         let settingsContent = SettingsV(statsVM: statsVM)
         let settingsScreen  = FocusShell(screen: .settings) { settingsContent }
         let settingsNav     = NavigationStack {
@@ -187,14 +189,13 @@ struct RootView: View {
             .tabItem { Image(systemName: "gear") }
         
         // Tabs built as a *local* keeps long chains out of top-level expression
-        // Wrapped here to apply shared toolbars, backgrounds, tab icon coloring
         let tabs    = TabView {
             focusNav
             historyNav
             settingsNav
         }
         
-        // Wrap here to apply shared toolbars, backgrounds
+        // Wrapped to apply shares (apply tab icon coloring, shared toolbars, backgrounds)
         let content = tabs
             .tint(palFocus.primary)
             .toolbarBackground(tabBG, for: .tabBar)
@@ -210,9 +211,12 @@ struct RootView: View {
             .environmentObject(hapticsEngine)
             .environmentObject(focusVM)
             .progressOverlay($isBusy, text: "Loading...")
-        
-        // Keep nav bars coherent with theme - applied per screen via FocusShell/background
+        // Applies current screen theme to background
             .toolbarBackground(tabBG, for: .navigationBar)
+//            .sceneHandlers
+//            .launchHandlers
+//            .membershipHandlers
+//            .rootSheets(activeSheet: $activeSheet, memVM: memVM)
         
         // MARK: App lifecycle (guardrail: scene handling lives at root)
             .onChange(of: scenePhase, perform: { phase in
@@ -329,6 +333,16 @@ struct RootView: View {
     }
 }
 
+//private extension View {
+//    var sceneHandlers: some View { modifier(SceneHandlers()) }
+//    var launchHandlers: some View { modifier(LaunchHandlers()) }
+//    func membershipHandlers(activeSheet: Binding<RootSheet?>, memVM: MembershipVM) -> some View {
+//            modifier(MembershipHandlers(activeSheet: activeSheet, memVM: memVM))
+//        }
+//        func rootSheets(activeSheet: Binding<RootSheet?>, memVM: MembershipVM) -> some View {
+//            modifier(RootSheets(activeSheet: activeSheet, memVM: memVM))
+//        }
+//}
 
 #if DEBUG
 #Preview {

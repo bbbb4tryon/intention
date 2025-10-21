@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		7705D2682E80C32C0046B67E /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 7705D2672E80C32C0046B67E /* README.md */; };
 		7767BD432E79FD870045D430 /* Intention-All.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 7767BD422E79FD870045D430 /* Intention-All.xctestplan */; };
-		7787866E2DF236D4004EDBEF /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = 7787866D2DF236D4004EDBEF /* Documentation.docc */; };
+		7787866E2DF236D4004EDBEF /* Docs.docc in Sources */ = {isa = PBXBuildFile; fileRef = 7787866D2DF236D4004EDBEF /* Docs.docc */; };
 		77DA310D2E44D7F100C6DC9E /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = 77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */; };
 		77DA31352E45872300C6DC9E /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77DA31342E45872300C6DC9E /* StoreKit.framework */; };
 /* End PBXBuildFile section */
@@ -29,7 +29,7 @@
 		770F222E2E02EF2E00F9CEB3 /* intention.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = intention.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7767BD422E79FD870045D430 /* Intention-All.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Intention-All.xctestplan"; sourceTree = "<group>"; };
 		7767BD4F2E7A07D90045D430 /* IntentionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IntentionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		7787866D2DF236D4004EDBEF /* Documentation.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = Documentation.docc; sourceTree = "<group>"; };
+		7787866D2DF236D4004EDBEF /* Docs.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = Docs.docc; sourceTree = "<group>"; };
 		77B8BFDD2E567C010060EFD5 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/iPhoneOS.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		77DA31342E45872300C6DC9E /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
@@ -94,7 +94,7 @@
 				7705D2672E80C32C0046B67E /* README.md */,
 				770F222E2E02EF2E00F9CEB3 /* intention.app */,
 				77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */,
-				7787866D2DF236D4004EDBEF /* Documentation.docc */,
+				7787866D2DF236D4004EDBEF /* Docs.docc */,
 				778786592DF220C5004EDBEF /* intention */,
 				7767BD502E7A07D90045D430 /* IntentionTests */,
 				77DA31332E45872300C6DC9E /* Frameworks */,
@@ -257,7 +257,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7787866E2DF236D4004EDBEF /* Documentation.docc in Sources */,
+				7787866E2DF236D4004EDBEF /* Docs.docc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

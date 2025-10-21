@@ -9,6 +9,8 @@ import SwiftUI
 
 // SwiftUI -> UIKit Bridge
 struct TileOrganizerWrapper: UIViewControllerRepresentable {
+    @EnvironmentObject var theme: ThemeManager
+    
     @Binding var categories: [CategoriesModel]
     let onMoveTile: (TileM, UUID, UUID) -> Void
     let onReorder: ([TileM], UUID) -> Void
@@ -16,7 +18,17 @@ struct TileOrganizerWrapper: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> TileOrganizerVC {
         let vc = TileOrganizerVC()
         vc.onMoveTile = onMoveTile
-        vc.onReorder = onReorder    // Hookup for persistencem, called in/by HistoryVM
+        vc.onReorder = onReorder    // Hookup for persistence, called in/by HistoryVM
+        
+        // supply Organizer palette colors to UIKit
+        //  - allows SwiftUI to access colors for it (the Overlay)
+        
+        let p = theme.palette(for: .organizer)
+        vc.textColor = UIColor(p.accent)            //FIXME: is .accent correct?
+        vc.tileSeparatorColor = UIColor(Color.intTan)   //FIXME: is .intTan correct?
+        vc.sectionSeparatorColor = UIColor(theme.palette(for: .history).border)
+        vc.headerTextColor = UIColor(theme.palette(for: .history).text)
+        vc.view.backgroundColor = .clear
         return vc
     }
     

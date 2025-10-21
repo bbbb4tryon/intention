@@ -13,9 +13,11 @@ import SwiftUI
  */
 
 // Shim: keep code compiling that expects ThemePalette, if any still refer to it!
+
+
 typealias ThemePalette = ScreenStylePalette
 // MARK: - Screens
-enum ScreenName { case focus, history, settings, recalibrate, membership } // FIXME: rename focus to focus
+enum ScreenName { case focus, history, settings, organizer, recalibrate, membership } // FIXME: rename focus to focus
 // MARK: - Text roles
 enum TextRole {
     case largeTitle, header, section, title3, label, body, tile, secondary, caption, action, placeholder
@@ -52,6 +54,34 @@ enum AppFontTheme: String, CaseIterable {
         }
         return .system(style, design: design)
     }
+}
+// MARK: DEFAULT OrganizerOverlay
+//private enum OrganizerBGStyle { case gradient  }     // adjust in extension Color, at bottom
+private enum OrganizerTan {
+    static let topLight = Color(red: 0.9137, green: 0.8627, blue: 0.7373) // #e9dcbc
+    static let bottomDark = Color(red: 0.2588, green: 0.2078, blue: 0.0863) // #423516
+}
+
+// MARK: DEFAULT Recalibrate Sheet
+private enum RecalibrateBlue {
+    // Light “Close” blue (used as top of gradient & general bg)
+    static let topLight  = Color(red: 0.72, green: 0.86, blue: 1.00)
+    // Darker body blue (used as bottom of gradient & accent/tint)
+    static let bottomDark = Color(red: 0.00, green: 0.30, blue: 0.60)
+}
+// MARK: Sea theme
+private enum Sea {
+    // Light “Close” blue (used as top of gradient & general bg)
+    static let topLight  = Color(red: 0.72, green: 0.86, blue: 1.00)
+    // Darker body blue (used as bottom of gradient & accent/tint)
+    static let bottomDark = Color(red: 0.00, green: 0.30, blue: 0.60)
+}
+// MARK: Fire theme
+private enum Fire {
+    // Light “Close” blue (used as top of gradient & general bg)
+    static let topLight  = Color(red: 0.72, green: 0.86, blue: 1.00)
+    // Darker body blue (used as bottom of gradient & accent/tint)
+    static let bottomDark = Color(red: 0.00, green: 0.30, blue: 0.60)
 }
 
 // MARK: - App Color Theme → per-screen palettes
@@ -101,22 +131,21 @@ enum AppColorTheme: String, CaseIterable {
                 )
                 
             case .recalibrate:
-                // unchanged – this one was fine
                 return .init(
-                    primary: .intSeaGreen,      // drives CTA fill
-                    background: Color.blue.opacity(0.20),
-                    surface: .intTan.opacity(0.7),
-                    accent: accent,
-                    text: .black,
-                    textSecondary: textPrimary,
+                    primary: RecalibrateBlue.bottomDark,       // CTA fill if you use `.primaryActionStyle`
+                    background: RecalibrateBlue.topLight,       // overall background - bg = a lighter hue of blue for "Close" button
+                    surface: .white.opacity(0.06),
+                    accent: RecalibrateBlue.bottomDark,         // toolbar/close tint = darker blue
+                    text: .white,                           // readable on darker gradient portion
+                    textSecondary: .white.opacity(0.85),
                     success: .green,
                     warning: .yellow,
                     danger: .red,
-                    border: .black.opacity(0.10),
+                    border: .white.opacity(0.18),
                     gradientBackground: .init(
-                        colors: [Color.blue.opacity(0.20), Color.blue.opacity(0.85)],
-                        start: .topLeading,
-                        end: .bottomTrailing
+                        colors: [RecalibrateBlue.topLight, RecalibrateBlue.bottomDark],
+                        start: .top,
+                        end: .bottom
                     )
                 )
                 
@@ -133,6 +162,25 @@ enum AppColorTheme: String, CaseIterable {
                     danger: .red,
                     border: .black.opacity(0.10),
                     gradientBackground: nil
+                )
+                
+            case .organizer:
+                return .init(
+                    primary: .intMint,
+                    background: Color(.systemGroupedBackground),
+                    surface: .white.opacity(0.96),
+                    accent: baseBackground,
+                    text: .intCharcoal,
+                    textSecondary: .intCharcoal.opacity(0.72),
+                    success: .green,
+                    warning: .yellow,
+                    danger: .red,
+                    border: .black.opacity(0.10),
+                    gradientBackground: .init(
+                        colors: [OrganizerTan.topLight, OrganizerTan.bottomDark],
+                        start: .top,
+                        end: .bottom
+                    )
                 )
             }
             
@@ -211,6 +259,20 @@ enum AppColorTheme: String, CaseIterable {
                     border: .white.opacity(0.18),
                     gradientBackground: nil
                 )
+            case .organizer:
+                return .init(
+                    primary: Color(red: 0.00, green: 0.28, blue: 0.62), // match settings
+                    background: bg,                                      // dark theme background
+                    surface: .white.opacity(0.12),                     // slightly higher for readability
+                    accent: bg.opacity(0.96),
+                    text: txt,
+                    textSecondary: txt.opacity(0.85),
+                    success: .green,
+                    warning: .yellow,
+                    danger: .red,
+                    border: .white.opacity(0.18),
+                    gradientBackground: nil
+                )
             }
             // ---------- FIRE ----------
         case .fire:
@@ -279,6 +341,20 @@ enum AppColorTheme: String, CaseIterable {
                     background: bg,
                     surface: .white.opacity(0.12),                      // slightly higher for readability
                     accent: accent,
+                    text: txt,
+                    textSecondary: txt.opacity(0.85),
+                    success: .green,
+                    warning: .yellow,
+                    danger: .red,
+                    border: .white.opacity(0.16),
+                    gradientBackground: nil
+                )
+            case .organizer:
+                return .init(
+                    primary: Color(red: 0.88, green: 0.12, blue: 0.02), // match settings
+                    background: bg,
+                    surface: .white.opacity(0.12),                      // slightly higher for readability
+                    accent: bg.opacity(0.96),
                     text: txt,
                     textSecondary: txt.opacity(0.85),
                     success: .green,
@@ -364,7 +440,9 @@ final class ThemeManager: ObservableObject {
 extension Color {
     static let intText = Color(red: 0.96, green: 0.96, blue: 0.96)     // #F5F5F5
     static let btnTextLight = intText     // #F5F5F5
-    static let btnTextDark  = Color(red: 0.99, green: 0.99, blue: 0.99)     // #FDFDFD
+    static let btnTextDark = Color(red: 0.99, green: 0.99, blue: 0.99)     // #FDFDFD
+    static let orgOverlayLight = Color(red: 0.9137, green: 0.8627, blue: 0.7373) // #e9dcbc
+    static let orgOverlayDark = Color(red: 0.2588, green: 0.2078, blue: 0.0863) // #423516
 }
 
 // MARK: - Preview Convenience
@@ -373,3 +451,4 @@ extension View {
         self.environmentObject(ThemeManager())
     }
 }
+

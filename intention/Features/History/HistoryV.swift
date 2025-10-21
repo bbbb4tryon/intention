@@ -52,19 +52,26 @@ struct HistoryV: View {
                             }
                         )
                         .id(category.id)
-                        .padding(.horizontal, 16)
-                        .environmentObject(theme)
+                        //                        .padding(.vertical, 12)
+                        //                        .padding(.horizontal, 16)
+                        //                        .environmentObject(theme)
+                    // -- category separator --
+                        Rectangle()
+                            .fill(p.border)
+                            .frame(height: 1)
+                            .padding(.vertical, 4)
                     }
                 }
-                .padding(.vertical, 12)
+//                Divider().overlay(Color.intTan)
+                //                .padding(.vertical, 12)
             }
             // Toasts
             VStack(spacing: 8) {
                 if let move = viewModel.lastUndoableMove {
                     HStack {
-                        Text("\(move.tile.text) moved").font(.footnote)
-                        Spacer()
-                        Button {viewModel.undoLastMove() } label: { T("Undo", .action) }.primaryActionStyle(screen: screen)
+//                        Text("\(move.tile.text) moved").font(.footnote)
+//                        Spacer()
+                        Button {viewModel.undoLastMove()} label: { T("Undo?", .action) }.primaryActionStyle(screen: screen)
                     }
                     .padding(.horizontal, 12)           // Card instead?
                     .padding(.vertical, 10)             // Card instead?
@@ -73,8 +80,7 @@ struct HistoryV: View {
                 }
                 
                 if viewModel.tileLimitWarning {
-                    Text("Archive capped at 200; oldest items were removed.")
-                        .font(.footnote)
+                    T("Archive capped at 200; oldest items were removed.", .caption)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
                         .background(.ultraThinMaterial, in: Capsule())
@@ -86,7 +92,7 @@ struct HistoryV: View {
                 }
             }
         }
-        .background(p.background.ignoresSafeArea())
+        .background(p.background)
         .tint(p.accent)
         .animation(.easeInOut(duration: 0.2), value: viewModel.lastUndoableMove != nil)
         .toolbar { historyToolbar }.environmentObject(theme)
@@ -104,37 +110,47 @@ struct HistoryV: View {
             }
             Button("Cancel", role: .cancel) { }
         } message: { Text("Tiles will be moved to Archive.") }
-        
-        
-            .fullScreenCover(isPresented: $isOrganizing,
-                             onDismiss: { viewModel.flushPendingSaves() }) {
-                OrganizerOverlayScreen(
-                    categories: $viewModel.categories,
-                    onMoveTile: { tile, fromID, toID in
-                        Task { @MainActor in
-                            do { try await viewModel.moveTileThrowing(tile, from: fromID, to: toID) }
-                            catch { viewModel.lastError = error }
+
+            .fullScreenCover(isPresented: $isOrganizing
+//                             //FIXME: - Does this =work without onDismiss?
+//                             onDismiss: { viewModel.flushPendingSaves() }
+            ) {
+                OrganizerOverlayChrome(onClose: {
+                    //FIXME: - Does this CLOSE AND save without flushPendingSaves?
+//                    viewModel.flushPendingSaves()
+                    isOrganizing = false
+                }) {
+                    OrganizerOverlayScreen(
+                        categories: $viewModel.categories,
+                        onMoveTile: { tile, fromID, toID in
+                            Task { @MainActor in
+                                do { try await viewModel.moveTileThrowing(tile, from: fromID, to: toID) }
+                                catch { viewModel.lastError = error }
+                            }
+                        },
+                        onReorder: { newTiles, categoryID in
+                            viewModel.updateTiles(in: categoryID, to: newTiles)
+                            viewModel.saveHistory()
+                        },
+                        onDone: {
+                            // close path X/drag like RecalibrationChrome
+                            //FIXME: - Does this CLOSE AND save without flushPendingSaves?
+                            // viewModel.flushPendingSaves()
+                            isOrganizing = false
                         }
-                    },
-                    onReorder: { newTiles, categoryID in
-                        viewModel.updateTiles(in: categoryID, to: newTiles)
-                        viewModel.saveHistory()
-                    },
-                    onDone: {
-                        viewModel.flushPendingSaves()
-                        isOrganizing = false
-                    }
-                )
-                .environmentObject(theme)
-                // Match Membership background exactly (Default = systemGroupedBackground)
-                .background(theme.palette(for: .membership).background.ignoresSafeArea())
-                // If you want to block swipe-down dismissal, uncomment:
-                // .interactiveDismissDisabled(true)
+                    )
+                    .environmentObject(theme)
+                }
+                // Chrome owns gesture/X dismissal
+                 .interactiveDismissDisabled(true)
             }
-                             .task(id: isOrganizing) {
-                                 // On leaving organize mode, force-flush pending saves.
-                                 if !isOrganizing { viewModel.flushPendingSaves() }
-                             }
+            // HistoryV: the flush in .task(id: isOrganizing) when it becomes false,
+            // - happens ONCE here, when the cover closes
+             .task(id: isOrganizing) {
+                 // On leaving organize mode, force-flush pending saves.
+                 if !isOrganizing { viewModel.flushPendingSaves() }
+             }
+        Spacer(minLength: 0)
     }
     
     //    @ToolbarContentBuilder private var historyToolbar: some ToolbarContent {
@@ -233,7 +249,7 @@ private struct CategoryCard: View {
     @EnvironmentObject private var viewModel: HistoryVM
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 2) {
             CategoryHeaderRow(
                 title: isArchive ? "Archive" : category.persistedInput.ifEmpty("Untitled"),
                 count: category.tiles.count,
@@ -244,49 +260,13 @@ private struct CategoryCard: View {
             )
             
             CategoryTileList(category: $category, isArchive: isArchive)
+                .padding(.vertical, 12)
+//                .frame(maxWidth: .infinity, alignment: .leading)
                 .environmentObject(viewModel)
         }
-        .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-}
-
-// MARK: - OrganizerOverlayScreen
-private struct OrganizerOverlayScreen: View {
-    @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var theme: ThemeManager
-    @Binding var categories: [CategoriesModel]
-    var onMoveTile: (TileM, UUID, UUID) -> Void
-    var onReorder: (_ newTiles: [TileM], _ categoryID: UUID) -> Void
-    var onDone: () -> Void
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 10) {
-                TileOrganizerWrapper(
-                    categories: $categories,
-                    onMoveTile: onMoveTile,
-                    onReorder: onReorder
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .shadow(radius: 3, y: 1)
-                .padding(16)
-            }
-            .navigationTitle("Organize")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { onDone() }.font(.body).controlSize(.large)
-
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button{ dismiss() }
-                    label: { Image(systemName: "xmark").imageScale(.small).font(.body).controlSize(.large) }.buttonStyle(.plain).accessibilityLabel("Close")
-                }
-            }
-        }
-        // If you *always* want systemGroupedBackground regardless of theme:
-        // .background(Color(.systemGroupedBackground).ignoresSafeArea())
+//        .padding(.horizontal, 16)
+//        .background(Color.clear)
+        //        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -322,8 +302,8 @@ extension HistoryV {
         historyVM.ensureGeneralCategory()
         
         if let generalID = historyVM.categories.first?.id {
-            historyVM.addToHistory(TileM(text: "Do item"), to: generalID)
-            historyVM.addToHistory(TileM(text: "Get other item"), to: generalID)
+            historyVM.addToHistory(TileM(text: "Color background from gray-ish to history Tan"), to: generalID)
+            historyVM.addToHistory(TileM(text: "Define Dividers as the light tan"), to: generalID)
         }
         
         return PreviewWrapper {
@@ -344,7 +324,7 @@ extension HistoryV {
         
         if let userID = h.addEmptyUserCategory() {
             h.renameCategory(id: userID, to: "Projects")
-            h.addToHistory(TileM(text: "Refactor overlay"), to: userID)
+            h.addToHistory(TileM(text: "Refactor the organizerOverlay"), to: userID)
             h.addToHistory(TileM(text: "Add accessibility"), to: userID)
             h.addToHistory(TileM(text: "Debug accessibility"), to: userID)
             h.addToHistory(TileM(text: "Ship v1"), to: userID)
