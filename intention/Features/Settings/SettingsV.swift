@@ -193,16 +193,31 @@ struct SettingsV: View {
                             onShowMedical: { showMedical = true }
                         )
                         .sheet(isPresented: $showTerms) {
-                            NavigationStack { LegalDocV(title: "Terms of Use",
-                                                        markdown: MarkdownLoader.load(named: LegalConfig.termsFile)) }
+                            NavigationStack {
+                                LegalDocV(
+                                title: "Terms of Use",
+                                markdown: MarkdownLoader
+                                    .load(named: LegalConfig.termsFile)
+                                )
+                            }
                         }
                         .sheet(isPresented: $showPrivacy) {
-                            NavigationStack { LegalDocV(title: "Privacy Policy",
-                                                        markdown: MarkdownLoader.load(named: LegalConfig.privacyFile)) }
+                            NavigationStack {
+                                LegalDocV(
+                                    title: "Privacy Policy",
+                                    markdown: MarkdownLoader
+                                        .load(named: LegalConfig.privacyFile)
+                                )
+                            }
                         }
                         .sheet(isPresented: $showMedical) {
-                            NavigationStack { LegalDocV(title: "Wellness Disclaimer",
-                                                        markdown: MarkdownLoader.load(named: LegalConfig.medicalFile)) }
+                            NavigationStack {
+                                LegalDocV(
+                                    title: "Wellness Disclaimer",
+                                    markdown: MarkdownLoader
+                                        .load(named: LegalConfig.medicalFile)
+                                )
+                            }
                         }
                     }
                 }

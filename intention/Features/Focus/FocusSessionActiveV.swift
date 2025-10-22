@@ -320,6 +320,7 @@ private struct TileSlot: View {
                         .foregroundStyle(palette.success)   // more vivid than "accent"
                         .accessibilityHidden(true)
                 }
+                .baselineOffset(1)
                 .padding(.horizontal, hPad)
                 .padding(.vertical, vPad)
             } else {

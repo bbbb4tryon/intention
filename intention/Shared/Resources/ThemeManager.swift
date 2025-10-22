@@ -59,7 +59,7 @@ enum AppFontTheme: String, CaseIterable {
 //private enum OrganizerBGStyle { case gradient  }     // adjust in extension Color, at bottom
 private enum OrganizerTan {
     static let topLight = Color(red: 0.9137, green: 0.8627, blue: 0.7373) // #e9dcbc
-    static let bottomDark = Color(red: 0.2588, green: 0.2078, blue: 0.0863) // #423516
+    static let bottomDark = Color(red: 0.4824, green: 0.3922, blue: 0.1569) // #7b6428
 }
 
 // MARK: DEFAULT Recalibrate Sheet
@@ -135,7 +135,7 @@ enum AppColorTheme: String, CaseIterable {
                     primary: RecalibrateBlue.bottomDark,       // CTA fill if you use `.primaryActionStyle`
                     background: RecalibrateBlue.topLight,       // overall background - bg = a lighter hue of blue for "Close" button
                     surface: .white.opacity(0.06),
-                    accent: RecalibrateBlue.bottomDark,         // toolbar/close tint = darker blue
+                    accent: .intMint,         // toolbar/close tint = darker blue
                     text: .white,                           // readable on darker gradient portion
                     textSecondary: .white.opacity(0.85),
                     success: .green,
@@ -143,7 +143,7 @@ enum AppColorTheme: String, CaseIterable {
                     danger: .red,
                     border: .white.opacity(0.18),
                     gradientBackground: .init(
-                        colors: [RecalibrateBlue.topLight, RecalibrateBlue.bottomDark],
+                        colors: [Color("topLight"), Color("bottomDark")],
                         start: .top,
                         end: .bottom
                     )
@@ -177,7 +177,7 @@ enum AppColorTheme: String, CaseIterable {
                     danger: .red,
                     border: .black.opacity(0.10),
                     gradientBackground: .init(
-                        colors: [OrganizerTan.topLight, OrganizerTan.bottomDark],
+                        colors: [OrganizerTan.topLight, OrganizerTan.topLight],
                         start: .top,
                         end: .bottom
                     )

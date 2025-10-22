@@ -12,11 +12,11 @@ struct OrganizerOverlayChrome<Content: View>: View {
     @EnvironmentObject var theme: ThemeManager
     var onClose: () -> Void
     @ViewBuilder var content: Content
-
+    
     @State private var offsetY: CGFloat = 0
     private let dismissThreshold: CGFloat = 120
     private var p: ScreenStylePalette { theme.palette(for: .organizer) }
-
+    
     var body: some View {
         ZStack {
             // The themed gradient or fallback background
@@ -26,7 +26,7 @@ struct OrganizerOverlayChrome<Content: View>: View {
             } else {
                 p.background.ignoresSafeArea()
             }
-
+            
             // "Sheet" container
             VStack(spacing: 0) {
                 // Grabber + close
@@ -45,13 +45,14 @@ struct OrganizerOverlayChrome<Content: View>: View {
                 }
                 .contentShape(Rectangle())
                 
-                // Your sheet content - the rounded part
-//FIXME: If you do see the gradient “disappear,” the cause will be an accidental parent/background at the presentation site or setting content to expand and fill the entire ZStack; the snippet above avoids both.
+                //FIXME: If you do see the gradient “disappear,” the cause will be an accidental parent/background at the presentation site or setting content to expand and fill the entire ZStack; the snippet above avoids both.
+                // -- Rounded part of sheet content --
                 content
-                    .background(p.surface)
+                // keep the gradient clear: let content be transparent
+                    .background(.clear)
             }
-//            .background(.clear)     //FIXME: - in RecalibrationChrome, needed here too?
-            .clipShape(.rect(cornerRadius: 22, style: .continuous))
+            .background(.clear)
+//            .clipShape(.rect(cornerRadius: 22, style: .continuous))
             .offset(y: max(0, offsetY))
             .gesture(
                 DragGesture()
@@ -61,9 +62,9 @@ struct OrganizerOverlayChrome<Content: View>: View {
                         else { withAnimation(.spring) { offsetY = 0 }}
                     }
             )
-            .padding(.top, 8) //FIXME: - in RecalibrationChrome, needed here too?
-        .padding(.horizontal, 0) //FIXME: - in RecalibrationChrome, needed here too?
-        .ignoresSafeArea(edges: .bottom) //FIXME: - in RecalibrationChrome, needed here too?
+            .padding(.top, 8)
+            .padding(.horizontal, 0)
+            .ignoresSafeArea(edges: .bottom)
         }
     }
 }
