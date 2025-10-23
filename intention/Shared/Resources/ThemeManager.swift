@@ -6,18 +6,21 @@
 //
 
 import SwiftUI
-/*
- Make color vary by theme+screen, while typography/spacing/components stay identical
- 
- The goal: one component system (Page, Card, fonts, paddings) + per-screen palette that swaps only colors when you change variant (“Default/Fire/Sea”)
- */
+// views will use local color constants for validation, border, and secondary text
 
 // Shim: keep code compiling that expects ThemePalette, if any still refer to it!
 
-
+//// Use the dark brown color for text
+//Text("Your Readable Text Here")
+//    .font(.headline)
+//    .foregroundColor(Color(red: 0.4824, green: 0.3922, blue: 0.1569)) // #7B6428
+// -- Use a material background (which applies a subtle blur/opacity)
+//    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+// modern approach in Swift for non-shadow readability.
+// It automatically ensures the text's background contrasts with the content behind it, boosting legibility without adding an explicit shadow
 typealias ThemePalette = ScreenStylePalette
 // MARK: - Screens
-enum ScreenName { case focus, history, settings, organizer, recalibrate, membership } // FIXME: rename focus to focus
+enum ScreenName { case focus, history, settings, organizer, recalibrate, membership }
 // MARK: - Text roles
 enum TextRole {
     case largeTitle, header, section, title3, label, body, tile, secondary, caption, action, placeholder
@@ -55,20 +58,25 @@ enum AppFontTheme: String, CaseIterable {
         return .system(style, design: design)
     }
 }
+
 // MARK: DEFAULT OrganizerOverlay
-//private enum OrganizerBGStyle { case gradient  }     // adjust in extension Color, at bottom
-private enum OrganizerTan {
-    static let topLight = Color(red: 0.9137, green: 0.8627, blue: 0.7373) // #e9dcbc
-    static let bottomDark = Color(red: 0.4824, green: 0.3922, blue: 0.1569) // #7b6428
+private enum OrgBG {
+    // -> lighter = #fffffc, darker #e9dcbc
+    // topLight = #FFFFFC
+        static let topLight = Color(red: 1.0, green: 1.0, blue: 0.9922)
+        // bottomDark = #E9DCBC
+        static let bottomDark = Color(red: 0.9137, green: 0.8627, blue: 0.7373)
 }
 
 // MARK: DEFAULT Recalibrate Sheet
 private enum RecalibrateBlue {
-    // Light “Close” blue (used as top of gradient & general bg)
-    static let topLight  = Color(red: 0.72, green: 0.86, blue: 1.00)
-    // Darker body blue (used as bottom of gradient & accent/tint)
-    static let bottomDark = Color(red: 0.00, green: 0.30, blue: 0.60)
+    // -> lighter = #335492, darker #001e64
+    // converted from #335492
+    static let topLight  = Color(red: 0.2000, green: 0.3294, blue: 0.5725)
+    // converted from #001e64
+    static let bottomDark = Color(red: 0.0, green: 0.1176, blue: 0.3922)
 }
+
 // MARK: Sea theme
 private enum Sea {
     // Light “Close” blue (used as top of gradient & general bg)
@@ -76,6 +84,7 @@ private enum Sea {
     // Darker body blue (used as bottom of gradient & accent/tint)
     static let bottomDark = Color(red: 0.00, green: 0.30, blue: 0.60)
 }
+
 // MARK: Fire theme
 private enum Fire {
     // Light “Close” blue (used as top of gradient & general bg)
@@ -111,17 +120,17 @@ enum AppColorTheme: String, CaseIterable {
             // ---------- DEFAULT ----------
         case .default:
             let baseBackground: Color = .intTan
-            let textPrimary: Color   = .intCharcoal
+            let textPrimary: Color   = .intCharcoal //FIXME: f2f2f2 Color(red: 0.9137, green: 0.8627, blue: 0.7373)
             let textSecondary: Color = .intCharcoal.opacity(0.85)
             
             switch screen {
             case .focus, .history, .settings:
                 return .init(
                     primary: .intGreen,             // drives CTA fill
-                    background: baseBackground,
+                    /* e0d8cb */ background: Color(red: 0.8784, green: 0.8471, blue: 0.7961),
                     surface: .intTan.opacity(0.7),
                     accent: accent,
-                    text: textPrimary,
+                    /**/ text: Color(red: 0.9137, green: 0.8627, blue: 0.7373),
                     textSecondary: textSecondary,
                     success: .green,
                     warning: .yellow,
@@ -136,16 +145,16 @@ enum AppColorTheme: String, CaseIterable {
                     background: RecalibrateBlue.topLight,       // overall background - bg = a lighter hue of blue for "Close" button
                     surface: .white.opacity(0.06),
                     accent: .intMint,         // toolbar/close tint = darker blue
-                    text: .white,                           // readable on darker gradient portion
+                    text: .intCharcoal,                           // readable on darker gradient portion
                     textSecondary: .white.opacity(0.85),
                     success: .green,
                     warning: .yellow,
                     danger: .red,
                     border: .white.opacity(0.18),
                     gradientBackground: .init(
-                        colors: [Color("topLight"), Color("bottomDark")],
-                        start: .top,
-                        end: .bottom
+                        colors: [(RecalibrateBlue.topLight), (RecalibrateBlue.bottomDark)],
+                        start: .topLeading,
+                        end: .bottomTrailing
                     )
                 )
                 
@@ -165,19 +174,21 @@ enum AppColorTheme: String, CaseIterable {
                 )
                 
             case .organizer:
+                // superior contrast (6.1:1) against the light gradient
+                /*#7b6428*/ let organizerText = Color(red: 0.4824, green: 0.3922, blue: 0.1569)
                 return .init(
                     primary: .intMint,
-                    background: Color(.systemGroupedBackground),
-                    surface: .white.opacity(0.96),
-                    accent: baseBackground,
-                    text: .intCharcoal,
+                    background: .clear,     // Set to .clear since we rely on the gradient
+                    surface: .clear,        // Surface should also be clear to see gradient
+                    accent: organizerText, /* Use the dark text color for chrome tint (X button) */
+                    text: organizerText.opacity(0.72), // Secondary text is slightly lighter
                     textSecondary: .intCharcoal.opacity(0.72),
                     success: .green,
                     warning: .yellow,
                     danger: .red,
                     border: .black.opacity(0.10),
                     gradientBackground: .init(
-                        colors: [OrganizerTan.topLight, OrganizerTan.topLight],
+                        colors: [OrgBG.topLight, OrgBG.topLight],
                         start: .top,
                         end: .bottom
                     )
@@ -247,9 +258,9 @@ enum AppColorTheme: String, CaseIterable {
                 )
             case .membership:
                 return .init(
-                    primary: Color(red: 0.00, green: 0.28, blue: 0.62), // match settings
-                    background: bg,                                      // dark theme background
-                    surface: .white.opacity(0.12),                     // slightly higher for readability
+                    primary: Color(red: 0.00, green: 0.28, blue: 0.62),
+                    background: bg,
+                    surface: .white.opacity(0.12),
                     accent: accent,
                     text: txt,
                     textSecondary: txt.opacity(0.85),
@@ -261,9 +272,9 @@ enum AppColorTheme: String, CaseIterable {
                 )
             case .organizer:
                 return .init(
-                    primary: Color(red: 0.00, green: 0.28, blue: 0.62), // match settings
-                    background: bg,                                      // dark theme background
-                    surface: .white.opacity(0.12),                     // slightly higher for readability
+                    primary: Color(red: 0.00, green: 0.28, blue: 0.62),
+                    background: bg,
+                    surface: .white.opacity(0.12),
                     accent: bg.opacity(0.96),
                     text: txt,
                     textSecondary: txt.opacity(0.85),

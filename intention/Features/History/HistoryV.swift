@@ -31,6 +31,7 @@ struct HistoryV: View {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
     
+    
     var body: some View {
         ScrollView {
             Page(top: 6, alignment: .center) {

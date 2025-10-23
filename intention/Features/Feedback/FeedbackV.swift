@@ -37,6 +37,7 @@ struct FeedbackV: View {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
     
+    
     var body: some View {
         // Email body with useful info for bug reports
 //        let body = "\n\nApp Version: \(version)\nDevice: \(deviceType)\niOS: \(osVersion)"

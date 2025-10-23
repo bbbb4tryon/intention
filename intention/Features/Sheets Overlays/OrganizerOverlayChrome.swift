@@ -40,19 +40,18 @@ struct OrganizerOverlayChrome<Content: View>: View {
                                     .font(.headline)
                                     .padding(12)
                             }
-                            .tint(p.accent)
+////                            .tint(p.accent)
+//                            .tint()
                         }
                 }
                 .contentShape(Rectangle())
-                
-                //FIXME: If you do see the gradient “disappear,” the cause will be an accidental parent/background at the presentation site or setting content to expand and fill the entire ZStack; the snippet above avoids both.
+
                 // -- Rounded part of sheet content --
+                // OrganizerOverlayScreen content is here
                 content
-                // keep the gradient clear: let content be transparent
-                    .background(.clear)
+                    .background(.clear) // Ensures content itself doesn't hide the ZStack gradient
             }
-            .background(.clear)
-//            .clipShape(.rect(cornerRadius: 22, style: .continuous))
+            .clipShape(.rect(cornerRadius: 22, style: .continuous))
             .offset(y: max(0, offsetY))
             .gesture(
                 DragGesture()

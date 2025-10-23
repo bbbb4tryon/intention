@@ -11,6 +11,7 @@ struct BalanceSideDots: View {
     let activeIndex: Int   // 0 = Left, 1 = Right
     let p: ScreenStylePalette
 
+    
     var body: some View {
         HStack(spacing: 16) {
             dot(label: "Left Foot", isActive: activeIndex == 0)
