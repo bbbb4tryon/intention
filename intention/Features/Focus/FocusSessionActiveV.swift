@@ -63,6 +63,11 @@ struct FocusSessionActiveV: View {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
     
+    // --- Local Color Definitions for Focus ---
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let colorDanger = Color.red
+    private let colorBorder = Color.intCharcoal
+    
     var body: some View {
         VStack(spacing: 0){             // Main VStack to control vertical layout
             // All your content that should appear above the tiles
@@ -177,7 +182,6 @@ struct FocusSessionActiveV: View {
             }
         }
         .onDisappear {
-            
             if focusVM.showRecalibrate == false {
                 recalibrationVM.performAsyncAction {
                     if recalibrationVM.phase == .running || recalibrationVM.phase == .pause {
@@ -208,7 +212,7 @@ struct FocusSessionActiveV: View {
                     isFilled: (slots[slot]?.isEmpty == false),
                     isCompleted: completionForSlot(slot),
                     isActive: isActiveSlot(slot),
-                    palette: p,
+                    p: p,
                     diffNoColor: diffNoColor
                 )
             }
@@ -288,7 +292,7 @@ private struct TileSlot: View {
     let isFilled: Bool
     let isCompleted: Bool
     let isActive: Bool
-    let palette: ScreenStylePalette
+    let p: ScreenStylePalette
     let diffNoColor: Bool
     
     // Layout constants
@@ -296,16 +300,21 @@ private struct TileSlot: View {
     private let vPad: CGFloat = 8
     private let minDesiredHeight: CGFloat = 1
     
+    // --- Local Color Definitions for Focus ---
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let colorSuccess = Color.green
+    private let colorBorder = Color.intCharcoal
+    
     var body: some View {
-        let bg = isActive ? palette.surface : palette.surface.opacity(0.35)
-        let stroke = palette.border
+        let bg = isActive ? p.surface : p.surface.opacity(0.35)
+        let stroke = colorBorder
         
         // MARK: - tiles container
         VStack {
             if isFilled {
                 HStack(alignment: .top, spacing: 8) {
                     theme.styledText(text, as: .tile, in: .focus)
-                        .foregroundStyle(palette.text)
+                        .foregroundStyle(p.text)
                     // Allow text to wrap to as many lines as needed
                         .lineLimit(nil)
                     // This allows the Text view to expand vertically while being constrained horizontally
@@ -317,7 +326,7 @@ private struct TileSlot: View {
                     // Always show a checkmark for filled tiles
                     Image(systemName: isCompleted ? "checkmark.circle.fill" : "checkmark.circle")
                         .font(.body)                        // slightly increases size
-                        .foregroundStyle(palette.success)   // more vivid than "accent"
+                        .foregroundStyle(colorSuccess)   // more vivid than "accent"
                         .accessibilityHidden(true)
                 }
                 .baselineOffset(1)
@@ -327,7 +336,7 @@ private struct TileSlot: View {
                 // Empty state - no checkmarks yet
                 HStack(alignment: .firstTextBaseline, spacing: 20) {
                     Image(systemName: "text.alignleft").font(.body).accessibilityHidden(true)
-                    Text("").foregroundStyle(palette.textSecondary)
+                    Text("").foregroundStyle(textSecondary)
                 }
                 .padding(.horizontal, hPad)
                 .padding(.vertical, vPad)

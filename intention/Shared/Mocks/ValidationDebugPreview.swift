@@ -90,7 +90,7 @@ struct ValidationDebugPreview: View {
                     .animation(.easeInOut(duration: 0.2), value: computedValidationState.isInvalid)
 
                 // 2. The ValidationCaption below the field
-                ValidationCaption(state: computedValidationState, palette: p)
+                ValidationCaption(state: computedValidationState)
                     .animation(.easeInOut(duration: 0.2), value: computedValidationState.isInvalid)
             }
             

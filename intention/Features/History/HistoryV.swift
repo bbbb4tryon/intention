@@ -31,6 +31,10 @@ struct HistoryV: View {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
     
+    // --- Local Color Definitions for History ---
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let colorDanger = Color.red
+    private let colorBorder = Color.intCharcoal
     
     var body: some View {
         ScrollView {
@@ -58,7 +62,7 @@ struct HistoryV: View {
                         //                        .environmentObject(theme)
                     // -- category separator --
                         Rectangle()
-                            .fill(p.border)
+                            .fill(colorBorder)
                             .frame(height: 1)
                             .padding(.vertical, 4)
                     }

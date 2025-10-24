@@ -13,21 +13,33 @@ struct ErrorOverlay: View {
     let error: Error
     let dismissAction: () -> Void
     
+    private let screen: ScreenName = .focus // or whichever main screen hosts this overlay
+        private var p: ScreenStylePalette { theme.palette(for: screen) }
+    
+    // --- Local Color Definitions by way of Recalibration ---
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let colorDanger = Color.red
+    
     var body: some View {
         VStack(spacing: 12) {
             Text("⚠️ Something went wrong")
                 .bold()
+                .foregroundStyle(colorDanger)
+            
+            // Message: use the theme's text color for readability
             Text(displayMessage(for: error))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(p.text)
             
+            // Use theme's primary CTA/Accent color
             Button("Dismiss", action: dismissAction)
+                .buttonStyle(.borderedProminent)
+                                .tint(p.accent) // Use the theme's accent color for the button
         }
-        .padding()
-        .background(.ultraThinMaterial)         //FIXME: Remove since background is at FocusShell and Root?
-        .cornerRadius(16)
-        .shadow(radius: 10)
-        .padding()
+        .padding(20)            // Lots, for visual spacing
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .shadow(radius: 8, y: 4)    // softer
+        .padding(30)        // Ensures overlay doesn't hug screen edges
     }
     
     private func displayMessage(for error: Error) -> String {

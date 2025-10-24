@@ -26,10 +26,16 @@ struct CategoryTileList: View {
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
+    
+    // --- Local Color Definitions for History ---
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let colorDanger = Color.red
+    private let colorBorder = Color.intCharcoal
+    
     var body: some View {
         if category.tiles.isEmpty {
             theme.styledText(isArchive ? "No archived items yet." : "Completed", as: .caption, in: screen)
-                .foregroundStyle(p.textSecondary)
+                .foregroundStyle(textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(10)
                 .background(p.background, in: RoundedRectangle(cornerRadius: 8, style: .continuous))

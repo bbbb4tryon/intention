@@ -14,6 +14,11 @@ struct BreathingPhaseGuide: View {
     let activeIndex: Int
     let p: ScreenStylePalette
     
+    // --- Local Color Definitions by way of Recalibration ---
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
+//    private let colorDanger = Color.red
+    private let colorBorder = Color.intCharcoal
+    
     var body: some View {
         HStack(spacing: 10) {
             ForEach(phases.indices, id: \.self) { i in
@@ -24,9 +29,9 @@ struct BreathingPhaseGuide: View {
                         Capsule().fill(i == activeIndex ? p.surface.opacity(0.9) : .clear)
                         )
                     .overlay(
-                        Capsule().stroke(i == activeIndex ? p.border : .clear, lineWidth: 1)
+                        Capsule().stroke(i == activeIndex ? colorBorder : .clear, lineWidth: 1)
                     )
-                    .foregroundStyle(i == activeIndex ? p.text : p.textSecondary)
+                    .foregroundStyle(i == activeIndex ? p.text : textSecondary)
                     .scaleEffect(i == activeIndex ? 1.06 : 1.0)
                     .animation(.spring(response: 0.22, dampingFraction: 0.85), value: activeIndex)
                     .accessibilityLabel("\(phases[i])\(i == activeIndex ? ", current" : "")")

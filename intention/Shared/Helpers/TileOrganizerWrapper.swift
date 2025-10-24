@@ -11,6 +11,12 @@ import SwiftUI
 struct TileOrganizerWrapper: UIViewControllerRepresentable {
     @EnvironmentObject var theme: ThemeManager
     
+    // --- Local Color Definitions for Overlay ---
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let colorDanger = Color.red
+    private let colorBorder = Color.intCharcoal
+    
+    
     @Binding var categories: [CategoriesModel]
     let onMoveTile: (TileM, UUID, UUID) -> Void
     let onReorder: ([TileM], UUID) -> Void
@@ -26,7 +32,7 @@ struct TileOrganizerWrapper: UIViewControllerRepresentable {
         let p = theme.palette(for: .organizer)
         vc.textColor = UIColor(p.accent)            //FIXME: is .accent correct?
         vc.tileSeparatorColor = UIColor(Color.intTan)   //FIXME: is .intTan correct?
-        vc.sectionSeparatorColor = UIColor(theme.palette(for: .history).border)
+        vc.sectionSeparatorColor = UIColor(colorBorder)
         vc.headerTextColor = UIColor(theme.palette(for: .history).text)
         vc.view.backgroundColor = .clear
         return vc

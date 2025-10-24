@@ -25,6 +25,11 @@ struct CategoryHeaderRow: View {
     var onRename: () -> Void
     var onDelete: () -> Void
     
+    // --- Local Color Definitions for History ---
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let colorDanger = Color.red
+    private let colorBorder = Color.intCharcoal
+    
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: isArchive ? "archivebox.fill" : "")
@@ -32,13 +37,13 @@ struct CategoryHeaderRow: View {
                 .foregroundStyle(isArchive ? p.text : p.accent)
             
             T("\(title)", .label)
-                .lineLimit(1)
+                .lineLimit(2)
             
             Spacer()
             
             Text("\(count)")
                 .font(.callout.monospacedDigit())
-                .foregroundStyle(p.textSecondary)
+                .foregroundStyle(textSecondary)
             
             if allowEdit {
                 Menu {

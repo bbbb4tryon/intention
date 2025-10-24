@@ -37,6 +37,10 @@ struct FeedbackV: View {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
     
+    // --- Local Color Definitions for FeedbackV ---
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let colorDanger = Color.red
+    private let colorBorder = Color.intCharcoal
     
     var body: some View {
         // Email body with useful info for bug reports
@@ -48,6 +52,7 @@ struct FeedbackV: View {
 
                 Group {
                     T("Name (optional)", .label)
+                    Spacer()
                     TextField("Jane Doe", text: $name)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled(false)
@@ -56,12 +61,14 @@ struct FeedbackV: View {
 
                 Group {
                     T("Email (required)", .label)
+                    Spacer()
                     TextField("name@example.com", text: $email)
                         .keyboardType(.emailAddress)
                         .textContentType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
                         .validatingField(state: emailState, palette: p)
+                    
                     ValidationCaption(state: emailState, palette: p)
                 }
 
@@ -71,7 +78,7 @@ struct FeedbackV: View {
                         Spacer()
                         Text("\(message.count)/\(maxMessageChars)")
                             .font(.caption)
-                            .foregroundStyle(p.textSecondary)
+                            .foregroundStyle(textSecondary)
                             .monospacedDigit()
                     }
 
@@ -82,7 +89,7 @@ struct FeedbackV: View {
                         .padding(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(messageState.isInvalid ? p.danger : p.border, lineWidth: 1)
+                                .stroke(messageState.isInvalid ? colorDanger : colorBorder, lineWidth: 1)
                         )
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)

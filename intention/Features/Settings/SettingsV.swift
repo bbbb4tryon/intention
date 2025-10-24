@@ -28,6 +28,11 @@ struct SettingsV: View {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
 
+    // --- Local Color Definitions Settings ---
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let colorDanger = Color.red
+    private let colorBorder = Color.intCharcoal
+    
     var body: some View {
         ScrollView {
             Page(top: 4, alignment: .center) {
@@ -79,7 +84,7 @@ struct SettingsV: View {
                             }
                             .padding(.vertical, 6)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.borderless)
                     }
                     .edgesIgnoringSafeArea(.bottom)
                 }
@@ -95,7 +100,7 @@ struct SettingsV: View {
                         .foregroundStyle(memVM.isMember ? .green : .secondary)
 
                         T("Your user ID/device ID: \(userID)", .caption)
-                            .foregroundStyle(p.textSecondary)
+                            .foregroundStyle(textSecondary)
                         HStack(spacing: 12) {
                             Button(action: {
                                 /// Instead of Link()
@@ -149,7 +154,7 @@ struct SettingsV: View {
                         T("Preferences", .section)
                         Toggle(isOn: .constant(true)) { T("Enable Notification", .caption) }
                         Toggle(isOn: $prefs.hapticsOnly) { T("Haptics Only: Vibration cues only", .caption)
-                            .foregroundStyle(p.textSecondary) }
+                            .foregroundStyle(textSecondary) }
                         Toggle(isOn: .constant(false)) { T("Sound Off", .caption) }
                             .controlSize(.small)        /// Toggle size
                             .toggleStyle(SwitchToggleStyle(tint: p.accent))

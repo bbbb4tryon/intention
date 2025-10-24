@@ -9,6 +9,7 @@ import SwiftUI
 
 struct StatNumberStyle: ViewModifier {
     let p: ScreenStylePalette
+    
     func body(content: Content) -> some View {
         content
             .bold()
@@ -21,17 +22,19 @@ struct StatNumberStyle: ViewModifier {
     }
 }
 struct StatCaptionStyle: ViewModifier {
-    let p: ScreenStylePalette
+//    let p: ScreenStylePalette
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
     func body(content: Content) -> some View {
         content
             .lineLimit(1)                           // never wrap
             .minimumScaleFactor(0.6)                // shrink, instead
             .allowsTightening(true)
-            .foregroundStyle(p.textSecondary)
+            .foregroundStyle(textSecondary)
             .layoutPriority(1)
     }
 }
 extension View {
     func statNumberStyle(_ p: ScreenStylePalette) -> some View { modifier(StatNumberStyle(p:p)) }
-    func statCaptionStyle(_ p: ScreenStylePalette) -> some View { modifier(StatCaptionStyle(p:p)) }
+//    func statCaptionStyle(_ p: ScreenStylePalette) -> some View { modifier(StatCaptionStyle(p:p)) }
+    func statCaptionStyle(_ p: ScreenStylePalette) -> some View { modifier(StatCaptionStyle()) }
 }

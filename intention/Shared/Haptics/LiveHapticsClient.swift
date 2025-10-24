@@ -16,9 +16,6 @@ final class HapticsService: ObservableObject {
     private let notify  = UINotificationFeedbackGenerator()
     
     init() { prepareGenerators() }
-//    init(prefs: AppPreferencesVM, engine: HapticsService) {
-//        light.prepare(); impact.prepare(); heavy.prepare(); notify.prepare()
-//    }
     
     /// Pre-warms the generators; safe to call often
     func warm() { prepareGenerators() }
@@ -26,37 +23,23 @@ final class HapticsService: ObservableObject {
         light.prepare(); impact.prepare(); heavy.prepare(); notify.prepare()
     }
     
-    func added() {      impact.impactOccurred(intensity: 0.8) }
-    func warn() {       notify.notificationOccurred(.warning) }
+    func added() { impact.impactOccurred(intensity: 0.8) }
+    func warn() { notify.notificationOccurred(.warning) }
     func notifyDone() {
-        // Pattern: heavy, tiny pause (10ms), heavy, tiny pause (10ms), heavy
         heavy.impactOccurred()                      // 1st heavy
         
         Task {
-            let shortPause: UInt64 = 20_000_000     // 20 million nanoseconds - 20 milisecdons
+            let longerPause: UInt64 = 200_000_000   // 200 million nanoseconds - 200 milisecdons
+            let shortPause: UInt64 = 90_000_000     // 90 million nanoseconds - 90 milisecdons
             // wait; second heavy
-            try? await Task.sleep(nanoseconds: shortPause); heavy.impactOccurred()
+            try? await Task.sleep(nanoseconds: longerPause); heavy.impactOccurred()
             // wait; third heavy
+            try? await Task.sleep(nanoseconds: shortPause); heavy.impactOccurred()
+            // wait; last heavy
             try? await Task.sleep(nanoseconds: shortPause); heavy.impactOccurred()
         }
         notify.notificationOccurred(.success)
     }
-    
-//        light.impactOccurred()
-//        Task {
-//            try? await Task.sleep(nanoseconds: 300_000_000); light.impactOccurred()
-//        }
-//    }
-
-//     func notifyDone() {
-//        /// long, long, short
-//         heavy.impactOccurred()
-//         Task {
-//             try? await Task.sleep(nanoseconds: 500_000_000); heavy.impactOccurred()
-//             try? await Task.sleep(nanoseconds: 250_000_000); heavy.impactOccurred()
-//         }
-//    }
-    
 }
 /// Gates haptics; VMs only talk to this protocol
 @MainActor
@@ -84,21 +67,3 @@ struct LiveHapticsClient: HapticsClient {
     func warn()     { guard enabled else { return }; engine.warn() }
     func notifyDone() { guard enabled else { return }; engine.notifyDone() }
 }
-
-/// for background tasks, just hop to main when calling: await MainActor.run { haptics.notifyDone() }
-/// if the compiler complains/nags:
-/// // Live client (wrap engine safely on main)
-/// struct LiveHapticsClient: HapticsClient {
-///    let prefs: AppPreferencesVM
-///    let engine: HapticsService
-///    private var enabled: Bool { prefs.hapticsOnly }
-///
-///    func added() async       { guard enabled else { return }
-///        await MainActor.run { engine.tapLight() } }
-///
-///    func warn() async{ guard enabled else { return }
-///        await MainActor.run { engine.doubleLight() } }
-///
-///    func notifyDone() async  { guard enabled else { return }
-///        await MainActor.run { engine.longLongShort() } }
-/// }

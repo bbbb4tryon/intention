@@ -47,6 +47,11 @@ struct DynamicCountdown: View {
         }
     }
     
+    // --- Local Color Definitions for History ---
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let colorDanger = Color.red
+    private let colorBorder = Color.intCharcoal
+    
     var body: some View {
         if isActive {
             ZStack {
