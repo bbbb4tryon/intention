@@ -13,7 +13,7 @@ struct PrimaryActionStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(maxWidth: .infinity)
-            .foregroundStyle(palette.primary)               // intGreen color
+            .foregroundStyle(palette.text)
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -23,8 +23,8 @@ struct PrimaryActionStyle: ButtonStyle {
     }
     
     private func fillColor(isPressed: Bool) -> Color {
-        let base = palette.primary                          // intGreen color
-        if !isEnabled { return base.opacity(0.85) }         // slightly dim intGreen
+        let base = palette.accent
+        if !isEnabled { return base.opacity(0.85) }         // slightly dim
         return isPressed ? base.opacity(0.90) : base
     }
 }
@@ -36,7 +36,7 @@ struct SecondaryActionStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(maxWidth: .infinity)
-            .foregroundStyle(palette.primary)
+            .foregroundStyle(palette.surface)
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -45,8 +45,8 @@ struct SecondaryActionStyle: ButtonStyle {
             .clipShape( RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
     private func fillColor(isPressed: Bool) -> Color {
-        let base = palette.primary.opacity(0.80)        // intGreen color
-        if !isEnabled { return base.opacity(0.70) }     // slightly dim intGreen
+        let base = palette.surface.opacity(0.80)
+        if !isEnabled { return base.opacity(0.70) }     // slightly dim
         return isPressed ? base.opacity(0.85) : base
     }
 }
@@ -57,7 +57,7 @@ struct RecalibrationActionStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(maxWidth: .infinity)
-            .foregroundStyle(palette.primary)
+            .foregroundStyle(palette.accent)
             .padding(.vertical, 12)
             .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -66,8 +66,8 @@ struct RecalibrationActionStyle: ButtonStyle {
         .clipShape( RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
     private func fillColor(isPressed: Bool) -> Color {
-        let base = palette.primary                          // intGreen color
-        if !isEnabled { return base.opacity(0.85) }         // slightly dim intGreen
+        let base = palette.accent
+        if !isEnabled { return base.opacity(0.85) }         // slightly dim
         return isPressed ? base.opacity(0.90) : base
     }
 }

@@ -17,6 +17,10 @@ struct RecalibrationSheetChrome<Content: View>: View {
     private let dismissThreshold: CGFloat = 120
 
     private var p: ScreenStylePalette { theme.palette(for: .recalibrate) }
+    // --- Local Color Definitions ---
+    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
+    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
+    private let colorDanger = Color.red
 
     var body: some View {
         ZStack {

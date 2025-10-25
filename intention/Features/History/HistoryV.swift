@@ -16,6 +16,8 @@ struct HistoryV: View {
     // UI State
     //    @State private var newTextTiles: [UUID: String] = [:]       /// Store new tile text per category using its `id` as key
     @State private var isOrganizing = false
+    @State private var showOrganizerOverlay = false
+    @State private var showErrorOverlay = false
     @State private var createdCategoryID: UUID?
     @State private var targetCategoryID: UUID?
     @State private var showRenamePicker = false
@@ -32,9 +34,9 @@ struct HistoryV: View {
     }
     
     // --- Local Color Definitions for History ---
-    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
+    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
-    private let colorBorder = Color.intCharcoal
     
     var body: some View {
         ScrollView {
@@ -60,22 +62,22 @@ struct HistoryV: View {
                         //                        .padding(.vertical, 12)
                         //                        .padding(.horizontal, 16)
                         //                        .environmentObject(theme)
-                    // -- category separator --
+                        // -- category separator --
                         Rectangle()
                             .fill(colorBorder)
                             .frame(height: 1)
                             .padding(.vertical, 4)
                     }
                 }
-//                Divider().overlay(Color.intTan)
+                //                Divider().overlay(Color.intTan)
                 //                .padding(.vertical, 12)
             }
             // Toasts
             VStack(spacing: 8) {
                 if let move = viewModel.lastUndoableMove {
                     HStack {
-//                        Text("\(move.tile.text) moved").font(.footnote)
-//                        Spacer()
+                        //                        Text("\(move.tile.text) moved").font(.footnote)
+                        //                        Spacer()
                         Button {viewModel.undoLastMove()} label: { T("Undo?", .action) }.primaryActionStyle(screen: screen)
                     }
                     .padding(.horizontal, 12)           // Card instead?
@@ -115,14 +117,28 @@ struct HistoryV: View {
             }
             Button("Cancel", role: .cancel) { }
         } message: { Text("Tiles will be moved to Archive.") }
-
+        
+//        // Organizer overlay (your fullScreenCover is driven by isOrganizing)
+//            .onReceive(NotificationCenter.default.publisher(for: .devOpenOrganizerOverlay)) { _ in
+//                withAnimation { isOrganizing = true }
+//            }
+        
+        // Error overlay
+//            .onReceive(NotificationCenter.default.publisher(for: .devOpenErrorOverlay)) { _ in
+//                showErrorOverlay = true
+//            }
+//            .overlay {
+//                if showErrorOverlay {
+//                    ErrorOverlayV(onClose: { showErrorOverlay = false })
+//                }
+//            }
             .fullScreenCover(isPresented: $isOrganizing
-//                             //FIXME: - Does this =work without onDismiss?
-//                             onDismiss: { viewModel.flushPendingSaves() }
+                             //                             //FIXME: - Does this =work without onDismiss?
+                             //                             onDismiss: { viewModel.flushPendingSaves() }
             ) {
                 OrganizerOverlayChrome(onClose: {
                     //FIXME: - Does this CLOSE AND save without flushPendingSaves?
-//                    viewModel.flushPendingSaves()
+                    //                    viewModel.flushPendingSaves()
                     isOrganizing = false
                 }) {
                     OrganizerOverlayScreen(
@@ -147,14 +163,14 @@ struct HistoryV: View {
                     .environmentObject(theme)
                 }
                 // Chrome owns gesture/X dismissal
-                 .interactiveDismissDisabled(true)
+                .interactiveDismissDisabled(true)
             }
-            // HistoryV: the flush in .task(id: isOrganizing) when it becomes false,
-            // - happens ONCE here, when the cover closes
-             .task(id: isOrganizing) {
-                 // On leaving organize mode, force-flush pending saves.
-                 if !isOrganizing { viewModel.flushPendingSaves() }
-             }
+        // HistoryV: the flush in .task(id: isOrganizing) when it becomes false,
+        // - happens ONCE here, when the cover closes
+            .task(id: isOrganizing) {
+                // On leaving organize mode, force-flush pending saves.
+                if !isOrganizing { viewModel.flushPendingSaves() }
+            }
         Spacer(minLength: 0)
     }
     
@@ -244,8 +260,8 @@ extension Array {
     var only: Element? { count == 1 ? first : nil }
 }
 
-// MARK: - Category Card (private) = Header + Tile List
-///composes CategoryHeaderRow + CategoryTileList with the rounded card chrome. Keeping it private avoids scattering styling across files and keeps the view tree simple
+// MARK: - Category Card (private) = Header  Tile List
+///composes CategoryHeaderRow  CategoryTileList with the rounded card chrome. Keeping it private avoids scattering styling across files and keeps the view tree simple
 private struct CategoryCard: View {
     @Binding var category: CategoriesModel
     let isArchive: Bool
@@ -266,11 +282,11 @@ private struct CategoryCard: View {
             
             CategoryTileList(category: $category, isArchive: isArchive)
                 .padding(.vertical, 12)
-//                .frame(maxWidth: .infinity, alignment: .leading)
+            //                .frame(maxWidth: .infinity, alignment: .leading)
                 .environmentObject(viewModel)
         }
-//        .padding(.horizontal, 16)
-//        .background(Color.clear)
+        //        .padding(.horizontal, 16)
+        //        .background(Color.clear)
         //        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }

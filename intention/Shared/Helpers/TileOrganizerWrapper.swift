@@ -12,9 +12,9 @@ struct TileOrganizerWrapper: UIViewControllerRepresentable {
     @EnvironmentObject var theme: ThemeManager
     
     // --- Local Color Definitions for Overlay ---
-    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
+    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
-    private let colorBorder = Color.intCharcoal
     
     
     @Binding var categories: [CategoriesModel]

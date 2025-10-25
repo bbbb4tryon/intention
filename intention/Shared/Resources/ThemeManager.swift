@@ -4,7 +4,6 @@
 //
 //  Created by Benjamin Tryon on 6/14/25.
 //
-
 import SwiftUI
 // views will use local color constants for validation, border, and secondary text
 // Shim: keep code compiling that expects ThemePalette, if any still refer to it!
@@ -132,25 +131,24 @@ enum AppColorTheme: String, CaseIterable {
         switch self {
             // ---------- DEFAULT ----------
         case .default:
-            
             switch screen {
             case .focus, .history, .settings:
                 return .init(
-                    primary: DefaultColors.surface,             // Secondary CTA color (gray)
-                    background: DefaultColors.backgroundLight,    // Page background
-                    surface: DefaultColors.surface.opacity(0.85), // Card/Bar surface (slightly lighter)
-                    accent: DefaultColors.accent,               // Primary CTA color (citron)
-                    text: DefaultColors.text,                   // Primary text color (dark gray)
+                    primary: DefaultColors.surface,             // secondary/quiet CTAs
+                    background: DefaultColors.backgroundLight,    // Page pg
+                    surface: DefaultColors.surface.opacity(0.85), // card/surface (slightly lighter)
+                    accent: DefaultColors.accent,                  // CTA color (citron)
+                    text: DefaultColors.text,                   // primary text color (dark gray)
                     gradientBackground: nil
                 )
                 
             case .recalibrate:
                 return .init(
-                    primary: RecalibrateBG.bottomDark,
-                    background: RecalibrateBG.topLight,       // overall background - bg = a lighter hue of blue for "Close" button
-                    surface: DefaultColors.surface.opacity(0.08), /* or .white.opacity(0.08),*/ // Card/Bar surface (much lighter)
-                    accent: DefaultColors.accent.opacity(0.5),    // CTA fill and accent fill
-                    text: DefaultColors.text.opacity(0.08),       // Primary text color (light hue of dark gray)
+                    primary: RecalibrateBG.bottomDark,          // icon tints if needed
+                    background: RecalibrateBG.topLight,         // fallback if gradient is nil
+                    surface: DefaultColors.surface.opacity(0.10),   // frosted cards
+                    accent: DefaultColors.accent,               // CTA on sheet
+                    text: DefaultColors.backgroundLight,       // light text over dark blue
                     gradientBackground: .init(
                         colors: [(RecalibrateBG.topLight), (RecalibrateBG.bottomDark)],
                         start: .topLeading,
@@ -160,12 +158,11 @@ enum AppColorTheme: String, CaseIterable {
                 
             case .membership:
                 return .init(
-//                    primary: DefaultColors.surface,             // Secondary CTA color (gray)
-                    primary: DefaultColors.accent,               // Primary CTA color (citron)
-                    background: DefaultColors.backgroundLight,    // Page background
-                    surface: DefaultColors.surface.opacity(0.96), // Card/Bar surface (slightly lighter)
-                    accent: DefaultColors.accent,               // Primary CTA color (citron)
-                    text: DefaultColors.text,                   // Primary text color (dark gray)
+                    primary: DefaultColors.accent,               // CTA color (citron)
+                    background: DefaultColors.backgroundLight,    // fallback if gradient is nil
+                    surface: DefaultColors.surface.opacity(0.96), // card/surface (slightly lighter)
+                    accent: DefaultColors.accent,               // CTA color (citron)
+                    text: DefaultColors.text,                   // primary text color (dark gray)
                     gradientBackground: .init(
                         colors: [(MembershipBG.topLight), (MembershipBG.bottomDark)],
                         start: .topTrailing,
@@ -178,13 +175,13 @@ enum AppColorTheme: String, CaseIterable {
                 // superior contrast (6.1:1) against the light gradient
                 /*#7b6428*/ let organizerText = Color(red: 0.4824, green: 0.3922, blue: 0.1569)
                 return .init(
-                    primary: DefaultColors.accent,               // Primary CTA color (citron)
-                    background: .clear,     // Set to .clear since we rely on the gradient
-                    surface: .clear,        // Surface should also be clear to see gradient
-                    accent: organizerText, /* Use the dark text color for chrome tint (X button) */
-                    text: organizerText.opacity(0.72), // Secondary text is slightly lighter
+                    primary: DefaultColors.accent,               // CTA color (citron)
+                    background: .clear,                         // clear, to see gradient
+                    surface: .clear,                            // let gradient breath
+                    accent: organizerText,                      // toolbar tint (X button, etc)
+                    text: organizerText,          // primary text
                     gradientBackground: .init(
-                        colors: [OrgBG.topLight, OrgBG.bottomDark],   // Use the light/medium background for organizer gradient
+                        colors: [OrgBG.topLight, OrgBG.bottomDark],  
                         start: .top,
                         end: .bottom
                     )

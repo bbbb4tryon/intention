@@ -22,8 +22,10 @@ struct StatNumberStyle: ViewModifier {
     }
 }
 struct StatCaptionStyle: ViewModifier {
-//    let p: ScreenStylePalette
-    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    //    let p: ScreenStylePalette
+    
+    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
+    
     func body(content: Content) -> some View {
         content
             .lineLimit(1)                           // never wrap
@@ -35,6 +37,6 @@ struct StatCaptionStyle: ViewModifier {
 }
 extension View {
     func statNumberStyle(_ p: ScreenStylePalette) -> some View { modifier(StatNumberStyle(p:p)) }
-//    func statCaptionStyle(_ p: ScreenStylePalette) -> some View { modifier(StatCaptionStyle(p:p)) }
+    //    func statCaptionStyle(_ p: ScreenStylePalette) -> some View { modifier(StatCaptionStyle(p:p)) }
     func statCaptionStyle(_ p: ScreenStylePalette) -> some View { modifier(StatCaptionStyle()) }
 }

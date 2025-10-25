@@ -15,58 +15,59 @@ struct SettingsV: View {
     @EnvironmentObject var focusVM: FocusSessionVM
     @ObservedObject var statsVM: StatsVM
     @AppStorage(DebugKeys.forceLegalNextLaunch) private var debugShowLegalNextLaunch = false
-
+    
     @State private var userID: String = ""      /// aka deviceID
     @State private var showTerms = false
     @State private var showPrivacy = false
     @State private var showMedical = false
     @State private var isBusy = false
-
+    
     private let screen: ScreenName = .settings
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
-
+    
     // --- Local Color Definitions Settings ---
-    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
+    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
-    private let colorBorder = Color.intCharcoal
     
     var body: some View {
         ScrollView {
             Page(top: 4, alignment: .center) {
                 T("Settings", .header)
                     .padding(.bottom, 4)
-
+                
 #if DEBUG
                 // DisclosureGroup<Label, Content>(label: Label, @ViewBuilder content: () -> Content)
                 // where the label is the first (non-closure) argument, and the content is the trailing closure
                 // use the implicit first and second trailing closures:
                 // The Label argument (mandatory for this initializer with DisclosureGroup)
                 DisclosureGroup {
-                    VStack(alignment: .leading, spacing: 6){    // The LABEL closure
-                        Button("Clear: Debug")      { UserDefaults.standard.removeObject(forKey: "debug.chunkSeconds"); Task { } }
-                        Button("Reset: Legal Gate") { LegalConsent.clearForDebug() } .controlSize(.large)
-                        Toggle("Show Legal on Next Launch", isOn: $debugShowLegalNextLaunch)
-                        Button("Show Recalibration"){ NotificationCenter.default.post(name: .init("dev.openRecalibration"), object: nil) }
-                        Button("Reset Session")     { Task {await focusVM.resetSessionStateForNewStart() }}
-                        Picker("Timer debug", selection: Binding(
-                            get: { UserDefaults.standard.integer(forKey: "debug.chunkSeconds") },
-                            set: { UserDefaults.standard.set($0, forKey: "debug.chunkSeconds") }
-                        )) {
-                            Text("10s").tag(10); Text("30s").tag(30); Text("60s").tag(60)
-                            Text("OFF (20m)").tag(0)         // 0 disables override
+                    VStack(alignment: .leading, spacing: 6) {
+                        Button("Clear: Debug") {
+                            UserDefaults.standard.removeObject(forKey: "debug.chunkSeconds")
                         }
-                    }
-                    .controlSize(.small)
-                    .font(.footnote)
-                    .buttonStyle(.bordered)
+                        Button("Reset: Legal Gate") { LegalConsent.clearForDebug() }
+                            .controlSize(.large)
+                        
+                        Toggle("Show Legal on Next Launch", isOn: $debugShowLegalNextLaunch)
+                        
+                        Button("Show Organizer")    { NotificationCenter.default.post(name: .devOpenOrganizerOverlay, object: nil) }
+                        Button("Show Recalibration"){ NotificationCenter.default.post(name: .devOpenRecalibration,      object: nil) }
+                        Button("Show Membership")   { NotificationCenter.default.post(name: .devOpenMembership,         object: nil) }
+                        Button("Show ErrorOverlay") { NotificationCenter.default.post(name: .devOpenErrorOverlay,       object: nil) }
+                        
+                        Button("Reset Session")     { Task { await focusVM.resetSessionStateForNewStart() } }
+                        
+                        Picker("Timer debug", selection: Binding( get: { UserDefaults.standard.integer(forKey: "debug.chunkSeconds") }, set: { UserDefaults.standard.set($0, forKey: "debug.chunkSeconds") } )) { Text("10s").tag(10); Text("30s").tag(30); Text("60s").tag(60); Text("OFF (20m)").tag(0) // 0 disables override
+                        }}.controlSize(.small) .font(.footnote) .buttonStyle(.bordered)
                 } label: {
                     Label("Dev", systemImage: "wrench")         // Dumb words, but this is the CONTENT closure
                 }
 #endif
-
+                
                 // MARK: Support
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
@@ -88,7 +89,7 @@ struct SettingsV: View {
                     }
                     .edgesIgnoringSafeArea(.bottom)
                 }
-
+                
                 // MARK: Membership
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
@@ -98,7 +99,7 @@ struct SettingsV: View {
                          ? T("Status: Active", .secondary).bold() : T("Status: Not Active", .secondary).bold()
                         )
                         .foregroundStyle(memVM.isMember ? .green : .secondary)
-
+                        
                         T("Your user ID/device ID: \(userID)", .caption)
                             .foregroundStyle(textSecondary)
                         HStack(spacing: 12) {
@@ -116,7 +117,7 @@ struct SettingsV: View {
                         }
                     }
                 }
-
+                
                 // MARK: Stats
                 Card {
                     Grid(horizontalSpacing: 12, verticalSpacing: 12){
@@ -125,13 +126,13 @@ struct SettingsV: View {
                                      value: "\(statsVM.totalCompletedIntentions)",
                                      caption: "Accomplished",
                                      screen: .settings)
-
+                            
                             StatPill(icon: "rosette",
                                      value: "\(statsVM.longestStreak)",
                                      caption: "Streak",
                                      screen: .settings)
-//                        }
-//                        GridRow {
+                            //                        }
+                            //                        GridRow {
                             StatPill(icon: "leaf.fill",
                                      value: "\(statsVM.recalibrationCounts[.breathing, default: 0])",
                                      caption: "Breathing",
@@ -140,14 +141,14 @@ struct SettingsV: View {
                                      value: "\(statsVM.recalibrationCounts[.balancing, default: 0])",
                                      caption: "Balancing",
                                      screen: .settings)
-
+                            
                         }
                         .frame(maxWidth: .infinity)
                     }
                 }
-
+                
                 Divider()
-
+                
                 // MARK: Preferences
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
@@ -161,12 +162,12 @@ struct SettingsV: View {
                     }
                     .friendlyAnimatedHelper("hapticsOnly-\(prefs.hapticsOnly ? "on" : "off")")
                 }
-
+                
                 // MARK: Customization
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
                         T("Personalization", .section)
-
+                        
                         // Color Theme Picker
                         Picker(selection: $theme.colorTheme) {
                             ForEach(AppColorTheme.publicCases, id: \.self) { option in Text(option.displayName).tag(option) }
@@ -175,7 +176,7 @@ struct SettingsV: View {
                         }
                         .pickerStyle(SegmentedPickerStyle())
                         .tint(p.accent)                 // segment highlight color
-
+                        
                         // Font Theme Picker
                         Picker(selection: $theme.fontTheme) {
                             ForEach(AppFontTheme.allCases, id: \.self) { option in Text(option.displayName).tag(option) }
@@ -187,11 +188,11 @@ struct SettingsV: View {
                         .friendlyAnimatedHelper(theme.fontTheme.rawValue)
                     }
                 }
-
+                
                 // MARK: Legal (reprise)
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
-
+                        
                         SettingsLegalSection(
                             onShowTerms: { showTerms = true },
                             onShowPrivacy: { showPrivacy = true },
@@ -200,9 +201,9 @@ struct SettingsV: View {
                         .sheet(isPresented: $showTerms) {
                             NavigationStack {
                                 LegalDocV(
-                                title: "Terms of Use",
-                                markdown: MarkdownLoader
-                                    .load(named: LegalConfig.termsFile)
+                                    title: "Terms of Use",
+                                    markdown: MarkdownLoader
+                                        .load(named: LegalConfig.termsFile)
                                 )
                             }
                         }
@@ -235,7 +236,7 @@ struct SettingsV: View {
             userID = await KeychainHelper.shared.getUserIdentifier()
         }
     }
-
+    
     func requestNotificationPermissions() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             if let error = error {
@@ -251,7 +252,7 @@ struct SettingsV: View {
     MainActor.assumeIsolated {
         let stats = PreviewMocks.stats
         stats.logSession(CompletedSession(date: .now, tileTexts: ["By Example", "Analysis checklist"], recalibration: .breathing))
-
+        
         return PreviewWrapper {
             SettingsV(statsVM: PreviewMocks.stats)
                 .previewTheme()

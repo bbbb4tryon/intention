@@ -25,10 +25,10 @@ struct MembershipSheetV: View {
     private var tailText: String { "All while helping us keep the lights on, the mortgage paid, and the \(useDogEmoji ? "🐕" : "dog") fed & happy!" }
     
     
-    // --- Local Color Definitions for FeedbackV ---
-    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    // --- Local Color Definitions ---
+    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
+    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
-    private let colorBorder = Color.intCharcoal
     
     var body: some View {
         NavigationStack {

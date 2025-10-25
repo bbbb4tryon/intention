@@ -45,6 +45,8 @@ struct FocusSessionActiveV: View {
     /// single flag `showValidation`controls when to show validation checks
     @FocusState private var intentionFocused: Bool
     @State private var showValidation: Bool = false
+    @State private var showMembership: Bool = false
+    @State private var showErrorOverlay: Bool = false
     @State private var isBusy = false
     
     private var isInputActive: Bool { focusVM.phase != .running && focusVM.tiles.count < 2 }
@@ -64,9 +66,9 @@ struct FocusSessionActiveV: View {
     }
     
     // --- Local Color Definitions for Focus ---
-    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
+    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
-    private let colorBorder = Color.intCharcoal
     
     var body: some View {
         VStack(spacing: 0){             // Main VStack to control vertical layout
@@ -79,7 +81,7 @@ struct FocusSessionActiveV: View {
                     // FIXME: Page {} may be controlling sizing, see if .frame( should be dropped
                     
                     
-                    // Text input + validation
+                    // Text input  validation
                     VStack(alignment: .leading, spacing: 8) {
                         if isInputActive {
                             // onSubmit and primaryCTA both call the same VM method handlePrimaryTap() -> "same funnel"
@@ -117,15 +119,15 @@ struct FocusSessionActiveV: View {
                                 
                             }
                         }
-                        // Guidance + Messages (no Add/Begin here)
+                        // Guidance  Messages (no Add/Begin here)
                         DynamicMessageAndActionArea(
                             focusVM: focusVM,
                             onRecalibrateNow: { focusVM.showRecalibrate = true }
                         )
                         .environmentObject(theme)
                         //  Centered countdown (its internal own logic self-selects paused/running visuals
-                        //      inside it, `isActive` includes .running + .paused
-                        //      In .paused, it draws the clipped overlay + "Paused"; in .running, it draws the unwinding pie + time
+                        //      inside it, `isActive` includes .running  .paused
+                        //      In .paused, it draws the clipped overlay  "Paused"; in .running, it draws the unwinding pie  time
                         //      The tap target persists across both states, thanks to .onTapGesture { handleTap() }.
                         DynamicCountdown(
                             fVM: focusVM,
@@ -169,9 +171,9 @@ struct FocusSessionActiveV: View {
                 onClose: {
                     recalibrationVM.performAsyncAction {
                         if recalibrationVM.phase == .running || recalibrationVM.phase == .pause {
-                        try await recalibrationVM.stop()
+                            try await recalibrationVM.stop()
+                        }
                     }
-                }
                     focusVM.showRecalibrate = false
                 }
             ) {
@@ -190,13 +192,29 @@ struct FocusSessionActiveV: View {
                 }
             }
         }
-        .onReceive(
-            NotificationCenter.default.publisher(
-                for: .init("dev.openRecalibration")
-            )
-        ) { _ in
+        // Recalibration full-screen cover (you already have this cover wired to focusVM.showRecalibrate)
+        .onReceive(NotificationCenter.default.publisher(for: .devOpenRecalibration)) { _ in
             focusVM.showRecalibrate = true
         }
+        
+//        // Membership (example: sheet driven by your local @State)
+//        .onReceive(NotificationCenter.default.publisher(for: .devOpenMembership)) { _ in
+//            showMembership = true
+//        }
+////        .sheet(isPresented: $showMembership) {
+////            // present your membership UI
+////            MembershipV()
+////        }
+//        
+//        // Error overlay (example: lightweight overlay flag)
+//        .onReceive(NotificationCenter.default.publisher(for: .devOpenErrorOverlay)) { _ in
+//            showErrorOverlay = true
+//        }
+//        .overlay {
+//            if showErrorOverlay {
+//                ErrorOverlayV(onClose: { showErrorOverlay = false })
+//            }
+//        }
     }
     
     
@@ -301,9 +319,10 @@ private struct TileSlot: View {
     private let minDesiredHeight: CGFloat = 1
     
     // --- Local Color Definitions for Focus ---
-    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
+    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
+    private let colorDanger = Color.red
     private let colorSuccess = Color.green
-    private let colorBorder = Color.intCharcoal
     
     var body: some View {
         let bg = isActive ? p.surface : p.surface.opacity(0.35)

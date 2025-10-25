@@ -8,6 +8,17 @@
 import MessageUI
 import SwiftUI
 
+
+private extension View {
+    @ViewBuilder func cardBackground() -> some View {
+        background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        //TODO: Or use .shadow(radius: 3, y: 1)
+    }
+    @ViewBuilder func fieldClip() -> some View {
+        clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
 struct FeedbackV: View {
     @EnvironmentObject var theme: ThemeManager
     @EnvironmentObject var prefs: AppPreferencesVM
@@ -39,105 +50,106 @@ struct FeedbackV: View {
     }
     
     // --- Local Color Definitions for FeedbackV ---
-    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
+    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
-    private let colorBorder = Color.intCharcoal
     
+    // MARK: Precomputes
+    private var trimmedMessage: String {
+        message.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    private var messageCountText: String { "\(message.count)/\(maxMessageChars)" }
+    private var deviceRowText: String { "Device ID: \(userID)" }
+    // --- MAYBE THESE TOO? ---
+    private var fieldStrokeShape: RoundedRectangle { .init(cornerRadius: 10, style: .continuous) }
+    private var cardShape: RoundedRectangle { .init(cornerRadius: 12, style: .continuous) }
+
     
+    // MARK: Section: Header
+    @ViewBuilder private var headerRow: some View {
+        T("Send Feedback", .header).cardBackground()
+        //TODO: Or use .shadow(radius: 3, y: 1)
+    }
     
-    var body: some View {
-        // Email body with useful info for bug reports
-        //        let body = "\n\nApp Version: \(version)\nDevice: \(deviceType)\niOS: \(osVersion)"
+        // MARK: Section: Name
+        @ViewBuilder private var nameSection: some View {
+            Group {
+                T("Name (optional)", .label)
+                Spacer()
+                TextField("Jane Doe", text: $name)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled(false)
+                    .validatingField(state: nameState, palette: p)
+            }
+        }
+
+        // MARK: Section: Email
+        @ViewBuilder private var emailSection: some View {
+            Group {
+                T("Email (required)", .label)
+                    .cardBackground()
+
+                Spacer()
+                TextField("name@example.com", text: $email)
+                    .keyboardType(.emailAddress)
+                    .textContentType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
+                    .validatingField(state: emailState, palette: p)
+                ValidationCaption(state: emailState)
+            }
+        }
         
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                T("Send Feedback", .header).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                //TODO: Or use .shadow(radius: 3, y: 1)
-                Group {
-                    T("Name (optional)", .label)
+        // MARK: Section: Message
+        @ViewBuilder private var messageSection: some View {
+            Group {
+                HStack {
+                    T("Message", .label)
+                        .cardBackground()
                     Spacer()
-                    TextField("Jane Doe", text: $name)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled(false)
-                        .validatingField(state: nameState, palette: p)
-                }
-                
-                Group {
-                    T("Email (required)", .label).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                    //TODO: Or use .shadow(radius: 3, y: 1)
-                    Spacer()
-                    TextField("name@example.com", text: $email)
-                        .keyboardType(.emailAddress)
-                        .textContentType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled(true)
-                        .validatingField(state: emailState, palette: p)
-                    
-                    ValidationCaption(state: emailState)
-                }
-                
-                Group {
-                    HStack {
-                        T("Message", .label).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                        //TODO: Or use .shadow(radius: 3, y: 1)
-                        Spacer()
-                        Text("\(message.count)/\(maxMessageChars)")
-                            .font(.caption)
-                            .foregroundStyle(textSecondary)
-                            .monospacedDigit()
-                    }
-                    
-                    TextEditor(text: $message)
-                        .frame(minHeight: 160)
-                        .textInputAutocapitalization(.sentences)
-                        .autocorrectionDisabled(false)
-                        .padding(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(messageState.isInvalid ? colorDanger : colorBorder, lineWidth: 1)
-                        )
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color.clear)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    ValidationCaption(state: messageState)
-                }
-                
-                // Auto insert userID/deviceID from your Keychain helper
-                T("Device ID: \(userID)", .caption)
-                    .foregroundStyle(p.textSecondary)
-                    .textSelection(.enabled)
-                
-                Button(action: sendTapped) {
-                    T("Send", .action)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                    //TODO: Or use .shadow(radius: 3, y: 1)
+                    Text(messageCountText)
+                        .font(.caption)
+                        .foregroundStyle(textSecondary)
                         .monospacedDigit()
                 }
-                .primaryActionStyle(screen: screen)
-                .disabled(!canSend)
-            }
-            .padding(20)
-            .frame(maxWidth: 700, alignment: .leading)
-        }
-        .background(p.background.ignoresSafeArea())
-        .tint(p.accent)
-        .navigationTitle("Feedback").background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-        //TODO: Or use .shadow(radius: 3, y: 1)
-        .navigationBarTitleDisplayMode(.inline)
-        .scrollDismissesKeyboard(.interactively) // swipe down to dismiss
-        .safeAreaInset(edge: .bottom) {
-            // keeps content visible above the keyboard on small screens
-            Color.clear.frame(height: 8)
-        }
-        .onAppear {
-            Task { @MainActor in
-                userID = await KeychainHelper.shared.getUserIdentifier()
+                
+                TextEditor(text: $message)
+                    .frame(minHeight: 160)
+                    .textInputAutocapitalization(.sentences)
+                    .autocorrectionDisabled(false)
+                    .padding(12)
+                    .overlay(
+                        fieldStrokeShape
+                            .stroke(messageState.isInvalid ? colorDanger : colorBorder, lineWidth: 1)
+                    )
+                    .background(fieldStrokeShape.fill(Color.clear))
+                    .fieldClip()
+                ValidationCaption(state: messageState)
             }
         }
-        // Mail composer (native), with graceful fallback if not available
-        .sheet(isPresented: $showComposer) {
+        
+        // MARK: Section: Device Row
+        @ViewBuilder private var deviceRow: some View {
+            // Auto insert userID/deviceID from your Keychain helper
+            T(deviceRowText, .caption)
+                .foregroundStyle(textSecondary)
+                .textSelection(.enabled)
+        }
+        
+        // MARK: Section: Send button
+        @ViewBuilder private var sendButtonSection: some View {
+        Button(action: sendTapped) {
+            T("Send", .action)
+                .cardBackground()
+                .monospacedDigit()
+        }
+        .primaryActionStyle(screen: screen)
+        .disabled(!canSend)
+    }
+        
+    // Keep the heavy sheet content out of the main body closure
+        // MARK: Mail sheet content
+        @ViewBuilder private var composerSheet: some View {
             if MFMailComposeViewController.canSendMail(), let payload = composerPayload {
                 MailComposer(
                     to: ["feedback@argonnesoftware.com"],
@@ -157,20 +169,88 @@ struct FeedbackV: View {
                 EmptyView()
             }
         }
+    
+    // MARK: CanSend: Bool
+    private var canSend: Bool {
+        emailIsValid(email) && !trimmedMessage.isEmpty
+    }
+
+    var body: some View {
+        // Email body with useful info for bug reports
+        //        let body = "\n\nApp Version: \(version)\nDevice: \(deviceType)\niOS: \(osVersion)"
+        
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                headerRow
+                nameSection
+                emailSection
+                messageSection
+                deviceRow
+                sendButtonSection
+            }
+            .padding(20)
+            .frame(maxWidth: 700, alignment: .leading)
+        }
+        .background(p.background.ignoresSafeArea())
+        .tint(p.accent)
+        .navigationTitle("Feedback")
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        //TODO: Or use .shadow(radius: 3, y: 1)
+        .navigationBarTitleDisplayMode(.inline)
+        .scrollDismissesKeyboard(.interactively) // swipe down to dismiss
+        .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 8) } // keeps content visible above the keyboard on small screens
+        .onAppear {
+            Task { @MainActor in
+                userID = await KeychainHelper.shared.getUserIdentifier()
+            }
+        }
+        .sheet(isPresented: $showComposer) { composerSheet }
         .alert("Feedback", isPresented: $showingAlert) {
             Button("OK", role: .cancel) { }
-        } message: { Text(alertMsg) }
+        } message: {
+            Text(alertMsg)
+        }
         .onChange(of: message) { new in
             if new.count > maxMessageChars {
                 message = String(new.prefix(maxMessageChars))
             }
         }
     }
+    
+    /// Returns true if we successfully opened a mail client.
+    /// UIApplication callers @MainActor (they already run on main, but this clarifies actor isolation)
+    // MARK: - MainActor OpenMainTo()
+    @MainActor
+    @discardableResult
+    private func openMailTo(subject: String, body: String) -> Bool {
+        let to = "feedback@argonnesoftware.com"
 
-    private var canSend: Bool {
-        emailIsValid(email) && !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        var comps = URLComponents()
+        comps.scheme = "mailto"
+        comps.path = to
+        comps.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: body)
+        ]
+
+        guard let url = comps.url else { return false }
+
+        // Prefer the environment's openURL (respects scene), but also probe UIApplication as a fallback.
+        var opened = false
+        openURL(url) { success in opened = success }
+        if opened { return true }
+
+        // Fallback probe (some contexts call this synchronously)
+        if UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+            return true
+        }
+
+        return false
     }
 
+    // MARK: - SendTapped()
+    @MainActor
     private func sendTapped() {
         // validate now (gate surfacing)
         emailState = emailIsValid(email) ? .valid : .invalid(messages: ["Enter a valid email address."])
@@ -200,38 +280,8 @@ struct FeedbackV: View {
         alertMsg = "No mail app available. Please configure a mail app or copy your message."
         showingAlert = true
     }
-    
-    /// Returns true if we successfully opened a mail client.
-    @discardableResult
-    private func openMailTo(subject: String, body: String) -> Bool {
-        let to = "feedback@argonnesoftware.com"
 
-        var comps = URLComponents()
-        comps.scheme = "mailto"
-        comps.path = to
-        comps.queryItems = [
-            URLQueryItem(name: "subject", value: subject),
-            URLQueryItem(name: "body", value: body)
-        ]
-
-        guard let url = comps.url else { return false }
-
-        // Prefer the environment's openURL (respects scene), but also probe UIApplication as a fallback.
-        var opened = false
-        openURL(url) { success in opened = success }
-        if opened { return true }
-
-        // Fallback probe (some contexts call this synchronously)
-        if UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url)
-            return true
-        }
-
-        return false
-    }
-
-
-
+    // MARK: ComposedBody()
     private func composedBody() -> String {
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"

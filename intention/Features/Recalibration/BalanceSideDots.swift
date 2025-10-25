@@ -12,9 +12,9 @@ struct BalanceSideDots: View {
     let p: ScreenStylePalette
 
     // --- Local Color Definitions by way of Recalibration ---
-    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
+    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
-    private let colorBorder = Color.intCharcoal
     
     var body: some View {
         HStack(spacing: 16) {
