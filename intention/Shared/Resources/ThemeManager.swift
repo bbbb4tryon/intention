@@ -271,82 +271,157 @@ enum AppColorTheme: String, CaseIterable {
 final class ThemeManager: ObservableObject {
     @AppStorage("selectedColorTheme") private var colorRaw: String = AppColorTheme.default.rawValue
     @AppStorage("selectedFontTheme")  private var fontRaw: String = AppFontTheme.serif.rawValue
-    
-    @Published var colorTheme: AppColorTheme { didSet { colorRaw = colorTheme.rawValue } }
-    @Published var fontTheme: AppFontTheme { didSet { fontRaw  = fontTheme.rawValue  } }
-    
+
+    @Published var colorTheme: AppColorTheme {
+        didSet { colorRaw = colorTheme.rawValue }
+    }
+    @Published var fontTheme: AppFontTheme {
+        didSet { fontRaw  = fontTheme.rawValue  }
+    }
+
     init() {
         let storedColor = UserDefaults.standard.string(forKey: "selectedColorTheme") ?? AppColorTheme.default.rawValue
         let storedFont  = UserDefaults.standard.string(forKey: "selectedFontTheme")  ?? AppFontTheme.serif.rawValue
         self.colorTheme = AppColorTheme(rawValue: storedColor) ?? .default
         self.fontTheme  = AppFontTheme(rawValue: storedFont)  ?? .serif
     }
-    
+
     func palette(for screen: ScreenName) -> ScreenStylePalette {
         colorTheme.colors(for: screen)
     }
-    
+
     func styledText(_ content: String, as role: TextRole, in screen: ScreenName) -> Text {
         let font  = fontTheme.toFont(Self.fontStyle(for: role))
         let color = Self.color(for: role, palette: palette(for: screen))
-        let weight: Font.Weight = switch role {
-        case .largeTitle:   .bold
-        case .header:       .semibold
-        case .section:      .semibold
-        case .title3:       .semibold
-        case .label:        .medium
-        case .action:       .semibold
-        default:            .regular
-        }
         
+        let weight: Font.Weight = switch role {
+            case .largeTitle: .bold
+            case .header:.semibold
+            case .section: .semibold
+            case .title3:.semibold
+            case .label: .medium
+            case .action:.semibold
+            default: .regular
+        }
         return Text(content).font(font).fontWeight(weight).foregroundColor(color)
     }
-    
+
     // MARK: Style mapping
     static func fontStyle(for role: TextRole) -> Font.TextStyle {
         switch role {
-        case .largeTitle:   .largeTitle
-        case .header:       .largeTitle
-        case .section:      .title2
-        case .title3:       .title3
-        case .label:        .headline
-        case .action:       .headline
-        case .body:         .body
-        case .tile:         .body
-        case .secondary:    .subheadline
-        case .placeholder:  .subheadline
-        case .caption:      .caption
+            case .largeTitle: .largeTitle
+            case .header: .largeTitle
+            case .section: .title2
+            case .title3:.title3
+            case .label: .headline
+            case .action:.headline
+            case .body: .body
+            case .tile: .body
+            case .secondary: .subheadline
+            case .placeholder: .subheadline
+            case .caption: .caption
         }
     }
     
     static func color(for role: TextRole, palette: ScreenStylePalette) -> Color {
         switch role {
-        case .header, .section, .title3, .body, .tile, .largeTitle:
-            return palette.text
-        case .secondary, .caption, .placeholder:
-            return palette.textSecondary
-        case .label:
-            return palette.text
-        case .action:
-            // ButtonStyles typically color the label; this keeps Action readable elsewhere.
-            return .intText
+            case .header, .section, .title3, .body, .tile, .largeTitle, .label:
+                return palette.text
+                
+            case .secondary, .caption, .placeholder:
+                // Calculate secondary text color based on primary theme text color.
+                return palette.text.opacity(0.72)
+                
+            case .action:
+                // Actions (buttons) often use white/light text for contrast against a filled background.
+                return .white
         }
     }
 }
 
-// MARK: - defines consistent, app-wide color of button text
+// MARK: - Legacy / Utility Colors (Cleaned up)
 extension Color {
-    static let intText = Color(red: 0.96, green: 0.96, blue: 0.96)     // #F5F5F5
-    static let btnTextLight = intText     // #F5F5F5
-    static let btnTextDark = Color(red: 0.99, green: 0.99, blue: 0.99)     // #FDFDFD
-    static let orgOverlayLight = Color(red: 0.9137, green: 0.8627, blue: 0.7373) // #e9dcbc
-    static let orgOverlayDark = Color(red: 0.2588, green: 0.2078, blue: 0.0863) // #423516
+    // New utility color for actions where white might be too harsh
+    static let intText = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
+
 }
 
-// MARK: - Preview Convenience
-extension View {
-    func previewTheme() -> some View {
-        self.environmentObject(ThemeManager())
-    }
-}
+
+//// MARK: - Theme Manager
+//@MainActor
+//final class ThemeManager: ObservableObject {
+//    @AppStorage("selectedColorTheme") private var colorRaw: String = AppColorTheme.default.rawValue
+//    @AppStorage("selectedFontTheme")  private var fontRaw: String = AppFontTheme.serif.rawValue
+//    
+//    @Published var colorTheme: AppColorTheme { didSet { colorRaw = colorTheme.rawValue } }
+//    @Published var fontTheme: AppFontTheme { didSet { fontRaw  = fontTheme.rawValue  } }
+//    
+//    init() {
+//        let storedColor = UserDefaults.standard.string(forKey: "selectedColorTheme") ?? AppColorTheme.default.rawValue
+//        let storedFont  = UserDefaults.standard.string(forKey: "selectedFontTheme")  ?? AppFontTheme.serif.rawValue
+//        self.colorTheme = AppColorTheme(rawValue: storedColor) ?? .default
+//        self.fontTheme  = AppFontTheme(rawValue: storedFont)  ?? .serif
+//    }
+//    
+//    func palette(for screen: ScreenName) -> ScreenStylePalette {
+//        colorTheme.colors(for: screen)
+//    }
+//    
+//    func styledText(_ content: String, as role: TextRole, in screen: ScreenName) -> Text {
+//        let font  = fontTheme.toFont(Self.fontStyle(for: role))
+//        let color = Self.color(for: role, palette: palette(for: screen))
+//        let weight: Font.Weight = switch role {
+//        case .largeTitle:   .bold
+//        case .header:       .semibold
+//        case .section:      .semibold
+//        case .title3:       .semibold
+//        case .label:        .medium
+//        case .action:       .semibold
+//        default:            .regular
+//        }
+//        
+//        return Text(content).font(font).fontWeight(weight).foregroundColor(color)
+//    }
+//    
+//    // MARK: Style mapping
+//    static func fontStyle(for role: TextRole) -> Font.TextStyle {
+//        switch role {
+//        case .largeTitle:   .largeTitle
+//        case .header:       .largeTitle
+//        case .section:      .title2
+//        case .title3:       .title3
+//        case .label:        .headline
+//        case .action:       .headline
+//        case .body:         .body
+//        case .tile:         .body
+//        case .secondary:    .subheadline
+//        case .placeholder:  .subheadline
+//        case .caption:      .caption
+//        }
+//    }
+//    
+//    static func color(for role: TextRole, palette: ScreenStylePalette) -> Color {
+//        switch role {
+//        case .header, .section, .title3, .body, .tile, .largeTitle:
+//            return palette.text
+//        case .secondary, .caption, .placeholder:
+//            return textSecondary
+//        case .label:
+//            return palette.text
+//        case .action:
+//            // ButtonStyles typically color the label; this keeps Action readable elsewhere.
+//            return .intText
+//        }
+//    }
+//}
+//
+//// MARK: - defines consistent, app-wide color of button text
+//extension Color {
+//    static let intText = Color(red: 0.96, green: 0.96, blue: 0.96)     // #F5F5F5
+//    static let btnTextLight = intText     // #F5F5F5
+//    static let btnTextDark = Color(red: 0.99, green: 0.99, blue: 0.99)     // #FDFDFD
+//    static let orgOverlayLight = Color(red: 0.9137, green: 0.8627, blue: 0.7373) // #e9dcbc
+//    static let orgOverlayDark = Color(red: 0.2588, green: 0.2078, blue: 0.0863) // #423516
+//}
+//
 

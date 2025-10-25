@@ -24,6 +24,12 @@ struct MembershipSheetV: View {
     // 1) Place this INSIDE the struct, but OUTSIDE `body`
     private var tailText: String { "All while helping us keep the lights on, the mortgage paid, and the \(useDogEmoji ? "🐕" : "dog") fed & happy!" }
     
+    
+    // --- Local Color Definitions for FeedbackV ---
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let colorDanger = Color.red
+    private let colorBorder = Color.intCharcoal
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -99,7 +105,7 @@ Unlock Unlimited Focus
                                 Label("Thank you.", systemImage: "heart")
                             }
                             .font(theme.fontTheme.toFont(.footnote))
-                            .foregroundStyle(p.textSecondary)
+                            .foregroundStyle(textSecondary)
                             .symbolRenderingMode(.hierarchical)
                             
                             VStack(alignment: .leading, spacing: 2) {

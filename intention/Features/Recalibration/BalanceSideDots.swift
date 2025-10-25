@@ -33,13 +33,13 @@ struct BalanceSideDots: View {
     private func dot(label: String, isActive: Bool) -> some View {
         HStack(spacing: 6) {
             Circle()
-                .fill(isActive ? p.accent : p.border)
+                .fill(isActive ? p.accent : colorBorder)
                 .frame(width: isActive ? fWOn : fWOff, height: isActive ? fHOn : fHOff)
-                .overlay(Circle().stroke(p.border, lineWidth: isActive ? 0 : 1))
+                .overlay(Circle().stroke(colorBorder, lineWidth: isActive ? 0 : 1))
                 .animation(.spring(response: 0.22, dampingFraction: 0.85), value: isActive)
             Text(label)
                 .font(.callout.weight(isActive ? .semibold : .regular))
-                .foregroundStyle(isActive ? p.text : p.textSecondary)
+                .foregroundStyle(isActive ? p.text : textSecondary)
         }
     }
 }

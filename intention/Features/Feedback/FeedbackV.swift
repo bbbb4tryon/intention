@@ -31,6 +31,7 @@ struct FeedbackV: View {
     @State private var alertMsg = ""
 
     private let maxMessageChars = 2000
+    
     private let screen: ScreenName = .settings
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text {
@@ -42,14 +43,16 @@ struct FeedbackV: View {
     private let colorDanger = Color.red
     private let colorBorder = Color.intCharcoal
     
+    
+    
     var body: some View {
         // Email body with useful info for bug reports
-//        let body = "\n\nApp Version: \(version)\nDevice: \(deviceType)\niOS: \(osVersion)"
+        //        let body = "\n\nApp Version: \(version)\nDevice: \(deviceType)\niOS: \(osVersion)"
         
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                T("Send Feedback", .header)
-
+                T("Send Feedback", .header).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                //TODO: Or use .shadow(radius: 3, y: 1)
                 Group {
                     T("Name (optional)", .label)
                     Spacer()
@@ -58,9 +61,10 @@ struct FeedbackV: View {
                         .autocorrectionDisabled(false)
                         .validatingField(state: nameState, palette: p)
                 }
-
+                
                 Group {
-                    T("Email (required)", .label)
+                    T("Email (required)", .label).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    //TODO: Or use .shadow(radius: 3, y: 1)
                     Spacer()
                     TextField("name@example.com", text: $email)
                         .keyboardType(.emailAddress)
@@ -69,19 +73,20 @@ struct FeedbackV: View {
                         .autocorrectionDisabled(true)
                         .validatingField(state: emailState, palette: p)
                     
-                    ValidationCaption(state: emailState, palette: p)
+                    ValidationCaption(state: emailState)
                 }
-
+                
                 Group {
                     HStack {
-                        T("Message", .label)
+                        T("Message", .label).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                        //TODO: Or use .shadow(radius: 3, y: 1)
                         Spacer()
                         Text("\(message.count)/\(maxMessageChars)")
                             .font(.caption)
                             .foregroundStyle(textSecondary)
                             .monospacedDigit()
                     }
-
+                    
                     TextEditor(text: $message)
                         .frame(minHeight: 160)
                         .textInputAutocapitalization(.sentences)
@@ -96,16 +101,18 @@ struct FeedbackV: View {
                                 .fill(Color.clear)
                         )
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    ValidationCaption(state: messageState, palette: p)
+                    ValidationCaption(state: messageState)
                 }
-
+                
                 // Auto insert userID/deviceID from your Keychain helper
                 T("Device ID: \(userID)", .caption)
                     .foregroundStyle(p.textSecondary)
                     .textSelection(.enabled)
-
+                
                 Button(action: sendTapped) {
                     T("Send", .action)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    //TODO: Or use .shadow(radius: 3, y: 1)
                         .monospacedDigit()
                 }
                 .primaryActionStyle(screen: screen)
@@ -116,7 +123,8 @@ struct FeedbackV: View {
         }
         .background(p.background.ignoresSafeArea())
         .tint(p.accent)
-        .navigationTitle("Feedback")
+        .navigationTitle("Feedback").background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        //TODO: Or use .shadow(radius: 3, y: 1)
         .navigationBarTitleDisplayMode(.inline)
         .scrollDismissesKeyboard(.interactively) // swipe down to dismiss
         .safeAreaInset(edge: .bottom) {

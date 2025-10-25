@@ -26,6 +26,11 @@ struct RecalibrationV: View {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
     
+    // --- Local Color Definitions for FeedbackV ---
+    private let textSecondary = Color.intCharcoal.opacity(0.85)
+    private let colorDanger = Color.red
+    private let colorBorder = Color.intCharcoal
+    
     var body: some View {
         VStack {
             ScrollView {
@@ -37,10 +42,10 @@ struct RecalibrationV: View {
                     
                     // Supporting copy: left-aligned, subdued
                     T("Short resets help you start your next 20-minute focus chunk fresh.", .body)
-                        .foregroundStyle(p.textSecondary)
+                        .foregroundStyle(textSecondary)
                     
                     T("Choose one below:", .body)
-                        .foregroundStyle(p.textSecondary)
+                        .foregroundStyle(textSecondary)
                     
                     // the ONLY CTA/timer block
                     actionArea

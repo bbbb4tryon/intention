@@ -110,7 +110,7 @@ struct FocusSessionActiveV: View {
                             //      Caption only after first submit AND invalid
                             if showValidation, case .invalid = vState {
                                 // Use VState logic for the correct messages
-                                ValidationCaption( state: vState, palette: p)
+                                ValidationCaption( state: vState)
                                 //FIXME: USE THIS BELOW, OR KEEP state: vState, palette: p
                                 //                                    state: vState.isInvalid ? vState : .invalid(messages: ["Please enter a task, what you intend to do."]),
                                 //                                    palette: p
