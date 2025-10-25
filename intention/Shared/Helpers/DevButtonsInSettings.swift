@@ -8,8 +8,14 @@
 import Foundation
 
 extension Notification.Name {
-    static let devOpenRecalibration      = Notification.Name("dev.openRecalibration")
-    static let devOpenMembership         = Notification.Name("dev.openMembership")
-    static let devOpenErrorOverlay       = Notification.Name("dev.openErrorOverlay")
-    static let devOpenOrganizerOverlay   = Notification.Name("dev.openOrganizerOverlayScreen")
+    static let devOpenRecalibration      = Notification.Name("ShowRecalibrationToDebug")
+    static let devOpenOrganizerOverlay   = Notification.Name("ShowOrganizerOverlayToDebug")
+    static let devOpenMembership         = Notification.Name("ShowMembershipToDebug")
+    static let devOpenErrorOverlay       = Notification.Name("ShowSampleErrorToDebug")
+}
+
+// Helper struct for keys when passing data
+enum DebugNotificationKey {
+    static let errorTitle = "errorTitleKey"
+    static let errorMessage = "errorMessageKey"
 }

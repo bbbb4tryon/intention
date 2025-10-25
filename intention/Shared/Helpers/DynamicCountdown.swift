@@ -4,7 +4,7 @@
 //
 //  Created by Benjamin Tryon on 8/13/25.
 //
-
+MOVE THIS DOWN AND LARGER TO FILL MORE OF THE SCREEN
 import SwiftUI
 
 struct DynamicCountdown: View {
