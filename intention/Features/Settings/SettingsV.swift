@@ -46,22 +46,40 @@ struct SettingsV: View {
                 // The Label argument (mandatory for this initializer with DisclosureGroup)
                 DisclosureGroup {
                     VStack(alignment: .leading, spacing: 6) {
-                        Button("Clear: Debug") {
+                        Button("Debug: Clear All") {
                             UserDefaults.standard.removeObject(forKey: "debug.chunkSeconds")
                         }
-                        Button("Reset: Legal Gate") { LegalConsent.clearForDebug() }
-                            .controlSize(.large)
+                        Button("Reset Session"){Task { await focusVM.resetSessionStateForNewStart() } }
                         
                         Toggle("Show Legal on Next Launch", isOn: $debugShowLegalNextLaunch)
                         
-                        Button("Show Organizer")    { NotificationCenter.default.post(name: .devOpenOrganizerOverlay, object: nil) }
-                        Button("Show Recalibration"){ NotificationCenter.default.post(name: .devOpenRecalibration,      object: nil) }
-                        Button("Show Membership")   { NotificationCenter.default.post(name: .devOpenMembership,         object: nil) }
-                        Button("Show ErrorOverlay") { NotificationCenter.default.post(name: .devOpenErrorOverlay,       object: nil) }
+                        Button("Reset: Legal Gate") { LegalConsent.clearForDebug() }
+                            .controlSize(.large)
                         
-                        Button("Reset Session")     { Task { await focusVM.resetSessionStateForNewStart() } }
+                        Divider()
+                        T("BYPASS", .largeTitle)
                         
-                        Picker("Timer debug", selection: Binding( get: { UserDefaults.standard.integer(forKey: "debug.chunkSeconds") }, set: { UserDefaults.standard.set($0, forKey: "debug.chunkSeconds") } )) { Text("10s").tag(10); Text("30s").tag(30); Text("60s").tag(60); Text("OFF (20m)").tag(0) // 0 disables override
+                        Button("Recalibration View"){NotificationCenter.default.post(
+                            // Fires signal to the receiver (e.g. FocusActiveSessionV)
+                            name: .devOpenRecalibration, object: nil) }
+                        Button("Organizer View"){ NotificationCenter.default.post(
+                            name: .devOpenOrganizerOverlay, object: nil) }
+                        Button("Membership View"){NotificationCenter.default.post(
+                            name: .devOpenMembership, object: nil) }
+                        Button("ErrorOverlay View") {
+                            // Pass sample data for the overlay's content
+                            let userInfo: [AnyHashable: Any] = [
+                                DebugNotificationKey.errorTitle: "Debug View Activated",
+                                DebugNotificationKey.errorMessage: "This is a forced-view of the error overlay for visual confirmation."
+                            ]
+                            NotificationCenter.default.post(
+                                name: .devOpenErrorOverlay, object: nil) }
+                        
+                        Picker("Timer debug", selection: Binding(
+                            get: { UserDefaults.standard.integer(forKey: "debug.chunkSeconds") },
+                            set: { UserDefaults.standard.set($0, forKey: "debug.chunkSeconds") } )) {
+                                Text("10s").tag(10); Text("30s").tag(30)
+                                Text("OFF (20m)").tag(0) // 0 disables override
                         }}.controlSize(.small) .font(.footnote) .buttonStyle(.bordered)
                 } label: {
                     Label("Dev", systemImage: "wrench")         // Dumb words, but this is the CONTENT closure

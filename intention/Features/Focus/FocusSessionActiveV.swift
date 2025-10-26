@@ -40,6 +40,7 @@ struct FocusSessionActiveV: View {
     @ObservedObject var focusVM: FocusSessionVM
     @ObservedObject var recalibrationVM: RecalibrationVM
     
+ 
     // MARK: Local UI State
     /// manages both focus to textfield AND return from background
     /// single flag `showValidation`controls when to show validation checks
