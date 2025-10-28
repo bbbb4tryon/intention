@@ -40,7 +40,7 @@ struct FocusShell<Content: View>: View {
          pal.gradientBackground?.averageColor ?? pal.background
     }
 }
-
+For SwiftUI Previews while you sort this out, keep your preview fallback (PNG noise overlay) so Previews don’t require Metal at all. This avoids blocking UI work when the toolchain isn’t present. (Matches what we just implemented.)
 
 // MARK: - RootSheet
 

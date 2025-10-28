@@ -15,26 +15,56 @@ private extension View {
     }
     
     /// Metal-based grain with system-driven animation time (no custom timers).
-       func metalTexturedGradient(strength: Double = 0.06) -> some View {
-           // Use system animation timeline to produce a time value.
-           TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
-               // Seconds since reference date is fine as a continuous time parameter.
-               let t = timeline.date.timeIntervalSinceReferenceDate
-               self.visualEffect { content, proxy in
-                   content.layerEffect(
-                       ShaderLibrary.noiseShader(
-                           .boundingRect,
-                           .float(proxy.size.width),
-                           .float(proxy.size.height),
-                           .float(t),           // <- animated time from TimelineView
-                           .float(strength)
-                       ),
-                       maxSampleOffset: .zero
-                   )
-               }
-           }
-       }
-}
+        @ViewBuilder
+        func metalTexturedGradient(strength: Double = 0.06) -> some View {
+            #if DEBUG
+            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+                // Preview fallback: no Metal toolchain needed
+                self.overlay(
+                    Image("noise-tile-256")
+                        .resizable()
+                        .scaledToFill()
+                        .opacity(strength)
+                        .allowsHitTesting(false)
+                )
+                .clipped()
+            } else {
+                // Real device/simulator build: animated shader via TimelineView
+                TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+                    let t = timeline.date.timeIntervalSinceReferenceDate
+                    self.visualEffect { content, proxy in
+                        content.layerEffect(
+                            ShaderLibrary.noiseShader(
+                                .boundingRect,
+                                .float(proxy.size.width),
+                                .float(proxy.size.height),
+                                .float(t),
+                                .float(strength)
+                            ),
+                            maxSampleOffset: .zero
+                        )
+                    }
+                }
+            }
+            #else
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+                let t = timeline.date.timeIntervalSinceReferenceDate
+                self.visualEffect { content, proxy in
+                    content.layerEffect(
+                        ShaderLibrary.noiseShader(
+                            .boundingRect,
+                            .float(proxy.size.width),
+                            .float(proxy.size.height),
+                            .float(t),
+                            .float(strength)
+                        ),
+                        maxSampleOffset: .zero
+                    )
+                }
+            }
+            #endif
+        }
+    }
 
 extension View {
     @ViewBuilder
