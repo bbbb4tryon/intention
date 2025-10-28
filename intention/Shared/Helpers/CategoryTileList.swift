@@ -59,7 +59,7 @@ struct CategoryTileList: View {
                         }
                         .padding(10)
                         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .draggable(DragPayload(tile: tile, from: category.id))
+                        .draggable(DragPayload(tile: tile, sourceCategoryID: category.id))
                         .swipeActions(edge: .trailing, allowsFullSwipe: !isArchive) {
                             if !isArchive {
                                 Button(role: .destructive) {
@@ -73,7 +73,7 @@ struct CategoryTileList: View {
                                 Button {
                                     Task {
                                         do {
-                                            try await viewModel.moveTileThrowing(tile, from: category.id, to: viewModel.archiveCategoryID)
+                                            try await viewModel.moveTileThrowing(tile, fromCategory: category.id, toCategory: viewModel.archiveCategoryID)
                                         } catch { viewModel.lastError = error }
                                     }
                                 } label: { Label("Archive", systemImage: "archivebox") }
@@ -95,9 +95,9 @@ struct CategoryTileList: View {
             .dropDestination(for: DragPayload.self) { items, _ in
                 guard let payload = items.first else { return false }
                 // from == category.id, lets sthe organizer or per-category reorder handle it.
-                guard payload.from != category.id else { return false }
+                guard payload.sourceCategoryID != category.id else { return false }
                 Task {
-                    do { try await viewModel.moveTileThrowing(payload.tile, from: payload.from, to: category.id) }
+                    do { try await viewModel.moveTileThrowing(payload.tile, fromCategory: payload.sourceCategoryID, toCategory: category.id) }
                     catch { viewModel.lastError = error }
                 }
                 return true

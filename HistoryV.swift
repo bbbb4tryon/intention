@@ -2,10 +2,12 @@
 //  HistoryV.swift
 //  intention
 //
-//  Created by Benjamin Tryon on 6/11/25.
+//  Created by Benjamin Tryon on 10/27/25.
 //
 
+
 import SwiftUI
+
 /// content-management screen with an explicit Edit/Done mode
 struct HistoryV: View {
     @Environment(\.dismiss) private var dismiss
@@ -100,8 +102,6 @@ struct HistoryV: View {
             }
         }
         .background(p.background)
-        .opacity(1)     // so the history background wins against organizerOverlay
-        .zIndex(0)      // so the history background wins against organizerOverlay
         .tint(p.accent)
         .animation(.easeInOut(duration: 0.2), value: viewModel.lastUndoableMove != nil)
         .toolbar { historyToolbar }.environmentObject(theme)
@@ -120,20 +120,20 @@ struct HistoryV: View {
             Button("Cancel", role: .cancel) { }
         } message: { Text("Tiles will be moved to Archive.") }
         
-        //        // Organizer overlay (your fullScreenCover is driven by isOrganizing)
-        //            .onReceive(NotificationCenter.default.publisher(for: .devOpenOrganizerOverlay)) { _ in
-        //                withAnimation { isOrganizing = true }
-        //            }
+//        // Organizer overlay (your fullScreenCover is driven by isOrganizing)
+//            .onReceive(NotificationCenter.default.publisher(for: .devOpenOrganizerOverlay)) { _ in
+//                withAnimation { isOrganizing = true }
+//            }
         
         // Error overlay
-        //            .onReceive(NotificationCenter.default.publisher(for: .debugShowSampleError)) { _ in
-        //                showErrorOverlay = true
-        //            }
-        //            .overlay {
-        //                if showErrorOverlay {
-        //                    ErrorOverlayV(onClose: { showErrorOverlay = false })
-        //                }
-        //            }
+//            .onReceive(NotificationCenter.default.publisher(for: .debugShowSampleError)) { _ in
+//                showErrorOverlay = true
+//            }
+//            .overlay {
+//                if showErrorOverlay {
+//                    ErrorOverlayV(onClose: { showErrorOverlay = false })
+//                }
+//            }
             .fullScreenCover(isPresented: $isOrganizing
                              //                             //FIXME: - Does this =work without onDismiss?
                              //                             onDismiss: { viewModel.flushPendingSaves() }
@@ -145,9 +145,9 @@ struct HistoryV: View {
                 }) {
                     OrganizerOverlayScreen(
                         categories: $viewModel.categories,
-                        onMoveTile: { tile, sourceID, destinationID in
+                        onMoveTile: { tile, fromID, toID in
                             Task { @MainActor in
-                                do { try await viewModel.moveTileThrowing(tile, fromCategory: sourceID, toCategory: destinationID) }
+                                do { try await viewModel.moveTileThrowing(tile, from: fromID, to: toID) }
                                 catch { viewModel.lastError = error }
                             }
                         },
@@ -173,17 +173,8 @@ struct HistoryV: View {
                 // On leaving organize mode, force-flush pending saves.
                 if !isOrganizing { viewModel.flushPendingSaves() }
             }
-            .overlay {
-                if let error = viewModel.lastError {
-                    ErrorOverlay(error: error) { viewModel.setError(nil) }
-                        .transition(.opacity.combined(with: .scale))
-                        .zIndex(1)
-                        .allowsHitTesting(true)     // opt-in to hits only when visible
-                }
-            }
         Spacer(minLength: 0)
     }
-    
     
     //    @ToolbarContentBuilder private var historyToolbar: some ToolbarContent {
     //        ToolbarItemGroup(placement: .topBarTrailing) {
@@ -266,107 +257,3 @@ struct HistoryV: View {
         .presentationDetents([.medium])
     }
 }
-// UUID helper
-extension Array {
-    var only: Element? { count == 1 ? first : nil }
-}
-
-// MARK: - Category Card (private) = Header  Tile List
-///composes CategoryHeaderRow  CategoryTileList with the rounded card chrome. Keeping it private avoids scattering styling across files and keeps the view tree simple
-private struct CategoryCard: View {
-    @Binding var category: CategoriesModel
-    let isArchive: Bool
-    var onRename: (UUID) -> Void
-    var onDelete: (UUID) -> Void
-    @EnvironmentObject private var viewModel: HistoryVM
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            CategoryHeaderRow(
-                title: isArchive ? "Archive" : category.persistedInput.ifEmpty("Untitled"),
-                count: category.tiles.count,
-                isArchive: isArchive,
-                allowEdit: !isArchive && category.id != viewModel.generalCategoryID,
-                onRename: { onRename(category.id) },
-                onDelete:  { onDelete(category.id) }
-            )
-            
-            CategoryTileList(category: $category, isArchive: isArchive)
-                .padding(.vertical, 12)
-            //                .frame(maxWidth: .infinity, alignment: .leading)
-                .environmentObject(viewModel)
-        }
-        //        .padding(.horizontal, 16)
-        //        .background(Color.clear)
-        //        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-}
-
-// UUID helper
-private extension String {
-    func ifEmpty(_ replacement: String) -> String { isEmpty ? replacement : self }
-}
-
-#if DEBUG
-extension HistoryV {
-    init(
-        viewModel: HistoryVM,
-        _preview_isOrganizing: Bool = false,
-        _preview_showRenameSheet: Bool = false,
-        _preview_targetCategoryID: UUID? = nil,
-        _preview_renameText: String = ""
-    ) {
-        self.viewModel = viewModel
-        _isOrganizing    = State(initialValue: _preview_isOrganizing)
-        _showRenameSheet = State(initialValue: _preview_showRenameSheet)
-        _targetCategoryID = State(initialValue: _preview_targetCategoryID)
-        _renameText      = State(initialValue: _preview_renameText)
-    }
-}
-#endif
-
-
-// Mock/ test data prepopulated
-#if DEBUG
-#Preview("Populated Preview History") {
-    MainActor.assumeIsolated {
-        let historyVM = HistoryVM(persistence: PersistenceActor())
-        historyVM.ensureGeneralCategory()
-        
-        if let generalID = historyVM.categories.first?.id {
-            historyVM.addToHistory(TileM(text: "Color background from gray-ish to history Tan"), to: generalID)
-            historyVM.addToHistory(TileM(text: "Define Dividers as the light tan"), to: generalID)
-        }
-        
-        return PreviewWrapper {
-            HistoryV(viewModel: historyVM)
-                .previewTheme()
-        }
-    }
-}
-#endif
-
-#if DEBUG
-#Preview("History — Organizer Overlay") {
-    MainActor.assumeIsolated {
-        // Build a self-contained HistoryVM with some tiles
-        let h = HistoryVM(persistence: PersistenceActor())
-        h.ensureGeneralCategory()
-        h.ensureArchiveCategory()
-        
-        if let userID = h.addEmptyUserCategory() {
-            h.renameCategory(id: userID, to: "Projects")
-            h.addToHistory(TileM(text: "Refactor the organizerOverlay"), to: userID)
-            h.addToHistory(TileM(text: "Add accessibility"), to: userID)
-            h.addToHistory(TileM(text: "Debug accessibility"), to: userID)
-            h.addToHistory(TileM(text: "Ship v1"), to: userID)
-            h.addToHistory(TileM(text: "Prep screenshots"), to: userID)
-        }
-        
-        return PreviewWrapper {
-            // Force organizer overlay ON for preview
-            HistoryV(viewModel: h, _preview_isOrganizing: true)
-        }
-    }
-}
-#endif

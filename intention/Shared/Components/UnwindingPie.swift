@@ -50,7 +50,7 @@ struct Pie: View {
                 .fill(palette.background.opacity(0.2))
             
             UnwindingPieShape(progress: remainingTime / totalTime)
-                .fill(palette.primary)
+                .fill(palette.accent)
             
         }
         .frame(width: 200, height: 200)

@@ -11,7 +11,7 @@ import SwiftUI
 
 struct DragPayload: Codable, Hashable, Transferable {
     let tile: TileM
-    let from: UUID
+    let sourceCategoryID: UUID
 
     static var transferRepresentation: some TransferRepresentation {
         CodableRepresentation(contentType: .data)

@@ -29,7 +29,7 @@ final class HistoryVM: ObservableObject {
         @Published var categoryValidationMessages: [UUID: [String]] = [:]
         @Published var tileLimitWarning: Bool = false
         @Published var lastUndoableMove: (tile: TileM, from: UUID, to: UUID)?
-        @Published var lastError: Error?
+    @Published var lastError: Error?                /// Used to trigger the UI visual error overlay
     
     // MARK: - Dependencies
     private let persistence: any Persistence
@@ -61,6 +61,8 @@ final class HistoryVM: ObservableObject {
         self.persistence = persistence
         Task { await loadHistory() }
     }
+    
+    func setError(_ error: Error?) { lastError = error }
 
     // MARK: - Load / Bootstrap / Reconcile
        private func loadHistory() async {
@@ -303,9 +305,9 @@ final class HistoryVM: ObservableObject {
     
     // MARK: valid target to call to move tiles within categories
     // Enforced (yes #2)
-    func moveTile(_ tile: TileM, from fromID: UUID, to toID: UUID) {
+    func transferTile(_ tile: TileM, fromCategory sourceID: UUID, toCategory destinationID: UUID) {
         Task {
-            do { try await moveTileThrowing(tile, from: fromID, to: toID) }
+            do { try await moveTileThrowing(tile, fromCategory: sourceID, toCategory: destinationID) }
             catch { await MainActor.run { self.lastError = error } }
         }
     }
@@ -314,7 +316,7 @@ final class HistoryVM: ObservableObject {
         guard let move = lastUndoableMove else { return }
         Task {
             do {
-                try await moveTileThrowing(move.tile, from: move.to, to: move.from)
+                try await moveTileThrowing(move.tile, fromCategory: move.to, toCategory: move.from)
                 await MainActor.run { self.lastUndoableMove = nil }
             } catch {
                 debugPrint("[HistoryVM.undoLastMove] error: ", error)
@@ -325,9 +327,9 @@ final class HistoryVM: ObservableObject {
     
     /// UI-friendly sugar for cross-category moves that funnels to the canonical thrower.
     /// Keeps call sites readable without duplicating core logic.
-    func moveTileBetweenCategories(_ tile: TileM, from sourceCategoryID: UUID, to destinationCategoryID: UUID) {
+    func moveTileBetweenCategories(_ tile: TileM, fromCategory sourceCategoryID: UUID, toCategory destinationCategoryID: UUID) {
         Task {
-            do { try await moveTileThrowing(tile, from: sourceCategoryID, to: destinationCategoryID) }
+            do { try await moveTileThrowing(tile, fromCategory: sourceCategoryID, toCategory: destinationCategoryID) }
             catch { await MainActor.run { self.lastError = error } }
         }
     }
@@ -469,10 +471,10 @@ final class HistoryVM: ObservableObject {
     
     // (yes #2)
     /// For cross-category moves: awaiting archive persistence before returning
-    func moveTileThrowing(_ tile: TileM, from fromID: UUID, to toID: UUID) async throws {
+    func moveTileThrowing(_ tile: TileM, fromCategory sourceID: UUID, toCategory destinationID: UUID) async throws {
         guard
-            let fromIndex = categories.firstIndex(where: { $0.id == fromID }),
-            let toIndex = categories.firstIndex(where: { $0.id == toID }),
+            let fromIndex = categories.firstIndex(where: { $0.id == sourceID }),
+            let toIndex = categories.firstIndex(where: { $0.id == destinationID }),
             let tileIndex = categories[fromIndex].tiles.firstIndex(of: tile)
         else { debugPrint("[HistoryVM.moveTileThrowing //core] Category ID not found. Tile not added."); throw HistoryError.moveFailed }
         
@@ -481,13 +483,13 @@ final class HistoryVM: ObservableObject {
         applyCaps(afterInsertingIn: toIndex)
         
         // If Archive is involved, mirror the authoritative store
-        if fromID == archiveCategoryID || toID == archiveCategoryID {
+        if sourceID == archiveCategoryID || destinationID == archiveCategoryID {
             let intoArchive = categories.first(where: { $0.id == archiveCategoryID })?.tiles ?? []
             Task { await archiveActor.saveArchivedTiles(intoArchive) }
         }
         
         saveHistory()
-        lastUndoableMove = (moving, fromID, toID)
+        lastUndoableMove = (moving, sourceID, destinationID)
         
         // Auto-clear undo affordance
         Task { @MainActor in

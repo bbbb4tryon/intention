@@ -25,7 +25,9 @@ final class TileOrganizerVC: UICollectionViewController {
     init() {
         let layout = UICollectionViewFlowLayout()
         layout.sectionInset = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
-        layout.itemSize = CGSize(width: UIScreen.main.bounds.width - 48, height: 44)
+        // Self-sizing cells: give an estimated size, let Auto Layout compute height
+        layout.estimatedItemSize = CGSize(width: UIScreen.main.bounds.width - 48, height: 56)
+        layout.itemSize = UICollectionViewFlowLayout.automaticSize
         layout.headerReferenceSize = CGSize(width: UIScreen.main.bounds.width, height: 30)
         super.init(collectionViewLayout: layout)
     }
@@ -62,6 +64,10 @@ final class TileOrganizerVC: UICollectionViewController {
 
         var config = UIListContentConfiguration.cell()
         config.text = tile.text
+        config.textProperties.numberOfLines = 0          // allow wrapping
+        config.textToSecondaryTextVerticalPadding = 6
+        config.directionalLayoutMargins = .init(top: 10, leading: 12, bottom: 10, trailing: 12)
+        
         config.textProperties.color = textColor             // accent label from struct TileOrganizerWrapper
         cell.contentConfiguration = config
         cell.backgroundColor = UIColor.secondarySystemBackground

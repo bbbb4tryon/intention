@@ -14,9 +14,9 @@ struct DynamicCountdown: View {
     
     /// Current progress sizes (0.0 to 1.0), passed from FocusSessionActiveV
     let progress: CGFloat
-    private let activeSize: CGFloat = 150
+    private let activeSize: CGFloat = 220
     private let compactSize: CGFloat = 60
-    let digitSize: CGFloat = 48
+    let digitSize: CGFloat = 56
     
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: .focus) }
@@ -84,7 +84,7 @@ struct DynamicCountdown: View {
                     // RUNNING/ACTIVE STATE
                     // Pie slicing
                     UnwindingPieShape(progress: progress)
-                        .fill(palette.primary)
+                        .fill(palette.accent)
                     //                    .fill(palette.primary.opacity(fVM.phase == .paused ? 0.4 : 1.0))
                     
                     // Time text in the center - always present, but lower Z-index than the pause overlay
@@ -94,7 +94,7 @@ struct DynamicCountdown: View {
                         
                         // Main fill color
                         digits
-                            .foregroundStyle(palette.text)
+                        foregroundStyle(palette.text) // dark gray over light areas
                         // Soft outline intText(F5F5F5)
                             .overlay(
                                 ZStack {

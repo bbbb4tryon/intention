@@ -77,21 +77,16 @@ final class AppOverlayManager: ObservableObject {
     init() {
         // This sets up the observer when the manager is initialized.
         NotificationCenter.default.addObserver(
-            forName: .debugShowSampleError,
-            object: nil,
-            queue: .main // Crucial: ensures UI updates happen safely
-        ) { [weak self] notification in
+            forName: .debugShowSampleError, object: nil, queue: nil // Ensures UI updates happen safely
+        ) { [weak self] note in
+            Task { @MainActor in
             guard let self = self else { return }
-            
-            // Extract the data payload
-            let userInfo = notification.userInfo
-            let title = userInfo?[DebugNotificationKey.errorTitle] as? String ?? "Debug Error"
-            let message = userInfo?[DebugNotificationKey.errorMessage] as? String ?? "No debug message provided."
-            
-            // Update the state to trigger the overlay
-            self.debugErrorTitle = title
-            self.debugErrorMessage = message
+            // Extract the data payload + self.Update the state to trigger the overlay
+            let userInfo = note.userInfo
+                self.debugErrorTitle = userInfo?[DebugNotificationKey.errorTitle] as? String ?? "Debug Error"
+                self.debugErrorMessage = userInfo?[DebugNotificationKey.errorMessage] as? String ?? "No debug message provided."
             self.isShowingDebugError = true
+            }
         }
     }
 }
@@ -388,8 +383,8 @@ struct RootView: View {
                             get: { historyVM.categories },
                             set: { historyVM.categories = $0 }
                         ),
-                        onMoveTile: { tile, fromID, toID in
-                            historyVM.moveTileBetweenCategories(tile, from: fromID, to: toID)
+                        onMoveTile: { tile, sourceID, destinationID in
+                            historyVM.moveTileBetweenCategories(tile, fromCategory: sourceID, toCategory: destinationID)
                         },
                         onReorder: { newTiles, catID in
                             historyVM.reorderTiles(newTiles, in: catID)

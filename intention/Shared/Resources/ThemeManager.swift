@@ -344,6 +344,8 @@ extension Color {
     static let intText = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
 
 }
+
+//Color + contrast utilities (safe, sRGB-linear, works with SwiftUI Color)
 //
 //Color extension to calculate .shadow or .material combination best contrasting with the text color of the specific screen based on the gradient background's luminence; the logic would then be applied to the specific areas behind text
 //import SwiftUI
@@ -382,13 +384,13 @@ extension Color {
 //        }
 //    }
 //}
-
+//
 //In SwiftUI, a texturized gradient background with superior contrast can be created by layering a subtle noise or grain texture over a LinearGradient. The texture helps to break up the smooth gradient, ensuring a more consistent contrast ratio against the text, which is a key accessibility requirement. A contrast ratio of 4.5:1 is the standard for normal text, with 3:1 for larger text, so 6.1:1 offers excellent readability.
 //Method 1: Using a noise shader
 //This modern technique provides the best performance and flexibility for generating procedural textures.
 //1. Create a noise shader
 //Create a new Metal file (.metal) in Xcode, for instance NoiseShader.metal, with the following code to generate a simple noise texture.
-
+//
 // // NoiseShader.metal
 //#include <metal_stdlib>
 //using namespace metal;
@@ -397,18 +399,18 @@ extension Color {
 //    float value = fract(sin(dot(position + time, float2(12.9898, 78.233))) * 43758.5453);
 //    return half4(value, value, value, 1) * color.a;
 //}
-
+//
 //2. Define within the AvailabilityTarget+.swift
-
+//
 //3. Apply the shader in a SwiftUI view
 //You can now apply this shader to your gradient in SwiftUI.
-
+//
 // 4. How it works:
 //A LinearGradient provides the base light colors.
 //The .visualEffect modifier applies the noiseShader using a layerEffect.
 //The time parameter can be used to animate the noise, or you can use a fixed value to create a static texture.
 //An opaque or translucent background, such as .ultraThinMaterial, can be placed directly behind the text to ensure the contrast ratio remains high in all areas, while still letting the textured background show through.
-
+//
 //
 //import SwiftUI
 //

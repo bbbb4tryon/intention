@@ -124,6 +124,7 @@ struct FocusSessionActiveV: View {
                             focusVM: focusVM,
                             onRecalibrateNow: { focusVM.showRecalibrate = true }
                         )
+                        .padding(.top, 8)
                         .environmentObject(theme)
                         //  Centered countdown (its internal own logic self-selects paused/running visuals
                         //      inside it, `isActive` includes .running  .paused
@@ -134,6 +135,7 @@ struct FocusSessionActiveV: View {
                             palette: p,
                             progress: Double(focusVM.countdownRemaining) / Double( TimerConfig.current.chunkDuration )
                         )
+                        .padding(.top, 20)  // separates from Stats and messages
                         .frame(maxWidth: .infinity)  // centers fixed-size content
                     }
                     .padding(.top, 8)

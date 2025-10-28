@@ -14,9 +14,19 @@ private extension View {
         self.symbolEffect(.bounce, isActive: isActive)
     }
     
-//    @ViewBuilder
-//    func metalTexturedGradientEffect(...) -> some View {
-//        self.???
+//    func metalTexturedGradient(strength: Double = 0.06, animate: Bool = false) -> some View {
+//        self.visualEffect { content, proxy in
+//            content.layerEffect(
+//                ShaderLibrary.noiseShader(
+//                    .boundingRect,
+//                    .float(proxy.size.width),
+//                    .float(proxy.size.height),
+//                    .float(animate ? proxy.time : 0.0),     // animate or freeze
+//                    .float(strength)
+//                ),
+//                maxSampleOffset: .zero
+//            )
+//        }
 //    }
 }
 
@@ -42,17 +52,21 @@ extension View {
             self.padding(.top)              /// simple fallback
         }
     }
-//    
+//    /// Cross-version "grain" for gradients: iOS 18 = Metal shader, older = tiled PNG overlay
 //    @ViewBuilder
-//    func metalGradientifAvailable(...) -> some View {
-//        if #available(iOS 18.0, *){
-//            self.metalTexturedGradientEffect(isActive: active)
-//        } else if #available(iOS 17.0, *){
-//            // fallback for ios 17
-//            self.????
+//    func texturedGradient(strength: Double = 0.06, animate: Bool = false) -> some View {
+//        if #available(iOS 18.0, *) {
+//            self.metalTexturedGradient(strength: strength, animate: animate)
 //        } else {
-//            // fallback for ios 16.0
-//            self
+//            // Fallback: drop a tiny seamless noise tile in Assets ("noise-tile-256")
+//            self.overlay(
+//                Image("noise-tile-256")
+//                    .resizable()
+//                    .scaledToFill()
+//                    .opacity(strength)
+//                    .allowsHitTesting(false)
+//            )
+//            .clipped()
 //        }
 //    }
 }
