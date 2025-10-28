@@ -65,6 +65,37 @@ extension RootView {
 }
 #endif
 
+
+// MARK: Global AppErrorOverlayManager
+// Use MainActor to ensure all state changes happen on the main thread safely.
+@MainActor
+final class AppOverlayManager: ObservableObject {
+    @Published var debugErrorTitle: String = ""
+    @Published var debugErrorMessage: String = ""
+    @Published var isShowingDebugError = false
+    
+    init() {
+        // This sets up the observer when the manager is initialized.
+        NotificationCenter.default.addObserver(
+            forName: .debugShowSampleError,
+            object: nil,
+            queue: .main // Crucial: ensures UI updates happen safely
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            
+            // Extract the data payload
+            let userInfo = notification.userInfo
+            let title = userInfo?[DebugNotificationKey.errorTitle] as? String ?? "Debug Error"
+            let message = userInfo?[DebugNotificationKey.errorMessage] as? String ?? "No debug message provided."
+            
+            // Update the state to trigger the overlay
+            self.debugErrorTitle = title
+            self.debugErrorMessage = message
+            self.isShowingDebugError = true
+        }
+    }
+}
+
 /// App entry. Owns and wires shared VMs/actors. Presents paywall and legal.
 /// Keeps single sources of truth at the root and centralizes scene handling.
 struct RootView: View {
@@ -78,8 +109,12 @@ struct RootView: View {
     // MARK: presentation
     // Which root-level sheet is visible (legal, membership, etc).
     @State private var activeSheet: RootSheet?
+    @State private var isShowingMembershipDebug = false
     // Global "busy, Loading" overlay.
     @State private var isBusy = false
+    
+    // MARK: Injecting Global ErrorOverlay Manager
+    @StateObject private var overlayManager = AppOverlayManager()
     
     // MARK: Scene
     /// Scene phase guardrail: pause timers, flush history, warms haptics.
@@ -94,6 +129,7 @@ struct RootView: View {
     @StateObject private var statsVM: StatsVM
     @StateObject private var prefs: AppPreferencesVM
     @StateObject private var hapticsEngine: HapticsService // warmed generators (UI object)
+    @StateObject private var debug = DebugRouter()
     
     /// Builds once: create infrastructure: actors/services, wire VM for "when", actors for "how", and assign to `@StateObject` wrappers.
     init() {
@@ -210,9 +246,11 @@ struct RootView: View {
             .environmentObject(prefs)
             .environmentObject(hapticsEngine)
             .environmentObject(focusVM)
+            .environmentObject(debug)
             .progressOverlay($isBusy, text: "Loading...")
         // Applies current screen theme to background
             .toolbarBackground(tabBG, for: .navigationBar)
+            .environmentObject(overlayManager)
 //            .sceneHandlers
 //            .launchHandlers
 //            .membershipHandlers
@@ -330,6 +368,68 @@ struct RootView: View {
                     }
                 }
             }
+        // ========== DEBUG PRESENTATION WIRING ==========
+        // Recalibration "sheet" as a full-screen chrome for debug
+            .fullScreenCover(isPresented: $debug.showRecalibration) {
+                RecalibrationSheetChrome(onClose: { debug.showRecalibration = false }) {
+                    // Use a minimal mock for debug rendering ONLY here.
+                    // (Does not mutate live session state.)
+                    RecalibrationV(vm: RecalibrationVM.mockForDebug())
+                }
+                .environmentObject(theme)
+            }
+
+            // Organizer overlay using LIVE history categories (no mocks).
+            // We pass a Binding into OrganizerOverlayScreen so reordering acts on your real data.
+            .fullScreenCover(isPresented: $debug.showOrganizer) {
+                OrganizerOverlayChrome(onClose: { debug.showOrganizer = false }) {
+                    OrganizerOverlayScreen(
+                        categories: Binding(
+                            get: { historyVM.categories },
+                            set: { historyVM.categories = $0 }
+                        ),
+                        onMoveTile: { tile, fromID, toID in
+                            historyVM.moveTileBetweenCategories(tile, from: fromID, to: toID)
+                        },
+                        onReorder: { newTiles, catID in
+                            historyVM.reorderTiles(newTiles, in: catID)
+                        },
+                        onDone: { debug.showOrganizer = false }
+                    )
+                }
+                .environmentObject(theme)
+            }
+
+            // Membership debug simply reuses your root sheet choreography
+            .onChange(of: debug.showMembership) { want in
+                if want { activeSheet = .membership; debug.showMembership = false }
+            }
+
+            // Route debug errors through the same global overlayManager
+            .onChange(of: debug.showError) { show in
+                if show {
+                    overlayManager.debugErrorTitle = debug.errorTitle
+                    overlayManager.debugErrorMessage = debug.errorMessage
+                    overlayManager.isShowingDebugError = true
+                    debug.showError = false
+                }
+            }
+        
+//            .onReceive(NotificationCenter.default.publisher(for: .devOpenMembership)) { _ in
+//                        isShowingMembershipDebug = true
+//                    }
+//        // The Global Presentation: Use .overlay to float over all content
+//                .overlay {
+//                    if overlayManager.isShowingDebugError {
+//                        ErrorOverlay(
+////                            title: overlayManager.debugErrorTitle,
+//                            displayMessage: overlayManager.debugErrorMessage,
+//                            dismissAction: { overlayManager.isShowingDebugError = false }
+//                        )
+//                        // Use a standard, quick animation for a polished feel
+//                        .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+//                    }
+//                }
     }
 }
 

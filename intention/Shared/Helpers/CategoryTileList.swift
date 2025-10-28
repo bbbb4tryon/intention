@@ -65,8 +65,8 @@ struct CategoryTileList: View {
                                 Button(role: .destructive) {
                                     if let idx = category.tiles.firstIndex(of: tile) {
                                         category.tiles.remove(at: idx)
-                                        // Persist via VM so caps & signatures are respected
-                                        viewModel.updateTiles(in: category.id, to: category.tiles)
+                                        // Persist via VM reorderTiles already applies caps + persists, updateTiles() & saveHistory() redundant
+                                        viewModel.reorderTiles(category.tiles, in: category.id)
                                     }
                                 } label: { Label("Delete", systemImage: "trash") } //FIXME: how to conform to the thememanager?
                                 

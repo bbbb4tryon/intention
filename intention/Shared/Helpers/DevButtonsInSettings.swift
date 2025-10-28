@@ -11,7 +11,8 @@ extension Notification.Name {
     static let devOpenRecalibration      = Notification.Name("ShowRecalibrationToDebug")
     static let devOpenOrganizerOverlay   = Notification.Name("ShowOrganizerOverlayToDebug")
     static let devOpenMembership         = Notification.Name("ShowMembershipToDebug")
-    static let devOpenErrorOverlay       = Notification.Name("ShowSampleErrorToDebug")
+    static let debugShowSampleError       = Notification.Name("ShowSampleErrorToDebug")
+    
 }
 
 // Helper struct for keys when passing data

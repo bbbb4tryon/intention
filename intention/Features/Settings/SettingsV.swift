@@ -13,6 +13,7 @@ struct SettingsV: View {
     @EnvironmentObject var prefs: AppPreferencesVM
     @EnvironmentObject var memVM: MembershipVM
     @EnvironmentObject var focusVM: FocusSessionVM
+    @EnvironmentObject var debug: DebugRouter
     @ObservedObject var statsVM: StatsVM
     @AppStorage(DebugKeys.forceLegalNextLaunch) private var debugShowLegalNextLaunch = false
     
@@ -59,22 +60,32 @@ struct SettingsV: View {
                         Divider()
                         T("BYPASS", .largeTitle)
                         
-                        Button("Recalibration View"){NotificationCenter.default.post(
-                            // Fires signal to the receiver (e.g. FocusActiveSessionV)
-                            name: .devOpenRecalibration, object: nil) }
-                        Button("Organizer View"){ NotificationCenter.default.post(
-                            name: .devOpenOrganizerOverlay, object: nil) }
-                        Button("Membership View"){NotificationCenter.default.post(
-                            name: .devOpenMembership, object: nil) }
-                        Button("ErrorOverlay View") {
-                            // Pass sample data for the overlay's content
-                            let userInfo: [AnyHashable: Any] = [
-                                DebugNotificationKey.errorTitle: "Debug View Activated",
-                                DebugNotificationKey.errorMessage: "This is a forced-view of the error overlay for visual confirmation."
-                            ]
-                            NotificationCenter.default.post(
-                                name: .devOpenErrorOverlay, object: nil) }
-                        
+                        Button("Recalibration View"){debug.presentRecalibration() }
+                        Button("Organizer View")     { debug.presentOrganizer() }
+                        Button("Membership View")    { debug.presentMembership() }
+                        Button("ErrorOverlay View")  {
+                            debug.presentError(
+                                title: "Debug View Activated",
+                                message: "This is a forced-view of the error overlay for visual confirmation."
+                            )
+                        }
+//                        
+//                        Button("Recalibration View"){NotificationCenter.default.post(
+//                            // Fires signal to the receiver (e.g. FocusActiveSessionV)
+//                            name: .devOpenRecalibration, object: nil) }
+//                        Button("Organizer View"){ NotificationCenter.default.post(
+//                            name: .devOpenOrganizerOverlay, object: nil) }
+//                        Button("Membership View"){NotificationCenter.default.post(
+//                            name: .devOpenMembership, object: nil) }
+//                        Button("ErrorOverlay View") {
+//                            // Pass sample data for the overlay's content
+//                            let userInfo: [AnyHashable: Any] = [
+//                                DebugNotificationKey.errorTitle: "Debug View Activated",
+//                                DebugNotificationKey.errorMessage: "This is a forced-view of the error overlay for visual confirmation."
+//                            ]
+//                            NotificationCenter.default.post(
+//                                name: .debugShowSampleError, object: nil) }
+//                        
                         Picker("Timer debug", selection: Binding(
                             get: { UserDefaults.standard.integer(forKey: "debug.chunkSeconds") },
                             set: { UserDefaults.standard.set($0, forKey: "debug.chunkSeconds") } )) {

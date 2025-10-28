@@ -39,16 +39,15 @@ struct FocusSessionActiveV: View {
     // MARK: View Models
     @ObservedObject var focusVM: FocusSessionVM
     @ObservedObject var recalibrationVM: RecalibrationVM
-    
  
     // MARK: Local UI State
     /// manages both focus to textfield AND return from background
     /// single flag `showValidation`controls when to show validation checks
     @FocusState private var intentionFocused: Bool
     @State private var showValidation: Bool = false
-    @State private var showMembership: Bool = false
-    @State private var showErrorOverlay: Bool = false
     @State private var isBusy = false
+    @State private var isShowingRecalibrationToDebug = false
+    @State private var isShowingOrganizerOverlayToDebug = false
     
     private var isInputActive: Bool { focusVM.phase != .running && focusVM.tiles.count < 2 }
     
@@ -168,8 +167,7 @@ struct FocusSessionActiveV: View {
         // Single bottom chrome: do NOT add an overlay; this keeps it snug to the tab bar
         //      if user taps Close or swipes down, this stops a running recalibration
         .fullScreenCover(isPresented: $focusVM.showRecalibrate) {
-            RecalibrationSheetChrome(
-                onClose: {
+            RecalibrationSheetChrome(onClose: {
                     recalibrationVM.performAsyncAction {
                         if recalibrationVM.phase == .running || recalibrationVM.phase == .pause {
                             try await recalibrationVM.stop()
@@ -179,8 +177,7 @@ struct FocusSessionActiveV: View {
                 }
             ) {
                 NavigationStack {
-                    RecalibrationV(vm: recalibrationVM)
-                        .navigationBarHidden(true)          // own chrome owns the close
+                    RecalibrationV(vm: recalibrationVM) .navigationBarHidden(true)          // own chrome owns the close
                 }
             }
         }
@@ -193,29 +190,11 @@ struct FocusSessionActiveV: View {
                 }
             }
         }
-        // Recalibration full-screen cover (you already have this cover wired to focusVM.showRecalibrate)
-        .onReceive(NotificationCenter.default.publisher(for: .devOpenRecalibration)) { _ in
-            focusVM.showRecalibrate = true
-        }
-        
-//        // Membership (example: sheet driven by your local @State)
-//        .onReceive(NotificationCenter.default.publisher(for: .devOpenMembership)) { _ in
-//            showMembership = true
+//        .sheet(isPresented: $showMembership) {
+//            // present your membership UI
+//            MembershipV()
 //        }
-////        .sheet(isPresented: $showMembership) {
-////            // present your membership UI
-////            MembershipV()
-////        }
-//        
-//        // Error overlay (example: lightweight overlay flag)
-//        .onReceive(NotificationCenter.default.publisher(for: .devOpenErrorOverlay)) { _ in
-//            showErrorOverlay = true
-//        }
-//        .overlay {
-//            if showErrorOverlay {
-//                ErrorOverlayV(onClose: { showErrorOverlay = false })
-//            }
-//        }
+
     }
     
     

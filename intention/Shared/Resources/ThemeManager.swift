@@ -7,6 +7,7 @@
 import SwiftUI
 // views will use local color constants for validation, border, and secondary text
 // Shim: keep code compiling that expects ThemePalette, if any still refer to it!
+
 typealias ThemePalette = ScreenStylePalette
 
 // -- Use a material background (which applies a subtle blur/opacity)
@@ -35,6 +36,7 @@ struct ScreenStylePalette {
         let end: UnitPoint
     }
     let gradientBackground: LinearGradientSpecial?      // nil == use `background` color
+//    dynamic foreground color that automatically adjusts based on the background color.
 }
 // MARK: - App Font Theme
 enum AppFontTheme: String, CaseIterable {
@@ -342,83 +344,111 @@ extension Color {
     static let intText = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
 
 }
-
-
-//// MARK: - Theme Manager
-//@MainActor
-//final class ThemeManager: ObservableObject {
-//    @AppStorage("selectedColorTheme") private var colorRaw: String = AppColorTheme.default.rawValue
-//    @AppStorage("selectedFontTheme")  private var fontRaw: String = AppFontTheme.serif.rawValue
-//    
-//    @Published var colorTheme: AppColorTheme { didSet { colorRaw = colorTheme.rawValue } }
-//    @Published var fontTheme: AppFontTheme { didSet { fontRaw  = fontTheme.rawValue  } }
-//    
-//    init() {
-//        let storedColor = UserDefaults.standard.string(forKey: "selectedColorTheme") ?? AppColorTheme.default.rawValue
-//        let storedFont  = UserDefaults.standard.string(forKey: "selectedFontTheme")  ?? AppFontTheme.serif.rawValue
-//        self.colorTheme = AppColorTheme(rawValue: storedColor) ?? .default
-//        self.fontTheme  = AppFontTheme(rawValue: storedFont)  ?? .serif
-//    }
-//    
-//    func palette(for screen: ScreenName) -> ScreenStylePalette {
-//        colorTheme.colors(for: screen)
-//    }
-//    
-//    func styledText(_ content: String, as role: TextRole, in screen: ScreenName) -> Text {
-//        let font  = fontTheme.toFont(Self.fontStyle(for: role))
-//        let color = Self.color(for: role, palette: palette(for: screen))
-//        let weight: Font.Weight = switch role {
-//        case .largeTitle:   .bold
-//        case .header:       .semibold
-//        case .section:      .semibold
-//        case .title3:       .semibold
-//        case .label:        .medium
-//        case .action:       .semibold
-//        default:            .regular
+//
+//Color extension to calculate .shadow or .material combination best contrasting with the text color of the specific screen based on the gradient background's luminence; the logic would then be applied to the specific areas behind text
+//import SwiftUI
+//
+//extension Color {
+//    func luminance() -> Double {
+//        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+//        
+//        // Convert SwiftUI Color to UIKit's UIColor to get RGB components
+//        guard UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a) else {
+//            return 0.0
 //        }
 //        
-//        return Text(content).font(font).fontWeight(weight).foregroundColor(color)
+//        // sRGB to linear RGB conversion
+//        let adjustedR = (r < 0.04045) ? r / 12.92 : pow((r + 0.055) / 1.055, 2.4)
+//        let adjustedG = (g < 0.04045) ? g / 12.92 : pow((g + 0.055) / 1.055, 2.4)
+//        let adjustedB = (b < 0.04045) ? b / 12.92 : pow((b + 0.055) / 1.055, 2.4)
+//        
+//        // Calculate luminance (perceived brightness)
+//        return 0.2126 * adjustedR + 0.7152 * adjustedG + 0.0722 * adjustedB
 //    }
-//    
-//    // MARK: Style mapping
-//    static func fontStyle(for role: TextRole) -> Font.TextStyle {
-//        switch role {
-//        case .largeTitle:   .largeTitle
-//        case .header:       .largeTitle
-//        case .section:      .title2
-//        case .title3:       .title3
-//        case .label:        .headline
-//        case .action:       .headline
-//        case .body:         .body
-//        case .tile:         .body
-//        case .secondary:    .subheadline
-//        case .placeholder:  .subheadline
-//        case .caption:      .caption
-//        }
-//    }
-//    
-//    static func color(for role: TextRole, palette: ScreenStylePalette) -> Color {
-//        switch role {
-//        case .header, .section, .title3, .body, .tile, .largeTitle:
-//            return palette.text
-//        case .secondary, .caption, .placeholder:
-//            return textSecondary
-//        case .label:
-//            return palette.text
-//        case .action:
-//            // ButtonStyles typically color the label; this keeps Action readable elsewhere.
-//            return .intText
+//
+//    func contrasted(against color: Color) -> Color {
+//        let textLuminance = self.luminance()
+//        let backgroundLuminance = color.luminance()
+//        let contrastRatio = (max(textLuminance, backgroundLuminance) + 0.05) / (min(textLuminance, backgroundLuminance) + 0.05)
+//        
+//        // W3C recommendation for enhanced contrast is 7:1 (AAA)
+//        // A ratio of 4.5:1 is the minimum (AA)
+//        // Adjust the threshold to achieve the desired contrast
+//        if contrastRatio < 6.1 {
+//            // Not enough contrast, choose a contrasting color
+//            return backgroundLuminance > 0.5 ? .black : .white
+//        } else {
+//            return self
 //        }
 //    }
 //}
-//
-//// MARK: - defines consistent, app-wide color of button text
-//extension Color {
-//    static let intText = Color(red: 0.96, green: 0.96, blue: 0.96)     // #F5F5F5
-//    static let btnTextLight = intText     // #F5F5F5
-//    static let btnTextDark = Color(red: 0.99, green: 0.99, blue: 0.99)     // #FDFDFD
-//    static let orgOverlayLight = Color(red: 0.9137, green: 0.8627, blue: 0.7373) // #e9dcbc
-//    static let orgOverlayDark = Color(red: 0.2588, green: 0.2078, blue: 0.0863) // #423516
-//}
-//
 
+//In SwiftUI, a texturized gradient background with superior contrast can be created by layering a subtle noise or grain texture over a LinearGradient. The texture helps to break up the smooth gradient, ensuring a more consistent contrast ratio against the text, which is a key accessibility requirement. A contrast ratio of 4.5:1 is the standard for normal text, with 3:1 for larger text, so 6.1:1 offers excellent readability.
+//Method 1: Using a noise shader
+//This modern technique provides the best performance and flexibility for generating procedural textures.
+//1. Create a noise shader
+//Create a new Metal file (.metal) in Xcode, for instance NoiseShader.metal, with the following code to generate a simple noise texture.
+
+// // NoiseShader.metal
+//#include <metal_stdlib>
+//using namespace metal;
+//
+//[[ stitchable ]] half4 noiseShader(float2 position, half4 color, float2 size, float time) {
+//    float value = fract(sin(dot(position + time, float2(12.9898, 78.233))) * 43758.5453);
+//    return half4(value, value, value, 1) * color.a;
+//}
+
+//2. Define within the AvailabilityTarget+.swift
+
+//3. Apply the shader in a SwiftUI view
+//You can now apply this shader to your gradient in SwiftUI.
+
+// 4. How it works:
+//A LinearGradient provides the base light colors.
+//The .visualEffect modifier applies the noiseShader using a layerEffect.
+//The time parameter can be used to animate the noise, or you can use a fixed value to create a static texture.
+//An opaque or translucent background, such as .ultraThinMaterial, can be placed directly behind the text to ensure the contrast ratio remains high in all areas, while still letting the textured background show through.
+
+//
+//import SwiftUI
+//
+//struct TexturedGradientView: View {
+//    let lightColors: [Color] = [Color(red: 0.95, green: 0.98, blue: 1.0), Color(red: 0.85, green: 0.95, blue: 1.0)]
+//
+//    var body: some View {
+//        ZStack {
+//            // Background Layer
+//            LinearGradient(
+//                colors: lightColors,
+//                startPoint: .top,
+//                endPoint: .bottom
+//            )
+//            .ignoresSafeArea()
+//            .visualEffect { content, proxy in
+//                content
+//                    .layerEffect(
+//                        ShaderLibrary.default.noiseShader(
+//                            .boundingRect,
+//                            .float(3.0), // Noise strength
+//                            .float(proxy.time)
+//                        ),
+//                        maxSampleOffset: .zero // For static noise
+//                    )
+//            }
+//
+//            // Foreground Text
+//            VStack {
+//                Text("Superior Contrast")
+//                    .font(.largeTitle)
+//                    .fontWeight(.bold)
+//                    .foregroundColor(.black)
+//                Text("6.1:1 Contrast Ratio")
+//                    .font(.title)
+//                    .foregroundColor(.black.opacity(0.8))
+//            }
+//            .padding(20)
+//            .background(.ultraThinMaterial) // Use material for guaranteed contrast on text
+//            .cornerRadius(12)
+//        }
+//    }
+//}

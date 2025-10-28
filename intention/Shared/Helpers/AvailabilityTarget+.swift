@@ -13,6 +13,11 @@ private extension View {
     func bounceSymbolEffect(isActive: Bool) -> some View {
         self.symbolEffect(.bounce, isActive: isActive)
     }
+    
+//    @ViewBuilder
+//    func metalTexturedGradientEffect(...) -> some View {
+//        self.???
+//    }
 }
 
 extension View {
@@ -37,4 +42,17 @@ extension View {
             self.padding(.top)              /// simple fallback
         }
     }
+//    
+//    @ViewBuilder
+//    func metalGradientifAvailable(...) -> some View {
+//        if #available(iOS 18.0, *){
+//            self.metalTexturedGradientEffect(isActive: active)
+//        } else if #available(iOS 17.0, *){
+//            // fallback for ios 17
+//            self.????
+//        } else {
+//            // fallback for ios 16.0
+//            self
+//        }
+//    }
 }

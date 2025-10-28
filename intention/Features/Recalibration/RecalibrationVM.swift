@@ -17,6 +17,7 @@ enum RecalibrationError: LocalizedError {
     }
 }
 
+
 /// One entry point: start(mode:)
 
 /// VM decides duration + cadence (no durations in the View).
@@ -255,3 +256,25 @@ final class RecalibrationVM: ObservableObject {
         }
     }
 }
+
+#if DEBUG
+@MainActor
+extension RecalibrationVM {
+    /// Debug-only setters; returning Self enables fluent build-up in previews.
+    @discardableResult func _debugSetPhase(_ p: Phase) -> Self { self.phase = p; return self }
+    @discardableResult func _debugSetMode(_ m: RecalibrationMode?) -> Self { self.mode = m; return self }
+
+    /// Canonical preview factory: shows a running breathing session with a visible countdown.
+    static func mockForDebug() -> RecalibrationVM {
+        let vm = RecalibrationVM(
+            haptics: NoopHapticsClient(),
+            breathingMinutes: 1,
+            balancingMinutes: 1
+        )
+        vm._debugSetMode(.breathing)
+          ._debugSetPhase(.running)
+        vm.timeRemaining = 17 // 1:30 gives a nice visual
+        return vm
+    }
+}
+#endif

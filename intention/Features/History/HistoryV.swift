@@ -124,7 +124,7 @@ struct HistoryV: View {
 //            }
         
         // Error overlay
-//            .onReceive(NotificationCenter.default.publisher(for: .devOpenErrorOverlay)) { _ in
+//            .onReceive(NotificationCenter.default.publisher(for: .debugShowSampleError)) { _ in
 //                showErrorOverlay = true
 //            }
 //            .overlay {
@@ -150,8 +150,8 @@ struct HistoryV: View {
                             }
                         },
                         onReorder: { newTiles, categoryID in
-                            viewModel.updateTiles(in: categoryID, to: newTiles)
-                            viewModel.saveHistory()
+                            // reorderTiles already applies caps AND persists, saveHistory() isn't needed
+                            viewModel.reorderTiles(newTiles, in: categoryID)
                         },
                         onDone: {
                             // close path X/drag like RecalibrationChrome

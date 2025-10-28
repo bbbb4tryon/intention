@@ -302,7 +302,7 @@ final class HistoryVM: ObservableObject {
     }
     
     // MARK: valid target to call to move tiles within categories
-    // Enforced
+    // Enforced (yes #2)
     func moveTile(_ tile: TileM, from fromID: UUID, to toID: UUID) {
         Task {
             do { try await moveTileThrowing(tile, from: fromID, to: toID) }
@@ -323,6 +323,26 @@ final class HistoryVM: ObservableObject {
         }
     }
     
+    /// UI-friendly sugar for cross-category moves that funnels to the canonical thrower.
+    /// Keeps call sites readable without duplicating core logic.
+    func moveTileBetweenCategories(_ tile: TileM, from sourceCategoryID: UUID, to destinationCategoryID: UUID) {
+        Task {
+            do { try await moveTileThrowing(tile, from: sourceCategoryID, to: destinationCategoryID) }
+            catch { await MainActor.run { self.lastError = error } }
+        }
+    }
+    
+    // MARK: Wrapper for call-site (RootView) clarity
+    /// Reorder tiles within the given category. Validates, re-applies caps, persists.
+    // (yes #2)
+    func reorderTiles(_ newOrder: [TileM], in categoryID: UUID){
+        guard let idx = categories.firstIndex(where: { $0.id == categoryID } ) else { return }
+        categories[idx].tiles = newOrder
+        applyCaps(afterInsertingIn: idx)
+        saveHistory()           // VM decides *when* to persist
+    }
+    
+    //(yes #2)
     /// Replace an entire category’s tiles (e.g., within-category reorder).
     func updateTiles(in categoryID: UUID, to newTiles: [TileM]) {
         guard let index = categories.firstIndex(where: { $0.id == categoryID }) else { return }
@@ -447,7 +467,7 @@ final class HistoryVM: ObservableObject {
         saveHistory()
     }
     
-    
+    // (yes #2)
     /// For cross-category moves: awaiting archive persistence before returning
     func moveTileThrowing(_ tile: TileM, from fromID: UUID, to toID: UUID) async throws {
         guard

@@ -16,36 +16,6 @@ final class FocusSessionVM: ObservableObject {
     /// UI state of the current 20-min chunk
     enum Phase: String, Codable, Sendable { case none, idle, running, finished, paused }
     
-    //    private struct BackgroundSnapshot: Codable, Equatable {
-    //        var tookAt: TimeInterval        // Date().timeIntervalSince1970
-    //        var remainingSeconds: Int
-    //        var phaseWasRunning: Bool
-    //        var chunkIndex: Int
-    //    }
-    //
-    //    @AppStorage("focus.lastSnapshot") private var lastSnapshotData: Data = Data()
-    //
-    //    private func saveSnapshot(remaining: Int, running: Bool, chunk: Int) {
-    //        let snap = BackgroundSnapshot(
-    //            tookAt: Date().timeIntervalSince1970,
-    //            remainingSeconds: remaining,
-    //            phaseWasRunning: running,
-    //            chunkIndex: chunk
-    //        )
-    //        if let data = try? JSONEncoder().encode(snap) {
-    //            lastSnapshotData = data
-    //        }
-    //    }
-    //
-    //    private func loadSnapshot() -> BackgroundSnapshot? {
-    //        guard !lastSnapshotData.isEmpty,
-    //              let snap = try? JSONDecoder().decode(BackgroundSnapshot.self, from: lastSnapshotData)
-    //        else { return nil }
-    //        return snap
-    //    }
-    //
-    //    private func clearSnapshot() { lastSnapshotData = Data() }
-    //
     // MARK: - Published UI State
     @Published var tileText: String = ""
     {
@@ -208,34 +178,6 @@ final class FocusSessionVM: ObservableObject {
         //        runningDeadline = Date().addingTimeInterval(TimeInterval(seconds)) // seconds = chunkDuration
         saveVMSnapshot()
         
-        //        let clock = ContinuousClock()
-        //        let deadline = clock.now.advanced(by: .seconds(seconds))
-        //        chunkCountdown = Task { [weak self] in
-        //            guard let self else { return }
-        //            while !Task.isCancelled {
-        //                let remaining = max(0, Int(clock.now.duration(to: deadline).components.seconds))
-        //                await MainActor.run { self.countdownRemaining = remaining }
-        //                // FIXME: print once per minute for debug purposes
-        //                if remaining % 60 == 0 {
-        //                    debugPrint("[FocusSessionVM.startCurrent20MinCountdown] tick remaining=\(remaining)")
-        //                }
-        //                if remaining == 0 { break }
-        //                try? await clock.sleep(for: .seconds(1))
-        //            }
-        //
-        //            /// >>> All post-finish work happens INSIDE the Task <<<
-        //            await MainActor.run {
-        //                guard self.phase == .running else { return }
-        //                self.fireDoneHapticOnce()
-        //                // >>> Single place that advances and decides
-        //                self.finishCurrentChunk()
-        //                self.saveSnapshot()
-        //            }
-        //            //        await MainActor.run { self.naturallyAdvanceSessionChunk() }
-        //            // Clear the task
-        //            await MainActor.run { self.chunkCountdown = nil }
-        //        }
-        
         await timeActor.startTicking(
             totalSeconds: total,
             onTick: { [ weak self ] secs in
@@ -301,41 +243,6 @@ final class FocusSessionVM: ObservableObject {
         phase = .running
         saveVMSnapshot()
         
-        //        chunkCountdown?.cancel()
-        //        chunkCountdown = nil
-        //        phase = .paused
-        // paused == wall clock setup
-        //        runningDeadline = nil
-        //        saveSnapshot()
-        //
-        //        let seconds = countdownRemaining
-        //        guard seconds > 0 else {
-        //            // Nothing to resume; treat as finished-same finisher as startCurrent...()
-        //            finishCurrentChunk()
-        //            return
-        //        }
-        //        phase = .running
-        //        saveSnapshot()
-        //
-        //        let clock = ContinuousClock()
-        //        let deadline = clock.now.advanced(by: .seconds(seconds))
-        //        chunkCountdown = Task { [weak self] in
-        //            guard let self else { return }
-        //            while !Task.isCancelled {
-        //                let remaining = max(0, Int(clock.now.duration(to: deadline).components.seconds))
-        //                await MainActor.run { self.countdownRemaining = remaining }
-        //                if remaining == 0 { break }
-        //                try? await clock.sleep(for: .seconds(1))
-        //            }
-        //            await MainActor.run {
-        //                guard self.phase == .running else { return }
-        //                self.phase = .finished
-        //                self.fireDoneHapticOnce()
-        //                // >>> Single place that advances and decides
-        //                self.finishCurrentChunk()
-        //                self.chunkCountdown = nil
-        //            }
-        //        }
     }
     
     // MARK: App lifecycle (RootView calls these)
@@ -387,40 +294,6 @@ final class FocusSessionVM: ObservableObject {
                     await startCurrent20MinCountdown(seconds: vmSnap.remainingSeconds)
                 }
             }
-            
-            //        guard let snap = loadSnapshot() else { return }
-            //
-            //        // Wall-clock delta
-            //        let elapsed = max(0, Int(Date().timeIntervalSince1970 - snap.tookAt))
-            //
-            //        // Only subtract time if we were running when we left
-            //        let recomputedRemaining = snap.phaseWasRunning
-            //        ? max(0, snap.remainingSeconds - elapsed)
-            //        : snap.remainingSeconds
-            //
-            //        // If time ran out while away, finish cleanly; otherwise resume exactly
-            //        if recomputedRemaining <= 0 {
-            //            remainingSeconds = 0
-            //            phase = .finished
-            //            isActive = false
-            //            clearSnapshot()
-            //            await handleChunkFinished()  // your existing completion path
-            //            return
-            //        }
-            //
-            //        // Safe resume
-            //        currentSessionChunk = snap.chunkIndex
-            //        remainingSeconds = recomputedRemaining
-            //        phase = snap.phaseWasRunning ? .running : .paused
-            //        isActive = true
-            //
-            //        clearSnapshot()
-            //
-            //        if snap.phaseWasRunning {
-            //            await timer.start(tickEvery: 1) { [weak self] in
-            //                await self?.onTick()
-            //            }
-            //        }
         }
     }
     
@@ -428,7 +301,7 @@ final class FocusSessionVM: ObservableObject {
         // On cold launch; reuse the same logic as foreground
         await resumeTickingAfterForeground()
     }
-
+    
     // MARK: End-of-chunk/session
     /// ONLY advancement path; Marks the current chunk complete, advances chunk index once,
     ///     performs end-of-session work when both chunks are done.
@@ -439,7 +312,7 @@ final class FocusSessionVM: ObservableObject {
             sessionActive = false
             phase = .finished
             showRecalibrate = true
-
+            
             if let targetCategoryID = historyVM?.generalCategoryID {
                 for tile in tiles.prefix(2) {
                     historyVM?.addToHistory(tile, to: targetCategoryID)
@@ -452,10 +325,10 @@ final class FocusSessionVM: ObservableObject {
         runningDeadline = nil
         saveVMSnapshot()
     }
-
+    
     /// Resets the session state for a new start - non-throwing; async because we `await` the actor
     func resetSessionStateForNewStart() async {
-//        stopCurrent20MinCountdown()                     /// Ensures any running countdown is stopped
+        //        stopCurrent20MinCountdown()                     /// Ensures any running countdown is stopped
         tiles = []
         tileText = ""
         canAdd = true
@@ -468,7 +341,7 @@ final class FocusSessionVM: ObservableObject {
         didHapticForChunk.removeAll()
         await timeActor.resetSessionTracking()
         clearVMSnapshot()
-//        debugPrint("[FocusVM.resetSessionStateForNewStart] state NOT reset for a new session.")
+        //        debugPrint("[FocusVM.resetSessionStateForNewStart] state NOT reset for a new session.")
     }
     
     /// checkmarks + Calls when each 20-min chunk completes:
@@ -478,66 +351,6 @@ final class FocusSessionVM: ObservableObject {
         //        completedTileIDs.contains(tile.id)
         return idx < currentSessionChunk
     }
-//    
-//    /// Stops and resets the current countdown timer
-//    func stopCurrent20MinCountdown() {
-//        chunkCountdown?.cancel()
-//        chunkCountdown = nil
-//        phase = .idle
-//        countdownRemaining = chunkDuration
-//        debugPrint("Current 20-min countdown stopped and reset")
-//    }
-    
-//    /// Adds a tile or starts session, depending on context
-//    func beginSessionFlow() async throws {
-//        if tiles.count < 2 {
-//            try await addTileAndPrepareForSession(tileText)
-//        } else {
-//            // NOTE: -
-//            /*
-//             If two tiles are already present, and a countdown just finished,
-//             this button could be used to explicitly start the *next* 20-min chunk
-//             if the user chose not to immediately continue.
-//             For now, based on your description, this button mainly triggers `addTileAndPrepareForSession`.
-//             // We might need more explicit UI for "Start next 20-min chunk".
-//             */
-//            print("All tiles added. Consider adding logic for starting next chunk explicitly.")
-//            try await beginOverallSession()
-//        }
-//    }
-//
-//    
-    //
-    //    /// (Part 2) checkmarks + Calls when each 20-min chunk completes:
-    //    func markCurrentTileCompleted() {
-    //        guard currentSessionChunk < tiles.count else { return }
-    //        completedTileIDs.insert(tiles[currentSessionChunk].id)
-    //        currentSessionChunk += 1
-    //    }
-    //    /// Chunks session for completion, triggers recalibration **uses HistoryVM canonical IDs** Flow Control
-    //    private func checkSessionCompletion() {
-    //        if currentSessionChunk >= 2 {                               /// both chunks done
-    //            sessionActive = false                                   /// 40-min overall session done
-    //            markCurrentTileCompleted()
-    //            showRecalibrate = true                                  /// modal triggered
-    //            debugPrint("Recalibration choice modal should display")
-    //            /// Bounded tile history call, add tiles to category
-    //            guard let targetCategoryID = historyVM?.generalCategoryID else {
-    //                debugPrint("[FocusSessionVM.checkSessionCompletion] missing historyVM.generalCategoryID"); return
-    //            }
-    //            for tile in tiles.prefix(2) {
-    //                historyVM?.addToHistory(tile, to: targetCategoryID)
-    //            }
-    //            /// NOTE: - Don't reset actor for new session here - user will on modal
-    //        } else {
-    //            print("""
-    //                  Completed the \(currentSessionChunk)!
-    //                  Well done!
-    //                  On to the next one
-    //                  """)
-    //            /// If currentSessionChunk is 1 and phase==finished, the UI will show "Start Next 20 Minutes"
-    //        }
-    //    }
     
     // MARK: Haptics (guard once per chunk)
     // Pattern to call haptic once per completion
@@ -601,84 +414,6 @@ final class FocusSessionVM: ObservableObject {
             }
         }
     }
-    
-    //    /// Button should be enabled when: <2 tiles and trimmed input is non-empty and not running,or exactly 2 tiles and phase is .idle.
-    //    var canPrimary: Bool {
-    //        if tiles.count < 2 {
-    //            let trimmed = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-    //            return !trimmed.isEmpty && tileText.taskValidationMessages.isEmpty
-    //        } else {
-    //            return phase == .idle
-    //        }
-    //    }
-    
-    // MARK: VM snapshot helpers (canonical)
-//    private func makeSnapshot() -> ActiveSessionSnapshot {      //FIXME: rename to makeActiveSnapshot()
-//        let deadlineAtResume = runningDeadline ?? Date().addingTimeInterval(TimeInterval(max(0, countdownRemaining)))
-//        return ActiveSessionSnapshot(
-//            tileTexts: tiles.map(\.text),
-//            phase: phase,
-//            chunkIndex: currentSessionChunk,
-//            deadline: deadlineAtResume
-//        )
-//    }
-//    
-//    private func saveSnapshot() {
-//        Task { try? await persistence.write(makeSnapshot(), to: Self.activeSnapshotKey) }
-//    }
-//    
-//    private func clearSnapshot() {
-//        Task { await persistence.clear(Self.activeSnapshotKey) }
-//    }
-    
-//    // treat a snapshot as stale if its deadline is older than one chunk duration before now.
-//    //      for any 20 min chunk, deadline < now - 20m is obviously stale
-//    func restoreActiveSessionIfAny() async {
-//        guard let snapshot: ActiveSessionSnapshot =
-//                try? await persistence.readIfExists(ActiveSessionSnapshot.self, from: Self.activeSnapshotKey)
-//        else { return }
-//        
-//        // Stale if the deadline is more than one full chunk ago
-//        if snapshot.deadline < Date().addingTimeInterval(-TimeInterval(config.chunkDuration)){
-//            await persistence.clear(Self.activeSnapshotKey)
-//            return
-//        }
-//        
-//        // 3) computedRemaining based on deadline, if present; else fall back to legacy fields
-//        let remainingAfterDeadline = max(0, Int(snapshot.deadline.timeIntervalSinceNow))
-//        
-//        // Mutate UI state on main; decide whether we should resume afterwards
-//        let shouldResume: Bool = await MainActor.run {
-//            tiles                 = snapshot.tileTexts.map { TileM(text: $0) }
-//            currentSessionChunk     = snapshot.chunkIndex
-//            countdownRemaining      = min(remainingAfterDeadline, config.chunkDuration)
-//            
-//            if snapshot.phase == FocusSessionVM.Phase.running && countdownRemaining > 0 {
-//                // 1) don't use .paused
-//                phase          = .running
-//                runningDeadline = snapshot.deadline
-//                // Recreate the 1 Hz VM ticker via the ContinuousClock path:
-//                // 2) will set a fresh runningDeadline again; safe
-//                chunkCountdown?.cancel()
-//                return true
-//            } else if snapshot.phase == .running && countdownRemaining == 0 {
-//                // 3) time actually expired while away - finish at once
-//                phase = .finished
-//                finishCurrentChunk()
-//                return false
-//            } else {
-//                // 4) according to whatever has occurred - idle, paused, finished - restore to that point
-//                phase = snapshot.phase
-//                return false
-//            }
-//        }
-//        if shouldResume {
-//            // This is async; call it *outside* MainActor.run’s synchronous closure
-//            try? await resumeCurrent20MinCountdown()
-//        }
-//        await MainActor.run { sessionActive = (phase == .paused || phase == .running || currentSessionChunk > 0) }
-//    }
-
 }
 
 extension FocusSessionVM {

@@ -168,9 +168,10 @@ struct RecalibrationV: View {
                 
                 Button(role: .destructive) {
                     vm.performAsyncAction { try await vm.stop() }
-                } label: { T("Cancel", .action) }
+                } label: { T("Cancel", .action)
+                        .recalibrationActionStyle(screen: screen)
+                }
             }
-            
         case .finished:
             EmptyView()
         }
@@ -418,9 +419,11 @@ struct RecalibrationV: View {
 //    }
 // }
 #if DEBUG
-#Preview("Recalibrate") {
+#Preview("Recalibrate - Running") {
     PreviewWrapper {
-        RecalibrationV(vm: RecalibrationVM(haptics: NoopHapticsClient()))
+//        RecalibrationV(vm: PreviewMocks.recalibrationRunning())
+//            .previewTheme()(haptics: NoopHapticsClient())
+        RecalibrationV(vm: RecalibrationVM.mockForDebug()).previewTheme()
             .previewTheme()
     }
 }

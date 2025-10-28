@@ -11,7 +11,7 @@ import SwiftUI
 enum PreviewMocks {
     // One persistence for everything in previews
     @MainActor static let persistence = PersistenceActor()
-
+    
     @MainActor static let history: HistoryVM = {
         let h = HistoryVM(persistence: persistence)
         h.generalCategoryID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
@@ -20,12 +20,12 @@ enum PreviewMocks {
         h.ensureArchiveCategory()
         return h
     }()
-
+    
     @MainActor static let stats: StatsVM = {
         StatsVM(persistence: persistence)
     }()
-
-// inject PaymentService(productIDs:) and use the VM’s debug setter
+    
+    // inject PaymentService(productIDs:) and use the VM’s debug setter
     @MainActor static let membershipVM: MembershipVM = {
         let svc = PaymentService(productIDs: ["com.argonnesoftware.intention"])
         let vm  = MembershipVM(payment: svc)
@@ -34,15 +34,13 @@ enum PreviewMocks {
         #endif
         return vm
     }()
-
-    @MainActor static let prefs: AppPreferencesVM = {
-        AppPreferencesVM()
+    
+    @MainActor static let prefs: AppPreferencesVM = { AppPreferencesVM()
     }()
     
-    @MainActor static let theme: ThemeManager = {
-        ThemeManager()
+    @MainActor static let theme: ThemeManager = { ThemeManager()
     }()
-
+    
     @MainActor static let focusSession: FocusSessionVM = {
         let vm = FocusSessionVM(previewMode: true,
                                 haptics: NoopHapticsClient(),    // ← ignore haptics in previews
@@ -52,13 +50,24 @@ enum PreviewMocks {
     }()
     
     @MainActor static let recal: RecalibrationVM = {
-            RecalibrationVM(haptics: NoopHapticsClient())             // ← ignore in previews
+        RecalibrationVM(haptics: NoopHapticsClient())             // ← ignore in previews
+        
+    }()
+//    
+//    
+//    // Simple visual data used by many previews
+//    @MainActor static func organizerSampleCategories() -> [CategoriesModel] {
+//        [
+//            .init(id: UUID(), persistedInput: "Work",
+//                  tiles: [TileM(text: "Write spec"), TileM(text: "Code review")]),
+//            .init(id: UUID(), persistedInput: "Life",
+//                  tiles: [TileM(text: "Laundry"), TileM(text: "Call mom")])
+//        ]
+//    }
+    // A convenience Recalibration instance using the VM’s canonical debug factory:
+    @MainActor static func recalibrationRunning() -> RecalibrationVM {
+        RecalibrationVM.mockForDebug() // uses the helper defined in the VM file
+    }
 
-        }()
 }
 #endif
-
-// @StateObject private var focusVM: FocusSessionVM
-// @StateObject private var recalibrationVM: RecalibrationVM
-// @StateObject private var prefs: AppPreferencesVM
-// @StateObject private var haptics: HapticsService

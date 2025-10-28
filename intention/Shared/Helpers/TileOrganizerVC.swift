@@ -7,6 +7,7 @@
 
 import UIKit
 // Authority on delegates and section headers - with reorder support and onReorder callback
+//Within-category reorder (UIKit reordering, SwiftUI list drag end)
 
 final class TileOrganizerVC: UICollectionViewController {
     var onMoveTile: (TileM, UUID, UUID) -> Void = { _, _, _ in }
