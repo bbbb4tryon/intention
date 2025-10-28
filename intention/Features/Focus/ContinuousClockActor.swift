@@ -128,11 +128,12 @@ actor ContinuousClockActor {
                 if secs != lastEmitted {
                     lastEmitted = secs
                     onTick(secs)
+                    await MainActor.run { onTick(secs) }
                 }
                 if secs == 0 { break }
                 try? await clock.sleep(for: .seconds(1))
             }
-            if !Task.isCancelled { onFinish() }
+        if !Task.isCancelled { await MainActor.run { onFinish() } }
     }
 
 // Use this helper anywhere you derive remaining time so it’s consistent and non-negative

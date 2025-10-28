@@ -5,6 +5,7 @@
 //  Created by Benjamin Tryon on 6/14/25.
 //
 import SwiftUI
+import UIKit
 // views will use local color constants for validation, border, and secondary text
 // Shim: keep code compiling that expects ThemePalette, if any still refer to it!
 
@@ -38,6 +39,22 @@ struct ScreenStylePalette {
     let gradientBackground: LinearGradientSpecial?      // nil == use `background` color
 //    dynamic foreground color that automatically adjusts based on the background color.
 }
+
+extension ScreenStylePalette.LinearGradientSpecial {
+    /// Lightweight sRGB average of the first and last color.
+    var averageColor: Color {
+        guard let c0 = colors.first, let c1 = colors.last else { return .clear }
+        func mix(_ a: CGFloat, _ b: CGFloat) -> CGFloat { (a + b) / 2 }
+        let (r0,g0,b0,a0) = c0.srgbComponents()
+        let (r1,g1,b1,a1) = c1.srgbComponents()
+        return Color(.sRGB,
+                     red:   Double(mix(r0, r1)),
+                     green: Double(mix(g0, g1)),
+                     blue:  Double(mix(b0, b1)),
+                     opacity: Double(mix(a0, a1)))
+    }
+}
+
 // MARK: - App Font Theme
 enum AppFontTheme: String, CaseIterable {
     case serif, rounded, mono
@@ -342,7 +359,52 @@ final class ThemeManager: ObservableObject {
 extension Color {
     // New utility color for actions where white might be too harsh
     static let intText = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
-
+    /// Returns sRGB components (0...1). Best-effort for dynamic/system colors.
+    fileprivate func srgbComponents() -> (r: CGFloat, g: CGFloat, b: CGFloat, a: CGFloat) {
+        // Bridge to UIColor; works on iOS targets (your app is iOS-only).
+        let ui = UIColor(self)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard ui.getRed(&r, green: &g, blue: &b, alpha: &a) else {
+            // Fallback for non-RGB colors; convert via CIColor (non-optional)
+            let ci = CIColor(color: ui)
+            return (ci.red, ci.green, ci.blue, ci.alpha)
+        }
+        return (r,g,b,a)
+    }
+    
+    /// Relative luminance per WCAG using linearized sRGB
+    func relativeLuminance() -> Double {
+        let (r, g, b, _) = srgbComponents()
+        func lin(_ c: CGFloat) -> Double {
+            let d = Double(c)
+            return (d <= 0.04045) ? d / 12.92 : pow((d + 0.055) / 1.055, 2.4)
+        }
+        let R = lin(r), G = lin(g), B = lin(b)
+        return 0.2126*R + 0.7152*G + 0.0722*B
+    }
+    
+    /// Contrast ratio between two colors (>=1 ... 21)
+    func contrastRatio(against other: Color) -> Double {
+        let L1 = self.relativeLuminance()
+        let L2 = other.relativeLuminance()
+        let hi = max(L1, L2), lo = min(L1, L2)
+        return (hi + 0.05) / (lo + 0.05)
+    }
+    
+    /// Chooses black/white that exceeds target contrast against a background if possible.
+    /// Falls back to the provided `preferred` color when already sufficient.
+    static func idealForeground(preferred: Color, on background: Color, target: Double = 6.1) -> Color {
+        // If preferred already meets target, keep it (respects your theme’s text tone)
+        if preferred.contrastRatio(against: background) >= target {
+            return preferred
+        }
+        // Otherwise pick the better of pure black or pure white
+        let black = Color.black, white = Color.white
+        let cBlack = black.contrastRatio(against: background)
+        let cWhite = white.contrastRatio(against: background)
+        return (cBlack >= cWhite) ? black : white
+        
+    }
 }
 
 //Color + contrast utilities (safe, sRGB-linear, works with SwiftUI Color)

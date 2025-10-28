@@ -23,6 +23,7 @@ struct OrganizerOverlayChrome<Content: View>: View {
             if let g = p.gradientBackground {
                 LinearGradient(colors: g.colors, startPoint: g.start, endPoint: g.end)
                     .ignoresSafeArea()
+                    .texturedGradient(strength: 0.05, animate: false)       // subtle, static
             } else {
                 p.background.ignoresSafeArea()
             }

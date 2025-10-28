@@ -29,14 +29,18 @@ struct FocusShell<Content: View>: View {
                 LinearGradient(
                     colors: g.colors, startPoint: g.start, endPoint: g.end
                 )
-                    .ignoresSafeArea()
+                .ignoresSafeArea()
             } else {
                 pal.background.ignoresSafeArea()
             }
             backgrounded
         }
     }
+    func effectiveBG(_ pal: ScreenStylePalette) -> Color {
+         pal.gradientBackground?.averageColor ?? pal.background
+    }
 }
+
 
 // MARK: - RootSheet
 
@@ -173,12 +177,13 @@ struct RootView: View {
     // MARK: Body
     var body: some View {
         // shared palette locals help calm the swift type-checker
-        let palFocus        = theme.palette(for: .focus)
-        let _               = theme.palette(for: .history)
-        let _               = theme.palette(for: .settings)
-        let _               = theme.palette(for: .recalibrate)
-        let _               = theme.palette(for: .membership)
-        let tabBG           = palFocus.background.opacity(0.88) // Makes tab bar match app theme (iOS 16+)
+        let focusPal        = theme.palette(for: .focus)
+        let historyPal               = theme.palette(for: .history)
+        let settingsPal               = theme.palette(for: .settings)
+        let recalPal               = theme.palette(for: .recalibrate)
+        let memberPal               = theme.palette(for: .membership)
+        let orgPal               = theme.palette(for: .organizer)
+        let tabBG           = focusPal.background.opacity(0.88) // Makes tab bar match app theme (iOS 16+)
         
         
         // Focus Tab
@@ -228,7 +233,7 @@ struct RootView: View {
         
         // Wrapped to apply shares (apply tab icon coloring, shared toolbars, backgrounds)
         let content = tabs
-            .tint(palFocus.primary)
+            .tint(focusPal.primary)
             .toolbarBackground(tabBG, for: .tabBar)
             .toolbarBackground(.visible, for: .tabBar)
         
@@ -250,6 +255,7 @@ struct RootView: View {
 //            .launchHandlers
 //            .membershipHandlers
 //            .rootSheets(activeSheet: $activeSheet, memVM: memVM)
+        
         
         // MARK: App lifecycle (guardrail: scene handling lives at root)
             .onChange(of: scenePhase, perform: { phase in

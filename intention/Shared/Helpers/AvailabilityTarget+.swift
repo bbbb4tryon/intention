@@ -14,20 +14,26 @@ private extension View {
         self.symbolEffect(.bounce, isActive: isActive)
     }
     
-//    func metalTexturedGradient(strength: Double = 0.06, animate: Bool = false) -> some View {
-//        self.visualEffect { content, proxy in
-//            content.layerEffect(
-//                ShaderLibrary.noiseShader(
-//                    .boundingRect,
-//                    .float(proxy.size.width),
-//                    .float(proxy.size.height),
-//                    .float(animate ? proxy.time : 0.0),     // animate or freeze
-//                    .float(strength)
-//                ),
-//                maxSampleOffset: .zero
-//            )
-//        }
-//    }
+    /// Metal-based grain with system-driven animation time (no custom timers).
+       func metalTexturedGradient(strength: Double = 0.06) -> some View {
+           // Use system animation timeline to produce a time value.
+           TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+               // Seconds since reference date is fine as a continuous time parameter.
+               let t = timeline.date.timeIntervalSinceReferenceDate
+               self.visualEffect { content, proxy in
+                   content.layerEffect(
+                       ShaderLibrary.noiseShader(
+                           .boundingRect,
+                           .float(proxy.size.width),
+                           .float(proxy.size.height),
+                           .float(t),           // <- animated time from TimelineView
+                           .float(strength)
+                       ),
+                       maxSampleOffset: .zero
+                   )
+               }
+           }
+       }
 }
 
 extension View {
@@ -52,21 +58,22 @@ extension View {
             self.padding(.top)              /// simple fallback
         }
     }
-//    /// Cross-version "grain" for gradients: iOS 18 = Metal shader, older = tiled PNG overlay
-//    @ViewBuilder
-//    func texturedGradient(strength: Double = 0.06, animate: Bool = false) -> some View {
-//        if #available(iOS 18.0, *) {
-//            self.metalTexturedGradient(strength: strength, animate: animate)
-//        } else {
-//            // Fallback: drop a tiny seamless noise tile in Assets ("noise-tile-256")
-//            self.overlay(
-//                Image("noise-tile-256")
-//                    .resizable()
-//                    .scaledToFill()
-//                    .opacity(strength)
-//                    .allowsHitTesting(false)
-//            )
-//            .clipped()
-//        }
-//    }
+    /// Cross-version "grain" for gradients:
+    /// - iOS 18: animated via TimelineView(.animation)
+    /// - iOS 17 and earlier: static tiled PNG overlay
+    @ViewBuilder
+    func texturedGradient(strength: Double = 0.06) -> some View {
+        if #available(iOS 18.0, *) {
+            self.metalTexturedGradient(strength: strength)
+        } else {
+            self.overlay(
+                Image("noise-tile-256")
+                    .resizable()
+                    .scaledToFill()
+                    .opacity(strength)
+                    .allowsHitTesting(false)
+            )
+            .clipped()
+        }
+    }
 }

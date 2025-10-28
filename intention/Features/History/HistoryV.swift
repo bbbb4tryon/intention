@@ -37,6 +37,7 @@ struct HistoryV: View {
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
+//    let metalGradient = effectiveBG(p)
     
     var body: some View {
         ScrollView {
@@ -88,6 +89,8 @@ struct HistoryV: View {
                 
                 if viewModel.tileLimitWarning {
                     T("Archive capped at 200; oldest items were removed.", .caption)
+//                        .autoContrastForeground(preferred: p.text, on: metalGradient, target: 6.1)
+//                        .readableBackdrop(ifAgainst: metalGradient, textColor: p.text, target: 6.1)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
                         .background(.ultraThinMaterial, in: Capsule())
