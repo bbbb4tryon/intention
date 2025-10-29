@@ -1,5 +1,5 @@
 //
-//  Sheet.swift
+//  MembershipSheetV.swift
 //  intention
 //
 //  Created by Benjamin Tryon on 6/11/25.
@@ -36,10 +36,8 @@ struct MembershipSheetV: View {
                 VStack {
                     // Hero
                     T("You’ve completed your free sessions.", .label)
-                    T("""
-For $0.30 Per Day, 
-Unlock Unlimited Focus
-""", .section).underline().padding(.top, 2)
+                    T("Unlock Unlimited Focus", .header).underline().padding(.top, 2)
+                    T("For about 30¢ per day", .secondary).padding(.top, 2)
                         .lineLimit(2)
                 }
                 .multilineTextAlignment(.center)
@@ -50,9 +48,10 @@ Unlock Unlimited Focus
                     if let prod = viewModel.primaryProduct {
                         Text("\(viewModel.perDayBlurb(for: prod)) • \(prod.displayPrice)")
                             .font(theme.fontTheme.toFont(.headline))
-                            .background(RoundedRectangle(cornerRadius: 12).fill(p.accent))
+                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .background(Capsule().fill(p.accent).shadow(radius: 8, y: 3)) // subtle lift
                             .foregroundStyle(Color.intText)
-                            .padding(.bottom, 4)
+                            .padding(.bottom, 6)
                     }
                     
                     // Primary CTA row (above the fold)
@@ -66,21 +65,22 @@ Unlock Unlimited Focus
                             Task {
                                 isBusy = true; defer { isBusy = false }
                                 do { try await viewModel.purchaseMembershipOrPrompt() }
-                                catch { viewModel.setError(error) }      /// Shows ErrorOverlay
+                                catch { viewModel.setError(error) }      // Shows ErrorOverlay
                             }
                         } label: { T("Upgrade", .action) }
                             .primaryActionStyle(screen: .membership)
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: .infinity, minHeight: 48)
                         
                         // Restore
                         Button {
                             Task {
                                 do { try await viewModel.restoreMembershipOrPrompt() }
-                                catch { viewModel.setError(error) }
-                            }        /// Shows ErrorOverlay
+                                catch { viewModel.setError(error) }     // Shows ErrorOverlay
+                            }
                         } label: { T("Restore Purchases", .label) }
                             .secondaryActionStyle(screen: .membership)
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .padding(.top, 6)
                         
                         // Apple offer-code redemption (subscription offers)
                         Button {
@@ -91,14 +91,15 @@ Unlock Unlimited Focus
                     }
                     
                     Card {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 10) {
                             T("Why upgrade?", .title3)
                             T("Your focus fuels our future.", .title3).underline()
-                            VStack(alignment: .leading, spacing: 4) {
+                            
+                            VStack(alignment: .leading, spacing: 8) {
                                 Label("Unlimited focus sessions", systemImage: "infinity")
                                 Label("Detailed stats & categories", systemImage: "chart.bar")
                                 Label("Full customization", systemImage: "paintbrush")
-                                Divider().padding()
+                                Divider().padding(.vertical, 4)
                                 Label("Build momentum", systemImage: "bolt")
                                 Label("Track progress", systemImage: "chart.line.uptrend.xyaxis")
                                 Label("\(tailText)", systemImage: "house")
@@ -108,15 +109,12 @@ Unlock Unlimited Focus
                             .foregroundStyle(textSecondary)
                             .symbolRenderingMode(.hierarchical)
                             
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Apple securely handles your purchase. Cancel anytime in **Settings › Manage Subscription.**")
-                                    .font(theme.fontTheme.toFont(.caption))
-                                    .foregroundStyle(.secondary)
-                                    .padding(.top)
-                            }
+                            T("Apple securely handles your purchase. Cancel anytime in **Settings › Manage Subscription.**", .caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 6)
                         }
                     }
-                    .padding(.top, 8)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
                 }
             }
             .background(p.background.ignoresSafeArea())
@@ -153,12 +151,12 @@ Unlock Unlimited Focus
             payment: PaymentService(productIDs: ["com.argonnesoftware.intention"])
         )
         memberVM._debugSetIsMember(false)    // Preview the non-member state
-
+        
         return MembershipSheetV()
-            // Inject the exact env objects MembershipSheetV expects
+        // Inject the exact env objects MembershipSheetV expects
             .environmentObject(PreviewMocks.theme)
             .environmentObject(memberVM)
-            // These keep parity with your app environment
+        // These keep parity with your app environment
             .environmentObject(PreviewMocks.prefs)
             .environmentObject(PreviewMocks.history)
             .environmentObject(PreviewMocks.stats)

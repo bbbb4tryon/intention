@@ -42,12 +42,11 @@ struct FocusShell<Content: View>: View {
 
 /// sheets presented from the root - Swift won't yell and this avoids deep view chains
 enum RootSheet: Identifiable, Equatable {
-    case legal, membership, terms, privacy, medical
+    case legal, terms, privacy, medical
     
     var id: String {
         switch self {
         case .legal: return "legal"
-        case .membership: return "membership"
         case .terms: return "terms"
         case .privacy: return "privacy"
         case .medical: return "medical"
@@ -308,12 +307,12 @@ struct RootView: View {
         
         // Membership prompt choreography
         ///FIXME: remove one of the membership because they're "re"-presented?
-            .onChange(of: memVM.shouldPrompt) { show in
-                if show, activeSheet == nil { activeSheet = .membership }
-            }
-            .onChange(of: activeSheet) { sheet in
-                if sheet == nil, memVM.shouldPrompt { activeSheet = .membership }
-            }
+//            .onChange(of: memVM.shouldPrompt) { show in
+//                if show, activeSheet == nil { activeSheet = .membership }
+//            }
+//            .onChange(of: activeSheet) { sheet in
+//                if sheet == nil, memVM.shouldPrompt { activeSheet = .membership }
+//            }
         // MARK: Sheets
             .sheet(item: $activeSheet) { sheet in
                 switch sheet {
@@ -329,14 +328,6 @@ struct RootView: View {
                         onShowPrivacy: { activeSheet = .privacy },
                         onShowMedical: { activeSheet = .medical }
                     )
-                    
-                case .membership:
-                    NavigationStack {
-                        MembershipSheetV()
-                            .environmentObject(memVM)
-                            .environmentObject(theme)
-                    }
-                    .onDisappear { memVM.shouldPrompt = false }
                     
                 case .terms:
                     NavigationStack {
@@ -388,17 +379,35 @@ struct RootView: View {
                         },
                         onReorder: { newTiles, catID in
                             historyVM.reorderTiles(newTiles, in: catID)
+                            
                         },
                         onDone: { debug.showOrganizer = false }
                     )
                 }
                 .environmentObject(theme)
             }
+        
+        
+            .fullScreenCover(isPresented: memVM.showSheetBinding) {
+                MembershipSheetChrome(onClose: {
+                    // close the chrome and tell the VM to stop prompting
+                    memVM.shouldPrompt = false
+                }) {
+                    NavigationStack {
+                        MembershipSheetV()
+                            .navigationBarHidden(true)  // chrome owns close
+                            .environmentObject(memVM)
+                            .environmentObject(theme)
+                    }
+                    .interactiveDismissDisabled(false)
+                }
+                //        .onDisappear { memVM.shouldPrompt = false }
+            }
 
             // Membership debug simply reuses your root sheet choreography
-            .onChange(of: debug.showMembership) { want in
-                if want { activeSheet = .membership; debug.showMembership = false }
-            }
+//            .onChange(of: debug.showMembership) { want in
+//                if want { activeSheet = .membership; debug.showMembership = false }
+//            }
 
             // Route debug errors through the same global overlayManager
             .onChange(of: debug.showError) { show in

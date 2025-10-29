@@ -9,7 +9,7 @@ import SwiftUI
 
 struct DynamicMessageAndActionArea: View {
     @EnvironmentObject var theme: ThemeManager
-    @ObservedObject var focusVM: FocusSessionVM
+    @EnvironmentObject var focusVM: FocusSessionVM
 //    let fontTheme: AppFontTheme       // Pass directly, is an AppStorage value
 //    let palette: ScreenStylePalette   // Pass directly, is an AppStorage value
     let onRecalibrateNow: () -> Void    // Define sheet closure property, from parent (FocusSessionActiveV) to trigger logic

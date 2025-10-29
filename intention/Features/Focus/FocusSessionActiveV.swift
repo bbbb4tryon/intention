@@ -3,9 +3,6 @@
 //  intention
 //
 //  Created by Benjamin Tryon on 6/11/25.
-//
-
-// FocusSessionActiveV <--> ContentView
 
 import SwiftUI
 
@@ -121,9 +118,9 @@ struct FocusSessionActiveV: View {
                         }
                         // Guidance  Messages (no Add/Begin here)
                         DynamicMessageAndActionArea(
-                            focusVM: focusVM,
                             onRecalibrateNow: { focusVM.showRecalibrate = true }
                         )
+                        .environmentObject(focusVM)
                         .padding(.top, 8)
                         .environmentObject(theme)
                         //  Centered countdown (its internal own logic self-selects paused/running visuals
@@ -134,6 +131,7 @@ struct FocusSessionActiveV: View {
                             palette: p,
                             progress: Double(focusVM.countdownRemaining) / Double( TimerConfig.current.chunkDuration )
                         )
+                        .environmentObject(focusVM)
                         .padding(.top, 20)  // separates from Stats and messages
                         .frame(maxWidth: .infinity)  // centers fixed-size content
                     }
