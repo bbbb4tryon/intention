@@ -9,7 +9,7 @@ import SwiftUI
 
 struct DynamicCountdown: View {
     @EnvironmentObject var theme: ThemeManager
-    @ObservedObject var fVM: FocusSessionVM
+    @EnvironmentObject var fVM: FocusSessionVM
     let palette: ScreenStylePalette
     
     /// Current progress sizes (0.0 to 1.0), passed from FocusSessionActiveV
