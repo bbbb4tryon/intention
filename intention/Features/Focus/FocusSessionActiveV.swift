@@ -131,7 +131,6 @@ struct FocusSessionActiveV: View {
                         //      In .paused, it draws the clipped overlay  "Paused"; in .running, it draws the unwinding pie  time
                         //      The tap target persists across both states, thanks to .onTapGesture { handleTap() }.
                         DynamicCountdown(
-                            fVM: focusVM,
                             palette: p,
                             progress: Double(focusVM.countdownRemaining) / Double( TimerConfig.current.chunkDuration )
                         )
