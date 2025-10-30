@@ -116,7 +116,8 @@ struct RecalibrationV: View {
     // MARK: Helpers
     private var PresetPicker: some View {
         HStack(spacing: 8) {
-            T("Length of Time", .caption).foregroundStyle(.secondary)
+            // theme drives contract, don't need .foregroundStyle
+            T("Length of Time", .caption)
             Picker("", selection: $breathingChoice) {
                 Text("2m").tag(2); Text("3m").tag(3); Text("4m").tag(4)
             }
