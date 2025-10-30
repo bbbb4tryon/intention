@@ -8,6 +8,11 @@
 import SwiftUI
 
 struct LegalAgreementSheetV: View {
+    @EnvironmentObject private var theme: ThemeManager
+    private let screen: ScreenName = .settings
+        private var p: ScreenStylePalette { theme.palette(for: screen) }
+        private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+
     let onAccept: () -> Void
     let onShowTerms: () -> Void
     let onShowPrivacy: () -> Void
@@ -21,30 +26,25 @@ struct LegalAgreementSheetV: View {
     var body: some View {
         NavigationStack {
         VStack(spacing: 14){
-                Text("Please review the policies below. By tapping **Agree & Continue**, you accept them.")
+            T("Please review the policies below. By tapping **Agree & Continue**, you accept them.", .body)
                 .multilineTextAlignment(.leading)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
                 .lineSpacing(4)
                 
                 // Links row
-                HStack(alignment: .center) {
-                    Button("Terms") { onShowTerms() }
-                        .buttonStyle(.plain).underline()
-                    Text("•").foregroundStyle(.tertiary)
-                    Button("Privacy Policy") { onShowPrivacy() }
-                        .buttonStyle(.plain).underline()
+            HStack(alignment: .center, spacing: 10) {
+                Button { onShowTerms() } label: { T("Terms", .label).underline() }
+                    .buttonStyle(.plain).underline()
+                T("•", .secondary).foregroundStyle(.tertiary)
+                
+                Button{ onShowPrivacy() } label: { T("Privacy Policy", .label).underline() }
+                    .buttonStyle(.plain).underline()
                 }
-                .font(.subheadline)
+//                .font(.subheadline)
                 
                 if let onShowMedical {
-                    Button("Wellness Disclaimer") { onShowMedical() }
+                    Button { onShowMedical() } label: { T("Wellness Disclaimer", .label).underline() }
                         .buttonStyle(.plain)
-                        .underline()
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
                 }
-                
                
 //                Spacer(minLength: 0)
             }
@@ -59,12 +59,10 @@ struct LegalAgreementSheetV: View {
                 VStack(spacing: 8){
                     Button("Agree & Continue", action: onAccept)
                         .buttonStyle(.borderedProminent)
-                        .tint(.blue)
+                        .tint(p.accent)
                         .controlSize(.large)
 
-                    Text("You can review these anytime in **Settings › Legal**.")
-                        .font(.footnote)
-                        .foregroundStyle(.tertiary)
+                    T("You can review these anytime in **Settings › Legal**.", .caption)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 10)

@@ -14,10 +14,13 @@ struct OrganizerOverlayScreen: View {
     var onMoveTile: (TileM, UUID, UUID) -> Void
     var onReorder: (_ newTiles: [TileM], _ categoryID: UUID) -> Void
     var onDone: () -> Void
-    private var p: ScreenStylePalette { theme.palette(for: .organizer) }
+    
+    private let screen: ScreenName = .settings
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     /* Dark text color */ private let textDarkColor = Color(red: 0.4824, green: 0.3922, blue: 0.1569) // #7B6428
-
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 10) {
@@ -34,23 +37,31 @@ struct OrganizerOverlayScreen: View {
                 // This replaces .clipShape and .shadow from the original code:
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                 // -------------------------------------------------------------
-//                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-//                .shadow(radius: 3, y: 1)
-//                .padding(5)
+                //                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                //                .shadow(radius: 3, y: 1)
+                //                .padding(5)
             } // For when we had a Zstack
             .navigationTitle("Organize")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { onDone() }.font(.body).controlSize(.large)
+                    //                    Button("Done") { onDone() }.font(.body).controlSize(.large)
+                    Button { onDone() } label: { T("Done", .action) }
                 }
                 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button{ dismiss() }
-                    label: { Image(systemName: "xmark").imageScale(.small).font(.body).controlSize(.large) }.buttonStyle(.plain).accessibilityLabel("Close")
+                    Button { dismiss() }
+                    label: { Image(systemName: "xmark")
+                            .imageScale(.small)
+                            .font(.body).foregroundStyle(p.text)
+                            .controlSize(.large)
+                    }
+                    .buttonStyle(.plain).accessibilityLabel("Close")
                 }
             }
-  
+            // .action role renders light text intended for filled buttons;
+            // .tint ensures the system buttons and nav items pick up the organizer accent consistently
+            .tint(p.accent)
         }
     }
 }

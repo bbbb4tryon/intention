@@ -36,7 +36,7 @@ struct CategoryHeaderRow: View {
                 .imageScale(.small)
                 .foregroundStyle(isArchive ? p.text : p.accent)
             
-            T("\(title)", .label)
+            T(title, .label)
                 .lineLimit(2)
             
             Spacer()

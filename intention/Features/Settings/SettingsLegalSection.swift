@@ -8,6 +8,11 @@
 import SwiftUI
 
 struct SettingsLegalSection: View {
+    @EnvironmentObject private var theme: ThemeManager
+    private let screen: ScreenName = .settings
+        private var p: ScreenStylePalette { theme.palette(for: screen) }
+        private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+
     var onShowTerms: () -> Void
     var onShowPrivacy: () -> Void
     var onShowMedical: () -> Void
@@ -16,13 +21,12 @@ struct SettingsLegalSection: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Legal").font(.headline)
             HStack(spacing: 10) {
-                Button("Terms of Use") { onShowTerms() }.buttonStyle(.plain).underline()
+                Button { onShowTerms() } label: { T("Terms of Use", .tile) }.underline().buttonStyle(.plain)
                 Text("•")
-                Button("Privacy Policy") { onShowPrivacy() }.buttonStyle(.plain).underline()
+                Button { onShowPrivacy() } label: { T("Privacy Policy", .tile) }.underline().buttonStyle(.plain)
                 Text("•")
-                Button("Wellness Disclaimer") { onShowMedical() }.buttonStyle(.plain).underline()
+                Button { onShowMedical() }label: { T("Wellness Disclaimer", .tile) }.underline().buttonStyle(.plain)
             }
-            .font(.footnote)
             .foregroundStyle(.secondary)
         }
     }
