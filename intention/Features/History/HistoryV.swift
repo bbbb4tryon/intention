@@ -210,7 +210,7 @@ struct HistoryV: View {
             }
             
             Menu {
-                Button("Rename") {
+                Button( action: {
                     if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
                         targetCategoryID = only
                         renameText = viewModel.name(for: only)
@@ -218,7 +218,23 @@ struct HistoryV: View {
                     } else {
                         showRenamePicker = true
                     }
-                }
+                },label: {
+                    Image(systemName: "pen")
+                })
+                .background(colorBorder)
+                .clipShape(Capsule())
+                .foregroundStyle(colorDanger)
+                .imageScale(.small).font(.headline).controlSize(.large).tint(.red)
+                
+//                Button("Rename") {
+//                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
+//                        targetCategoryID = only
+//                        renameText = viewModel.name(for: only)
+//                        showRenameSheet = true
+//                    } else {
+//                        showRenamePicker = true
+//                    }
+//                }
                 
                 Button(role: .destructive, action: {
                     if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
@@ -228,14 +244,27 @@ struct HistoryV: View {
                     else {
                         showDeletePicker = true
                     }
-                },
-                       label: {
+                },label: {
                     Image(systemName: "trash")
                 })
                 .background(colorBorder)
                 .clipShape(Capsule())
+                .foregroundStyle(colorDanger)
                 .imageScale(.small).font(.headline).controlSize(.large).tint(.red)
                 
+                Button( action: {
+                    if let id = viewModel.addEmptyUserCategory() {
+                        createdCategoryID = id
+                    } else {
+                        debugPrint("Add Not Possible")
+                    }
+                }, label: {
+                    Image("plus")
+                })
+                .disabled(!viewModel.canAddUserCategory())
+                .background(colorBorder)
+                .clipShape(Capsule())
+                .imageScale(.small).font(.headline).controlSize(.large).tint(p.accent)
             
 //                Button("Delete", role: .destructive) {
 //                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
@@ -257,7 +286,7 @@ struct HistoryV: View {
 //                }
 //                .disabled(!viewModel.canAddUserCategory())
             } label: {
-                Image(systemName: "line.3.horizontal").imageScale(.small).font(.headline).controlSize(.large)
+                Image(systemName: "line.3.horizontal").imageScale(.small).font(.headline).controlSize(.large).tint(p.accent)
             }
             .buttonStyle(.plain)
         }
