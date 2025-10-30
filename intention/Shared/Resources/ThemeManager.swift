@@ -36,7 +36,7 @@ struct ScreenStylePalette {
         let end: UnitPoint
     }
     let gradientBackground: LinearGradientSpecial?      // nil == use `background` color
-//    dynamic foreground color that automatically adjusts based on the background color.
+    //    dynamic foreground color that automatically adjusts based on the background color.
 }
 // MARK: - App Font Theme
 enum AppFontTheme: String, CaseIterable {
@@ -170,7 +170,7 @@ enum AppColorTheme: String, CaseIterable {
                         start: .topTrailing,
                         end: .bottomLeading
                     )
-
+                    
                 )
                 
             case .organizer:
@@ -183,7 +183,7 @@ enum AppColorTheme: String, CaseIterable {
                     accent: organizerText,                      // toolbar tint (X button, etc)
                     text: organizerText,          // primary text
                     gradientBackground: .init(
-                        colors: [OrgBG.topLight, OrgBG.bottomDark],  
+                        colors: [OrgBG.topLight, OrgBG.bottomDark],
                         start: .top,
                         end: .bottom
                     )
@@ -193,74 +193,74 @@ enum AppColorTheme: String, CaseIterable {
             // ---------- SEA ----------
         case .sea:
             // Background: #0B47A3 (Dark Blue)
-                        let seaBG = Color(red: 0.043, green: 0.278, blue: 0.639)
-                        // Text: #D9EBFF (Very Light Blue)
-                        let seaText = Color(red: 0.851, green: 0.922, blue: 1.0)
-                        // Accent: #FF8C00 (Orange)
-                        let seaAccent = Color(red: 1.0, green: 0.55, blue: 0.0)
-       
-                    
-                    // Standard colors for the Sea gradient
-                    let seaGradientColors: [Color] = [Sea.topLight, Sea.bottomDark]
-
-                    switch screen {
-                    case .focus, .history, .settings:
-                        // These main tabs use solid backgrounds
-                        return .init(
-                            primary: Color(red: 0.00, green: 0.30, blue: 0.70),
-                            background: seaBG,
-                            surface: seaText.opacity(0.12),
-                            accent: seaAccent,
-                            text: seaText,
-                            gradientBackground: nil
-                        )
-                        
-                    case .recalibrate:
-                        // Unique Gradient Direction: Diagonal
-                        return .init(
-                            primary: Color(red: 0.00, green: 0.12, blue: 0.22),
-                            background: Sea.bottomDark.opacity(0.9),
-                            surface: seaText.opacity(0.15),
-                            accent: seaAccent,
-                            text: .white,
-                            gradientBackground: .init(
-                                colors: seaGradientColors,
-                                start: .topLeading,
-                                end: .bottomTrailing // ↖️ Diagonal flow
-                            )
-                        )
-                        
-                    case .membership:
-                        // Unique Gradient Direction: Horizontal
-                        return .init(
-                            primary: Color(red: 0.00, green: 0.28, blue: 0.62),
-                            background: seaBG,
-                            surface: seaText.opacity(0.12),
-                            accent: seaAccent,
-                            text: seaText,
-                            gradientBackground: .init(
-                                colors: seaGradientColors,
-                                start: .leading,
-                                end: .trailing // ➡️ Horizontal flow
-                            )
-                        )
-                        
-                    case .organizer:
-                        // Unique Gradient Direction: Vertical
-                        return .init(
-                            primary: Color(red: 0.00, green: 0.28, blue: 0.62),
-                            // Background is .clear to ensure the gradient shows through FocusShell
-                            background: .clear,
-                            surface: seaText.opacity(0.12),
-                            accent: seaAccent,
-                            text: seaText,
-                            gradientBackground: .init(
-                                colors: seaGradientColors,
-                                start: .top,
-                                end: .bottom // ⬇️ Vertical flow
-                            )
-                        )
-                    }
+            let seaBG = Color(red: 0.043, green: 0.278, blue: 0.639)
+            // Text: #D9EBFF (Very Light Blue)
+            let seaText = Color(red: 0.851, green: 0.922, blue: 1.0)
+            // Accent: #FF8C00 (Orange)
+            let seaAccent = Color(red: 1.0, green: 0.55, blue: 0.0)
+            
+            
+            // Standard colors for the Sea gradient
+            let seaGradientColors: [Color] = [Sea.topLight, Sea.bottomDark]
+            
+            switch screen {
+            case .focus, .history, .settings:
+                // These main tabs use solid backgrounds
+                return .init(
+                    primary: Color(red: 0.00, green: 0.30, blue: 0.70),
+                    background: seaBG,
+                    surface: seaText.opacity(0.12),
+                    accent: seaAccent,
+                    text: seaText,
+                    gradientBackground: nil
+                )
+                
+            case .recalibrate:
+                // Unique Gradient Direction: Diagonal
+                return .init(
+                    primary: Color(red: 0.00, green: 0.12, blue: 0.22),
+                    background: Sea.bottomDark.opacity(0.9),
+                    surface: seaText.opacity(0.15),
+                    accent: seaAccent,
+                    text: .white,
+                    gradientBackground: .init(
+                        colors: seaGradientColors,
+                        start: .topLeading,
+                        end: .bottomTrailing // ↖️ Diagonal flow
+                    )
+                )
+                
+            case .membership:
+                // Unique Gradient Direction: Horizontal
+                return .init(
+                    primary: Color(red: 0.00, green: 0.28, blue: 0.62),
+                    background: seaBG,
+                    surface: seaText.opacity(0.12),
+                    accent: seaAccent,
+                    text: seaText,
+                    gradientBackground: .init(
+                        colors: seaGradientColors,
+                        start: .leading,
+                        end: .trailing // ➡️ Horizontal flow
+                    )
+                )
+                
+            case .organizer:
+                // Unique Gradient Direction: Vertical
+                return .init(
+                    primary: Color(red: 0.00, green: 0.28, blue: 0.62),
+                    // Background is .clear to ensure the gradient shows through FocusShell
+                    background: .clear,
+                    surface: seaText.opacity(0.12),
+                    accent: seaAccent,
+                    text: seaText,
+                    gradientBackground: .init(
+                        colors: seaGradientColors,
+                        start: .top,
+                        end: .bottom // ⬇️ Vertical flow
+                    )
+                )
+            }
         }
     }
 }
@@ -270,70 +270,74 @@ enum AppColorTheme: String, CaseIterable {
 final class ThemeManager: ObservableObject {
     @AppStorage("selectedColorTheme") private var colorRaw: String = AppColorTheme.default.rawValue
     @AppStorage("selectedFontTheme")  private var fontRaw: String = AppFontTheme.serif.rawValue
-
+    
     @Published var colorTheme: AppColorTheme {
         didSet { colorRaw = colorTheme.rawValue }
     }
     @Published var fontTheme: AppFontTheme {
         didSet { fontRaw  = fontTheme.rawValue  }
     }
-
+    
     init() {
         let storedColor = UserDefaults.standard.string(forKey: "selectedColorTheme") ?? AppColorTheme.default.rawValue
         let storedFont  = UserDefaults.standard.string(forKey: "selectedFontTheme")  ?? AppFontTheme.serif.rawValue
         self.colorTheme = AppColorTheme(rawValue: storedColor) ?? .default
         self.fontTheme  = AppFontTheme(rawValue: storedFont)  ?? .serif
     }
-
+    
     func palette(for screen: ScreenName) -> ScreenStylePalette {
         colorTheme.colors(for: screen)
     }
-
+    
     func styledText(_ content: String, as role: TextRole, in screen: ScreenName) -> Text {
         let font  = fontTheme.toFont(Self.fontStyle(for: role))
         let color = Self.color(for: role, palette: palette(for: screen))
         
         let weight: Font.Weight = switch role {
-            case .largeTitle: .bold
-            case .header:.semibold
-            case .section: .semibold
-            case .title3:.semibold
-            case .label: .medium
-            case .action:.semibold
-            default: .regular
+        case .largeTitle:   .bold
+        case .header:       .semibold
+        case .section:      .semibold
+        case .title3:       .semibold
+        case .label:        .semibold
+        case .action:       .semibold
+        case .tile:         .medium         // .medium improves tile text on light chips
+        default: .regular
         }
         return Text(content).font(font).fontWeight(weight).foregroundColor(color)
     }
-
+    
     // MARK: Style mapping
     static func fontStyle(for role: TextRole) -> Font.TextStyle {
         switch role {
-            case .largeTitle: .largeTitle
-            case .header: .largeTitle
-            case .section: .title2
-            case .title3:.title3
-            case .label: .headline
-            case .action:.headline
-            case .body: .body
-            case .tile: .body
-            case .secondary: .subheadline
-            case .placeholder: .subheadline
-            case .caption: .caption
+        case .largeTitle: .largeTitle
+        case .header: .largeTitle
+        case .section: .title2
+        case .title3:.title3
+        case .label: .headline
+        case .action:.headline
+        case .body: .body
+        case .tile: .body
+        case .secondary: .subheadline
+        case .placeholder: .subheadline
+        case .caption: .caption
         }
     }
     
     static func color(for role: TextRole, palette: ScreenStylePalette) -> Color {
         switch role {
-            case .header, .section, .title3, .body, .tile, .largeTitle, .label:
-                return palette.text
-                
-            case .secondary, .caption, .placeholder:
-                // Calculate secondary text color based on primary theme text color.
-                return palette.text.opacity(0.72)
-                
-            case .action:
-                // Actions (buttons) often use white/light text for contrast against a filled background.
-                return .white
+        case .header, .section, .title3, .body, .tile, .largeTitle, .label:
+            // unchanged (primary text)
+            return palette.text
+            
+        case .secondary, .caption:
+            // was ~0.72 — better readability on light bg
+            return palette.text.opacity(0.80)
+            
+        case .placeholder:
+            return palette.text.opacity(0.70)          // was ~0.55–0.60 in practice; lift for inputs
+        case .action:
+            // Actions (buttons) often use white/light text for contrast against a filled background.
+            return .white
         }
     }
 }
@@ -342,7 +346,7 @@ final class ThemeManager: ObservableObject {
 extension Color {
     // New utility color for actions where white might be too harsh
     static let intText = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
-
+    
 }
 
 //Color + contrast utilities (safe, sRGB-linear, works with SwiftUI Color)
@@ -353,17 +357,17 @@ extension Color {
 //extension Color {
 //    func luminance() -> Double {
 //        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-//        
+//
 //        // Convert SwiftUI Color to UIKit's UIColor to get RGB components
 //        guard UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a) else {
 //            return 0.0
 //        }
-//        
+//
 //        // sRGB to linear RGB conversion
 //        let adjustedR = (r < 0.04045) ? r / 12.92 : pow((r + 0.055) / 1.055, 2.4)
 //        let adjustedG = (g < 0.04045) ? g / 12.92 : pow((g + 0.055) / 1.055, 2.4)
 //        let adjustedB = (b < 0.04045) ? b / 12.92 : pow((b + 0.055) / 1.055, 2.4)
-//        
+//
 //        // Calculate luminance (perceived brightness)
 //        return 0.2126 * adjustedR + 0.7152 * adjustedG + 0.0722 * adjustedB
 //    }
@@ -372,7 +376,7 @@ extension Color {
 //        let textLuminance = self.luminance()
 //        let backgroundLuminance = color.luminance()
 //        let contrastRatio = (max(textLuminance, backgroundLuminance) + 0.05) / (min(textLuminance, backgroundLuminance) + 0.05)
-//        
+//
 //        // W3C recommendation for enhanced contrast is 7:1 (AAA)
 //        // A ratio of 4.5:1 is the minimum (AA)
 //        // Adjust the threshold to achieve the desired contrast

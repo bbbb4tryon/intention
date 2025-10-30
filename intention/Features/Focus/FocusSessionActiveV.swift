@@ -82,6 +82,7 @@ struct FocusSessionActiveV: View {
                     VStack(alignment: .leading, spacing: 8) {
                         if isInputActive {
                             // onSubmit and primaryCTA both call the same VM method handlePrimaryTap() -> "same funnel"
+                            // lifted .placeholder / .caption contrast in ThemeManager and that boots this textfield
                             TextField("", text: $focusVM.tileText, prompt: T("Add Your Intended Task", .caption))
                                 .focused($intentionFocused)
                                 .submitLabel(.done)
@@ -316,6 +317,8 @@ private struct TileSlot: View {
                 HStack(alignment: .top, spacing: 8) {
                     theme.styledText(text, as: .tile, in: .focus)
                         .foregroundStyle(p.text)
+                    // Tiny leading for multi-line readability
+                        .lineSpacing(2)
                     // Allow text to wrap to as many lines as needed
                         .lineLimit(nil)
                     // This allows the Text view to expand vertically while being constrained horizontally
@@ -349,8 +352,8 @@ private struct TileSlot: View {
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(stroke, lineWidth: 1)
         )
-        //        .frame(minHeight: minDesiredHeight, alignment: .center)
-        //    }
+        // subtle lift to separate from page
+        .shadow(radius: 0.5,y: 0.5)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(isFilled ? (isCompleted ? "Intention completed" : "Intention") : "Empty slot")
         .accessibilityHint(isFilled ? "" : "Add an intention above, then press Add.")
