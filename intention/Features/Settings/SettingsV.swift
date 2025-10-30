@@ -114,7 +114,9 @@ struct SettingsV: View {
                             }
                             .padding(.vertical, 6)
                         }
-                        .buttonStyle(.borderless)
+                        .primaryActionStyle(screen: .settings)
+                        .frame(maxWidth: .infinity)
+                        .tint(p.accent)
                     }
                     .edgesIgnoringSafeArea(.bottom)
                 }
@@ -125,7 +127,7 @@ struct SettingsV: View {
                         T("Membership", .section)
                         //                        .friendlyHelper()
                         T(memVM.isMember ? "Status: Active" : "Status: Not Active", .label)
-                        )
+                        
                         .foregroundStyle(memVM.isMember ? .green : .secondary)
                         
                         T("Your user ID/device ID: \(userID)", .caption)

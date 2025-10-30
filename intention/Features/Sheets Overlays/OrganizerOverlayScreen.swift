@@ -43,22 +43,34 @@ struct OrganizerOverlayScreen: View {
             } // For when we had a Zstack
             .navigationTitle("Organize")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+            .toolbarTitleMenu {
                     //                    Button("Done") { onDone() }.font(.body).controlSize(.large)
                     Button { onDone() } label: { T("Done", .action) }
+                Button { dismiss() }
+                label: { Image(systemName: "xmark")
+                        .imageScale(.small)
+                        .font(.body).foregroundStyle(p.text)
+                        .controlSize(.large)
                 }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() }
-                    label: { Image(systemName: "xmark")
-                            .imageScale(.small)
-                            .font(.body).foregroundStyle(p.text)
-                            .controlSize(.large)
-                    }
-                    .buttonStyle(.plain).accessibilityLabel("Close")
-                }
+                .buttonStyle(.plain).accessibilityLabel("Close")
+
             }
+//            .toolbar {
+//                ToolbarItem(placement: .cancellationAction) {
+//                    //                    Button("Done") { onDone() }.font(.body).controlSize(.large)
+//                    Button { onDone() } label: { T("Done", .action) }
+//                }
+//                
+//                ToolbarItem(placement: .topBarTrailing) {
+//                    Button { dismiss() }
+//                    label: { Image(systemName: "xmark")
+//                            .imageScale(.small)
+//                            .font(.body).foregroundStyle(p.text)
+//                            .controlSize(.large)
+//                    }
+//                    .buttonStyle(.plain).accessibilityLabel("Close")
+//                }
+//            }
             // .action role renders light text intended for filled buttons;
             // .tint ensures the system buttons and nav items pick up the organizer accent consistently
             .tint(p.accent)
