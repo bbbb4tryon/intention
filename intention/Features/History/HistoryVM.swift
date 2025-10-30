@@ -404,10 +404,6 @@ final class HistoryVM: ObservableObject {
     
     
    // MARK: Utilities / Convenience
-    /// User-defined categories (not General/Archive)
-//       var userCategoryIDs: [UUID] {
-//           categories.map(\.id).filter { $0 != generalCategoryID && $0 != archiveCategoryID }
-//       }
     
     var userDefinedCategoryCount: Int {
 //        categories.filter { $0.id != generalCategoryID && $0.id != archiveCategoryID }.count

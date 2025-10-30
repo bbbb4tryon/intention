@@ -44,6 +44,7 @@ struct HistoryV: View {
                 
                 LazyVStack(alignment: .leading, spacing: 8) {
                     // $Bindings are so rows can edit categories
+                    
                     ForEach($viewModel.categories) { $category in
                         CategoryCard(
                             category: $category,
@@ -59,9 +60,7 @@ struct HistoryV: View {
                             }
                         )
                         .id(category.id)
-                        //                        .padding(.vertical, 12)
-                        //                        .padding(.horizontal, 16)
-                        //                        .environmentObject(theme)
+
                         // -- category separator --
                         Rectangle()
                             .fill(colorBorder)
@@ -69,9 +68,8 @@ struct HistoryV: View {
                             .padding(.vertical, 4)
                     }
                 }
-                //                Divider().overlay(Color.intTan)
-                //                .padding(.vertical, 12)
             }
+            
             // Toasts
             VStack(spacing: 8) {
                 if let move = viewModel.lastUndoableMove {
@@ -212,7 +210,7 @@ struct HistoryV: View {
             }
             
             Menu {
-                Button("Rename Category") {
+                Button("Rename") {
                     if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
                         targetCategoryID = only
                         renameText = viewModel.name(for: only)
@@ -222,7 +220,7 @@ struct HistoryV: View {
                     }
                 }
                 
-                Button("Delete Category", role: .destructive) {
+                Button("Delete", role: .destructive) {
                     if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
                         targetCategoryID = only
                         showDeleteConfirm = true
@@ -231,16 +229,14 @@ struct HistoryV: View {
                     }
                 }
                 
-                Divider()
-                
-                Button("Add Category") {
+                Button("Add") {
                     if let id = viewModel.addEmptyUserCategory() {
                         createdCategoryID = id
                     }
                 }
                 .disabled(!viewModel.canAddUserCategory())
             } label: {
-                Image(systemName: "ellipsis.circle").foregroundStyle(p.primary)
+                Image(systemName: "ellipsis.circle").foregroundStyle(p.accent)
             }
         }
     }

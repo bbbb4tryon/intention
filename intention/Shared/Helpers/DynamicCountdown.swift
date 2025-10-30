@@ -14,9 +14,9 @@ struct DynamicCountdown: View {
     
     /// Current progress sizes (0.0 to 1.0), passed from FocusSessionActiveV
     let progress: CGFloat
-    private let activeSize: CGFloat = 220
-    private let compactSize: CGFloat = 60
-    let digitSize: CGFloat = 56
+    private let activeSize: CGFloat = 280       // was 220
+    private let compactSize: CGFloat = 72       // was 60
+    let digitSize: CGFloat = 44                 // small so circle/pause feel larger
     
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: .focus) }
@@ -69,7 +69,7 @@ struct DynamicCountdown: View {
                         VStack(spacing: 8) {
                             Image(systemName: "pause.circle.fill")
                                 .resizable()
-                                .frame(width: 40, height: 40)
+                                .frame(width: 56, height: 56)       // was 40 x 40
                                 .foregroundStyle(palette.accent)
                                 .shadow(radius: 2)
                             

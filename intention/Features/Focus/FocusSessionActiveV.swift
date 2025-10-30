@@ -127,13 +127,16 @@ struct FocusSessionActiveV: View {
                         //      inside it, `isActive` includes .running  .paused
                         //      In .paused, it draws the clipped overlay  "Paused"; in .running, it draws the unwinding pie  time
                         //      The tap target persists across both states, thanks to .onTapGesture { handleTap() }.
+                        
                         DynamicCountdown(
                             palette: p,
                             progress: Double(focusVM.countdownRemaining) / Double( TimerConfig.current.chunkDuration )
                         )
                         .environmentObject(focusVM)
-                        .padding(.top, 20)  // separates from Stats and messages
+                        .padding(.top, 28)  // separates from Stats and messages
                         .frame(maxWidth: .infinity)  // centers fixed-size content
+                        .frame(minHeight: 320)          // reserves vertical space so it dominates the section
+                        .contentShape(Rectangle())      // keeps taps clean in the area
                     }
                     .padding(.top, 8)
                     .onDisappear { intentionFocused = false }
