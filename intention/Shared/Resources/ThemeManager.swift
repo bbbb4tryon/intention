@@ -306,7 +306,26 @@ final class ThemeManager: ObservableObject {
         return Text(content).font(font).fontWeight(weight).foregroundColor(color)
     }
     
-    // MARK: Style mapping
+    // MARK: Role map
+    /*
+        .header → top-of-screen titles only (screen or sheet titles).
+
+        .section → group headers inside a screen (Settings sections, “Projects”, etc).
+
+        .title3 → short emphatic lines in content (hero callouts, paused label, stat values).
+
+        .label → control/field labels and row titles.
+
+        .body → normal paragraph copy and long lines.
+
+        .tile → text inside chips/tiles/lists (history items, slots).
+
+        .secondary → supportive inline text (status, helper hints).
+
+        .caption → small legal/help footers and placeholder prompts.
+
+        .action → anything on a tappable control.
+    */
     static func fontStyle(for role: TextRole) -> Font.TextStyle {
         switch role {
         case .largeTitle: .largeTitle

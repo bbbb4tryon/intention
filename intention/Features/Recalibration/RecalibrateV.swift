@@ -36,7 +36,8 @@ struct RecalibrationV: View {
             ScrollView {
                 Page {
                     // H1 centered; prose left-aligned = calmer eye path
-                    T("Reset & Recalibrate", .largeTitle).underline()
+                    T("Reset & Recalibrate", .largeTitle)
+                    // really want flair? use a 1-pt bottom divider below the title instead of underline
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 12)
                     
