@@ -220,25 +220,42 @@ struct HistoryV: View {
                     }
                 }
                 
-                Button("Delete", role: .destructive) {
+                Button(role: .destructive, action: {
                     if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
                         targetCategoryID = only
                         showDeleteConfirm = true
-                    } else {
+                    }
+                    else {
                         showDeletePicker = true
                     }
-                } label: {
-                    Image(systemName: "line.3.horizontal").imageScale(.small).font(.headline).controlSize(.large)
-                }
+                },
+                       label: {
+                    Image(systemName: "trash")
+                })
+                .background(colorBorder)
+                .clipShape(Capsule())
+                .imageScale(.small).font(.headline).controlSize(.large).tint(.red)
                 
-                Button("Add") {
-                    if let id = viewModel.addEmptyUserCategory() {
-                        createdCategoryID = id
-                    }
-                } label: {
-                    Image(systemName: "plus").imageScale(.small).font(.headline).controlSize(.large)
-                }
-                .disabled(!viewModel.canAddUserCategory())
+            
+//                Button("Delete", role: .destructive) {
+//                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
+//                        targetCategoryID = only
+//                        showDeleteConfirm = true
+//                    } else {
+//                        showDeletePicker = true
+//                    }
+//                }
+//                    Image(systemName: "trash").imageScale(.small).font(.headline).controlSize(.large)
+                
+                
+//                Button("Add") {
+//                    if let id = viewModel.addEmptyUserCategory() {
+//                        createdCategoryID = id
+//                    }
+//                } label: {
+//                    Image(systemName: "plus").imageScale(.small).font(.headline).controlSize(.large)
+//                }
+//                .disabled(!viewModel.canAddUserCategory())
             } label: {
                 Image(systemName: "line.3.horizontal").imageScale(.small).font(.headline).controlSize(.large)
             }
