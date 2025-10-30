@@ -130,7 +130,7 @@ struct RecalibrationV: View {
     private var PresetPickerBal: some View {
         HStack(spacing: 8) {
             Toggle(isOn: $vm.eyesClosedMode) {
-                T("Expert Mode: Eyes-closed", .caption).foregroundStyle(.secondary)
+                T("Expert Mode: Eyes-closed", .caption)
             }
             .toggleStyle(.automatic)
         }
