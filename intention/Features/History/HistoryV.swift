@@ -258,7 +258,9 @@ private struct CategoryCard: View {
     let isArchive: Bool
     var onRename: (UUID) -> Void
     var onDelete: (UUID) -> Void
+    
     @EnvironmentObject private var viewModel: HistoryVM
+    @EnvironmentObject private var theme: ThemeManager
     
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -267,18 +269,15 @@ private struct CategoryCard: View {
                 count: category.tiles.count,
                 isArchive: isArchive,
                 allowEdit: !isArchive && category.id != viewModel.generalCategoryID,
-                onRename: { id in  targetCategoryID = id; renameText = viewModel.name(for: id); showRenameSheet = true /* onRename(category.id) */},
+                onRename: {  onRename(category.id) },       // NOTE: CategoryHeaderRow expects () -> Void, adapt by calling the closure with category.id
                 onDelete:  { onDelete(category.id) }
             )
             
             CategoryTileList(category: $category, isArchive: isArchive)
                 .padding(.vertical, 12)
-            //                .frame(maxWidth: .infinity, alignment: .leading)
                 .environmentObject(viewModel)
+                .environmentObject(theme)
         }
-        //        .padding(.horizontal, 16)
-        //        .background(Color.clear)
-        //        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
     
 }
