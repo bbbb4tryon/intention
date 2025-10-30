@@ -23,7 +23,6 @@ struct CategoryHeaderRow: View {
     /// Only allow edit menu for user categories (not General/Archive).
     var allowEdit: Bool = true
     var onRename: () -> Void
-    var onDelete: () -> Void
     
     // --- Local Color Definitions for History ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
@@ -48,9 +47,9 @@ struct CategoryHeaderRow: View {
             if allowEdit {
                 Menu {
                     Button("Rename", action: onRename).padding()
-                    Button("Delete", role: .destructive, action: onDelete)
                 } label: {
-                    Image(systemName: "ellipsis.circle").foregroundStyle(p.primary)
+                    Image(systemName: "ellipsis.circle")
+                        .foregroundStyle(p.primary)
                         .imageScale(.medium)
                 }
             }

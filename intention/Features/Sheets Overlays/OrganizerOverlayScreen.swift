@@ -45,15 +45,9 @@ struct OrganizerOverlayScreen: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarTitleMenu {
                     //                    Button("Done") { onDone() }.font(.body).controlSize(.large)
+                
                     Button { onDone() } label: { T("Done", .action) }
-                Button { dismiss() }
-                label: { Image(systemName: "xmark")
-                        .imageScale(.small)
-                        .font(.body).foregroundStyle(p.text)
-                        .controlSize(.large)
-                }
-                .buttonStyle(.plain).accessibilityLabel("Close")
-
+                Button { dismiss() } label: { T("Dismiss", .action) }
             }
 //            .toolbar {
 //                ToolbarItem(placement: .cancellationAction) {

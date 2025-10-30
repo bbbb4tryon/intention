@@ -53,14 +53,10 @@ struct HistoryV: View {
                                 targetCategoryID = id
                                 renameText = viewModel.name(for: id)
                                 showRenameSheet = true
-                            },
-                            onDelete: { id in
-                                targetCategoryID = id
-                                showDeleteConfirm = true
                             }
                         )
                         .id(category.id)
-
+                        
                         // -- category separator --
                         Rectangle()
                             .fill(colorBorder)
@@ -98,11 +94,16 @@ struct HistoryV: View {
             }
         }
         .background(p.background)
-        .opacity(1)     // so the history background wins against organizerOverlay
+        .opacity(isOrganizing ? 0.98 : 1.0) // so history bg wins against organizerOverlay
         .zIndex(0)      // so the history background wins against organizerOverlay
         .tint(p.accent)
+        // nav bar background reacts to edit mode
+        .toolbarBackground(isOrganizing ? p.background.opacity(0.92) : .clear, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        
         .animation(.easeInOut(duration: 0.2), value: viewModel.lastUndoableMove != nil)
-        .toolbar { historyToolbar }.environmentObject(theme)
+        .toolbar { historyToolbar }
+        .environmentObject(theme)
         //        /// [.medium] is half-screen, .visible affordance
         //        .sheet(isPresented: $showRenameSheet) {
         //            renameSheet
@@ -121,12 +122,12 @@ struct HistoryV: View {
                 NavigationStack {
                     RenameCategoryV(
                         originalName: currentName, text: $renameText, onCancel: { showRenameSheet = false }, onSave: {
-                        let trimmed = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if let id = targetCategoryID, !trimmed.isEmpty {
-                            viewModel.renameCategory(id: id, to: trimmed)
+                            let trimmed = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if let id = targetCategoryID, !trimmed.isEmpty {
+                                viewModel.renameCategory(id: id, to: trimmed)
+                            }
+                            showRenameSheet = false
                         }
-                        showRenameSheet = false
-                    }
                     )
                     .navigationBarHidden(true)
                     .environmentObject(theme)
@@ -199,97 +200,155 @@ struct HistoryV: View {
     //        ToolbarItemGroup(placement: .topBarTrailing) {
     @ToolbarContentBuilder
     private var historyToolbar: some ToolbarContent {
+        // Primary edit/done toggle - keep as trailing item
         ToolbarItemGroup(placement: .topBarTrailing) {
             Button {
                 if isOrganizing { viewModel.flushPendingSaves() }
                 withAnimation { isOrganizing.toggle() }
             } label: {
-                Label(
-                    isOrganizing ? "Done" : "Edit", systemImage: "arrow.up.arrow.down"
+                Label(isOrganizing ? "Done" : "Edit", systemImage: "arrow.up.and.down.text.designator"
                 ).foregroundStyle(p.primary)
             }
-            
-            Menu {
-                Button( action: {
-                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
-                        targetCategoryID = only
-                        renameText = viewModel.name(for: only)
-                        showRenameSheet = true
-                    } else {
-                        showRenamePicker = true
-                    }
-                },label: {
-                    Image(systemName: "pen")
-                })
-                .background(colorBorder)
-                .clipShape(Capsule())
-                .foregroundStyle(colorDanger)
-                .imageScale(.small).font(.headline).controlSize(.large).tint(.red)
-                
-//                Button("Rename") {
-//                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
-//                        targetCategoryID = only
-//                        renameText = viewModel.name(for: only)
-//                        showRenameSheet = true
-//                    } else {
-//                        showRenamePicker = true
-//                    }
-//                }
-                
-                Button(role: .destructive, action: {
-                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
-                        targetCategoryID = only
-                        showDeleteConfirm = true
-                    }
-                    else {
-                        showDeletePicker = true
-                    }
-                },label: {
-                    Image(systemName: "trash")
-                })
-                .background(colorBorder)
-                .clipShape(Capsule())
-                .foregroundStyle(colorDanger)
-                .imageScale(.small).font(.headline).controlSize(.large).tint(.red)
-                
-                Button( action: {
-                    if let id = viewModel.addEmptyUserCategory() {
-                        createdCategoryID = id
-                    } else {
-                        debugPrint("Add Not Possible")
-                    }
-                }, label: {
-                    Image("plus")
-                })
-                .disabled(!viewModel.canAddUserCategory())
-                .background(colorBorder)
-                .clipShape(Capsule())
-                .imageScale(.small).font(.headline).controlSize(.large).tint(p.accent)
-            
-//                Button("Delete", role: .destructive) {
-//                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
-//                        targetCategoryID = only
-//                        showDeleteConfirm = true
-//                    } else {
-//                        showDeletePicker = true
-//                    }
-//                }
-//                    Image(systemName: "trash").imageScale(.small).font(.headline).controlSize(.large)
-                
-                
-//                Button("Add") {
-//                    if let id = viewModel.addEmptyUserCategory() {
-//                        createdCategoryID = id
-//                    }
-//                } label: {
-//                    Image(systemName: "plus").imageScale(.small).font(.headline).controlSize(.large)
-//                }
-//                .disabled(!viewModel.canAddUserCategory())
-            } label: {
-                Image(systemName: "line.3.horizontal").imageScale(.small).font(.headline).controlSize(.large).tint(p.accent)
-            }
-            .buttonStyle(.plain)
         }
+        
+        // Menu {
+        // Title menu = category management + quick actions
+        ToolbarItem(placement: .principal) {
+            List {}
+            T("History", .header)
+                .toolbarTitleMenu {
+                    // --- Organize toggle (mirrors the top-right button) ---
+                    Button(isOrganizing ? "Done Organizing" : "Organize") {
+                        if isOrganizing { viewModel.flushPendingSaves() }
+                        withAnimation { isOrganizing.toggle() }
+                    }
+                    
+                    Divider()
+                    
+                    // --- Add category (guarded by VM cap) ---
+                    //                        Button("Add Category") {
+                    Button( action: {
+                        if let id = viewModel.addEmptyUserCategory() { createdCategoryID = id
+                        } else {
+                            debugPrint("Add Not Possible")
+                        }
+                    }, label: {
+                        Image(systemName: "plus")
+                        T("Add Category", .action)
+                    })
+                    .disabled(!viewModel.canAddUserCategory())
+                    
+                    // --- Rename category (picker if multiple) ---
+                    //                        Button("Rename Category") {
+                    Button( action: {
+                        if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
+                            targetCategoryID = only
+                            renameText = viewModel.name(for: only)
+                            showRenameSheet = true
+                        } else {
+                            showRenamePicker = true
+                        }
+                    }, label: {
+                        Image(systemName: "pen")
+                        T("Rename Category", .action)
+                    })
+                    
+                    // --- Delete category (moves tiles to Archive by spec) ---
+                    // Button("Delete Category", role: .destructive) {
+                    Button(role: .destructive, action: {
+                        if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
+                            targetCategoryID = only
+                            showDeleteConfirm = true
+                        } else {
+                            showDeletePicker = true
+                        }
+                    },label: {
+                        Image(systemName: "trash")
+                        T("Delete Category", .action)
+                    })
+                    
+                    Divider()
+                    
+                    // --- Quick Archive: archive latest General tile ---
+                    Button(action: {
+                        Task { @MainActor in
+                            await viewModel.archiveMostRecentFromGeneral()
+                        }}) {
+                            Image(systemName: "arrow.up.circle")
+                            T("Archive Most Recent From General", .action)
+                        }
+                        .disabled(!viewModel.hasAnyGeneralTiles)
+                }
+            //
+            //                .background(colorBorder)
+            //                .clipShape(Capsule())
+            //                .foregroundStyle(colorDanger)
+            //                .imageScale(.small).font(.headline).controlSize(.large).tint(.red)
+            
+            //                Button("Rename") {
+            //                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
+            //                        targetCategoryID = only
+            //                        renameText = viewModel.name(for: only)
+            //                        showRenameSheet = true
+            //                    } else {
+            //                        showRenamePicker = true
+            //                    }
+            //                }
+            
+            //                Button(role: .destructive, action: {
+            //                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
+            //                        targetCategoryID = only
+            //                        showDeleteConfirm = true
+            //                    }
+            //                    else {
+            //                        showDeletePicker = true
+            //                    }
+            //                },label: {
+            //                    Image(systemName: "trash")
+            //                })
+            //                .background(colorBorder)
+            //                .clipShape(Capsule())
+            //                .foregroundStyle(colorDanger)
+            //                .imageScale(.small).font(.headline).controlSize(.large).tint(.red)
+            //
+            Button( action: {
+                if let id = viewModel.addEmptyUserCategory() {
+                    createdCategoryID = id
+                } else {
+                    debugPrint("Add Not Possible")
+                }
+            }, label: {
+                Image("plus")
+            })
+            .disabled(!viewModel.canAddUserCategory())
+            .background(colorBorder)
+            .clipShape(Capsule())
+            .imageScale(.small).font(.headline).controlSize(.large).tint(p.accent)
+            
+            //                Button("Delete", role: .destructive) {
+            //                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
+            //                        targetCategoryID = only
+            //                        showDeleteConfirm = true
+            //                    } else {
+            //                        showDeletePicker = true
+            //                    }
+            //                }
+            //                    Image(systemName: "trash").imageScale(.small).font(.headline).controlSize(.large)
+            
+            
+            //                Button("Add") {
+            //                    if let id = viewModel.addEmptyUserCategory() {
+            //                        createdCategoryID = id
+            //                    }
+            //                } label: {
+            //                    Image(systemName: "plus").imageScale(.small).font(.headline).controlSize(.large)
+            //                }
+            //                .disabled(!viewModel.canAddUserCategory())
+        }
+        //            } label: {
+        //                Image(systemName: "line.3.horizontal").imageScale(.small).font(.headline).controlSize(.large).tint(p.accent)
+        //            }
+        //            .buttonStyle(.plain)
     }
 }
 
@@ -304,7 +363,6 @@ private struct CategoryCard: View {
     @Binding var category: CategoriesModel
     let isArchive: Bool
     var onRename: (UUID) -> Void
-    var onDelete: (UUID) -> Void
     
     @EnvironmentObject private var viewModel: HistoryVM
     @EnvironmentObject private var theme: ThemeManager
@@ -317,7 +375,6 @@ private struct CategoryCard: View {
                 isArchive: isArchive,
                 allowEdit: !isArchive && category.id != viewModel.generalCategoryID,
                 onRename: {  onRename(category.id) },       // NOTE: CategoryHeaderRow expects () -> Void, adapt by calling the closure with category.id
-                onDelete:  { onDelete(category.id) }
             )
             
             CategoryTileList(category: $category, isArchive: isArchive)

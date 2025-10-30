@@ -56,21 +56,31 @@ struct CategoryTileList: View {
                         .draggable(DragPayload(tile: tile, sourceCategoryID: category.id))
                         .swipeActions(edge: .trailing, allowsFullSwipe: !isArchive) {
                             if !isArchive {
-                                Button(role: .destructive) {
+                                /* remove from category + persist via VM */
+                                Button(role: .destructive, action: {
                                     if let idx = category.tiles.firstIndex(of: tile) {
                                         category.tiles.remove(at: idx)
                                         // Persist via VM reorderTiles already applies caps + persists, updateTiles() & saveHistory() redundant
                                         viewModel.reorderTiles(category.tiles, in: category.id)
+                                    } else {
+                                        debugPrint("Tiles removed")
                                     }
-                                } label: { Label("Delete", systemImage: "trash") }
+                                },label: {
+                                    Image(systemName: "trash")
+                                    T("Delete", .action)
+                                })
                                 
+                                /* move to Archive via VM */
                                 Button {
                                     Task {
-                                        do {
-                                            try await viewModel.moveTileThrowing(tile, fromCategory: category.id, toCategory: viewModel.archiveCategoryID)
-                                        } catch { viewModel.lastError = error }
+                                        do { try await viewModel.moveTileThrowing(
+                                            tile, fromCategory: category.id, toCategory: viewModel.archiveCategoryID )}
+                                        catch { viewModel.lastError = error }
                                     }
-                                } label: { Label("Archive", systemImage: "archivebox") }
+                                } label: {
+                                    Image(systemName: "archivebox")
+                                    T("Archive", .action)
+                                }
                             }
                         }
                         // Per-tile light tan separator
