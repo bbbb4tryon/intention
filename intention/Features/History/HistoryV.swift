@@ -105,11 +105,37 @@ struct HistoryV: View {
         .tint(p.accent)
         .animation(.easeInOut(duration: 0.2), value: viewModel.lastUndoableMove != nil)
         .toolbar { historyToolbar }.environmentObject(theme)
-        /// [.medium] is half-screen, .visible affordance
-        .sheet(isPresented: $showRenameSheet) {
-            renameSheet
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.visible)
+        //        /// [.medium] is half-screen, .visible affordance
+        //        .sheet(isPresented: $showRenameSheet) {
+        //            renameSheet
+        //                .presentationDetents([.medium])
+        //                .presentationDragIndicator(.visible)
+        //        }
+        .fullScreenCover(isPresented: $showRenameSheet) {
+            RenamingSheetChrome(onClose: {
+                showRenameSheet = false
+            }) {
+                let currentName = {
+                    guard let id = targetCategoryID else { return "" }
+                    return viewModel.name(for: id)
+                }()
+                
+                NavigationStack {
+                    RenameCategoryV(
+                        originalName: currentName, text: $renameText, onCancel: { showRenameSheet = false }, onSave: {
+                        let trimmed = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if let id = targetCategoryID, !trimmed.isEmpty {
+                            viewModel.renameCategory(id: id, to: trimmed)
+                        }
+                        showRenameSheet = false
+                    }
+                    )
+                    .navigationBarHidden(true)
+                    .environmentObject(theme)
+                }
+                
+            }
+            .interactiveDismissDisabled(false)
         }
         .alert("Delete category?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) {
@@ -120,20 +146,6 @@ struct HistoryV: View {
             Button("Cancel", role: .cancel) { }
         } message: { Text("Tiles will be moved to Archive.") }
         
-        //        // Organizer overlay (your fullScreenCover is driven by isOrganizing)
-        //            .onReceive(NotificationCenter.default.publisher(for: .devOpenOrganizerOverlay)) { _ in
-        //                withAnimation { isOrganizing = true }
-        //            }
-        
-        // Error overlay
-        //            .onReceive(NotificationCenter.default.publisher(for: .debugShowSampleError)) { _ in
-        //                showErrorOverlay = true
-        //            }
-        //            .overlay {
-        //                if showErrorOverlay {
-        //                    ErrorOverlayV(onClose: { showErrorOverlay = false })
-        //                }
-        //            }
             .fullScreenCover(isPresented: $isOrganizing
                              //                             //FIXME: - Does this =work without onDismiss?
                              //                             onDismiss: { viewModel.flushPendingSaves() }
@@ -232,46 +244,14 @@ struct HistoryV: View {
             }
         }
     }
-    
-    
-    @ViewBuilder private var renameSheet: some View {
-        NavigationStack {
-            Form {
-                Section("New Name") {
-                    TextField("Category name", text: $renameText)
-                        .textInputAutocapitalization(.words)
-                        .disableAutocorrection(true)
-                    
-                    Button { Task { viewModel.canAddUserCategory() } } label: { T("Rename Category", .action) }
-                        .primaryActionStyle(screen: screen)
-                }
-            }
-            .navigationTitle("Rename")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { showRenameSheet = false }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        if let id = targetCategoryID {
-                            viewModel.renameCategory(id: id, to: renameText.trimmingCharacters(in: .whitespacesAndNewlines))
-                        }
-                        showRenameSheet = false
-                    }
-                    .disabled(renameText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
-        }
-        .presentationDetents([.medium])
-    }
 }
+
 // UUID helper
 extension Array {
     var only: Element? { count == 1 ? first : nil }
 }
 
-// MARK: - Category Card (private) = Header  Tile List
+// MARK: - Category Card (local) Header  Tile List
 ///composes CategoryHeaderRow  CategoryTileList with the rounded card chrome. Keeping it private avoids scattering styling across files and keeps the view tree simple
 private struct CategoryCard: View {
     @Binding var category: CategoriesModel
@@ -287,7 +267,7 @@ private struct CategoryCard: View {
                 count: category.tiles.count,
                 isArchive: isArchive,
                 allowEdit: !isArchive && category.id != viewModel.generalCategoryID,
-                onRename: { onRename(category.id) },
+                onRename: { id in  targetCategoryID = id; renameText = viewModel.name(for: id); showRenameSheet = true /* onRename(category.id) */},
                 onDelete:  { onDelete(category.id) }
             )
             
@@ -300,7 +280,59 @@ private struct CategoryCard: View {
         //        .background(Color.clear)
         //        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
+    
 }
+
+
+// MARK: - RenameCategoryV (local, a form)
+private struct RenameCategoryV: View {
+    @EnvironmentObject var theme: ThemeManager
+    let screen: ScreenName = .history
+    
+    var originalName: String
+    @Binding var text: String
+    var onCancel: () -> Void
+    var onSave: () -> Void
+    
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // Handle area already provided by Chrome; minimal UI
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Rename Category")
+                    .font(theme.fontTheme.toFont(.title2))
+                    .fontWeight(.semibold)
+                    .foregroundStyle(p.text)
+                
+                TextField("Category name", text: $text)
+                    .textInputAutocapitalization(.words)
+                    .disableAutocorrection(true)
+                    .padding(12)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+                
+                HStack(spacing: 12) {
+                    Button(action: onCancel) { Text("Cancel") }
+                        .secondaryActionStyle(screen: screen)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                    
+                    Button(action: onSave) { Text("Save") }
+                        .primaryActionStyle(screen: screen)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                                  text.trimmingCharacters(in: .whitespacesAndNewlines) == originalName)
+                }
+            }
+            .padding(16)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+            
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .background(Color.clear) // Chrome provides bg
+    }
+}
+
 
 // UUID helper
 private extension String {
