@@ -89,7 +89,8 @@ struct DynamicCountdown: View {
                     
                     // Time text in the center - always present, but lower Z-index than the pause overlay
                     VStack(spacing: 4) {
-                        let digits = T("\(fVM.formattedTime)", .largeTitle)
+                        let digits = T("\(fVM.formattedTime)", .label)
+                        // label with .font doing heavy lifting
                             .font(.system(size: digitSize, weight: .bold, design: .monospaced))
                         
                         // Main fill color

@@ -35,8 +35,8 @@ struct MembershipSheetV: View {
             ScrollView {
                 VStack {
                     // Hero
-                    T("You’ve completed your free sessions.", .label)
-                    T("Unlock Unlimited Focus", .header).underline().padding(.top, 2)
+                    T("You’ve completed your free sessions.", .body)        // it's information body copy
+                    T("Unlock Unlimited Focus", .header).padding(.top, 2)
                     T("For about 30¢ per day", .secondary).padding(.top, 2)
                         .lineLimit(2)
                 }
@@ -67,7 +67,7 @@ struct MembershipSheetV: View {
                                 do { try await viewModel.purchaseMembershipOrPrompt() }
                                 catch { viewModel.setError(error) }      // Shows ErrorOverlay
                             }
-                        } label: { T("Upgrade", .action) }
+                         } label: { T("Upgrade", .action) }
                             .primaryActionStyle(screen: .membership)
                             .frame(maxWidth: .infinity, minHeight: 48)
                         
@@ -77,7 +77,7 @@ struct MembershipSheetV: View {
                                 do { try await viewModel.restoreMembershipOrPrompt() }
                                 catch { viewModel.setError(error) }     // Shows ErrorOverlay
                             }
-                        } label: { T("Restore Purchases", .label) }
+                        } label: { T("Restore Purchases", .action) }
                             .secondaryActionStyle(screen: .membership)
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .padding(.top, 6)
@@ -85,7 +85,7 @@ struct MembershipSheetV: View {
                         // Apple offer-code redemption (subscription offers)
                         Button {
                             Task { await redeemOfferCode() }
-                        } label: { T("Redeem Code (Apple)", .caption) }
+                        } label: { T("Redeem Code (Apple)", .action) }      // it’s a button, not footnote text use .action
                             .buttonStyle(.plain)
                             .padding(.top, 4)
                     }
@@ -93,7 +93,7 @@ struct MembershipSheetV: View {
                     Card {
                         VStack(alignment: .leading, spacing: 10) {
                             T("Why upgrade?", .title3)
-                            T("Your focus fuels our future.", .title3).underline()
+                            T("Your focus fuels our future.", .title3).padding(.top, 2)
                             
                             VStack(alignment: .leading, spacing: 8) {
                                 Label("Unlimited focus sessions", systemImage: "infinity")
@@ -106,7 +106,7 @@ struct MembershipSheetV: View {
                                 Label("Thank you.", systemImage: "heart")
                             }
                             .font(theme.fontTheme.toFont(.footnote))
-                            .foregroundStyle(textSecondary)
+                            .foregroundStyle(.secondary)
                             .symbolRenderingMode(.hierarchical)
                             
                             T("Apple securely handles your purchase. Cancel anytime in **Settings › Manage Subscription.**", .caption)

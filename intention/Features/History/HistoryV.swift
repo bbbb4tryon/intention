@@ -85,7 +85,7 @@ struct HistoryV: View {
                 }
                 
                 if viewModel.tileLimitWarning {
-                    T("Archive capped at 200; oldest items were removed.", .caption)
+                    T("Archive capped at 200; oldest items were removed.", .tile)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
                         .background(.ultraThinMaterial, in: Capsule())
@@ -227,17 +227,22 @@ struct HistoryV: View {
                     } else {
                         showDeletePicker = true
                     }
+                } label: {
+                    Image(systemName: "line.3.horizontal").imageScale(.small).font(.headline).controlSize(.large)
                 }
                 
                 Button("Add") {
                     if let id = viewModel.addEmptyUserCategory() {
                         createdCategoryID = id
                     }
+                } label: {
+                    Image(systemName: "plus").imageScale(.small).font(.headline).controlSize(.large)
                 }
                 .disabled(!viewModel.canAddUserCategory())
             } label: {
-                Image(systemName: "ellipsis.circle").foregroundStyle(p.accent)
+                Image(systemName: "line.3.horizontal").imageScale(.small).font(.headline).controlSize(.large)
             }
+            .buttonStyle(.plain)
         }
     }
 }

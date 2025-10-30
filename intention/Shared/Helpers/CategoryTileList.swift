@@ -31,6 +31,7 @@ struct CategoryTileList: View {
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
+    private let dividerRects = Color(red: 0.878, green: 0.847, blue: 0.796)
     
     var body: some View {
         if category.tiles.isEmpty {
@@ -44,16 +45,9 @@ struct CategoryTileList: View {
                 ForEach(category.tiles, id: \.id) { tile in
                     VStack(spacing: 0) {
                         HStack(alignment: .firstTextBaseline) {
-                            T(tile.text, .body)
+                            T(tile.text, .tile)
                                 .foregroundStyle(p.surface)
                                 .multilineTextAlignment(.leading)
-                            
-                            //                        if isArchive {
-                            //                            Image(systemName: "archivebox")
-                            //                                .imageScale(.small)
-                            //                                .secondaryActionStyle(screen: screen)
-                            //                                .frame(maxWidth: .infinity)
-                            //                        }
                             
                             Spacer()
                         }
@@ -68,7 +62,7 @@ struct CategoryTileList: View {
                                         // Persist via VM reorderTiles already applies caps + persists, updateTiles() & saveHistory() redundant
                                         viewModel.reorderTiles(category.tiles, in: category.id)
                                     }
-                                } label: { Label("Delete", systemImage: "trash") } //FIXME: how to conform to the thememanager?
+                                } label: { Label("Delete", systemImage: "trash") }
                                 
                                 Button {
                                     Task {
@@ -82,7 +76,7 @@ struct CategoryTileList: View {
                         // Per-tile light tan separator
                         if tile.id != category.tiles.last?.id {
                             Rectangle()
-                                .fill(Color.intTan)         // light tan between tiles
+                                .fill(dividerRects)         // light tan between tiles
                                 .frame(height: 1)
                                 .padding(.leading, 6)       // optional indent to look lighter
                                 .padding(.trailing, 6)

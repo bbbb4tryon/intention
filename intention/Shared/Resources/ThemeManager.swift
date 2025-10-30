@@ -320,7 +320,7 @@ final class ThemeManager: ObservableObject {
 
         .tile → text inside chips/tiles/lists (history items, slots).
 
-        .secondary → supportive inline text (status, helper hints).
+        .secondary → supportive inline text (status, helper hints). -- avoid bolding, use *label* instead
 
         .caption → small legal/help footers and placeholder prompts.
 

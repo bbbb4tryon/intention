@@ -58,7 +58,7 @@ struct SettingsV: View {
                             .controlSize(.large)
                         
                         Divider()
-                        T("BYPASS", .largeTitle)
+                        T("BYPASS", .title3)
                         
                         Button("Recalibration View"){debug.presentRecalibration() }
                         Button("Organizer View")     { debug.presentOrganizer() }
@@ -124,8 +124,7 @@ struct SettingsV: View {
                     VStack(alignment: .leading, spacing: 8) {
                         T("Membership", .section)
                         //                        .friendlyHelper()
-                        (memVM.isMember
-                         ? T("Status: Active", .secondary).bold() : T("Status: Not Active", .secondary).bold()
+                        T(memVM.isMember ? "Status: Active" : "Status: Not Active", .label)
                         )
                         .foregroundStyle(memVM.isMember ? .green : .secondary)
                         
@@ -182,10 +181,11 @@ struct SettingsV: View {
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
                         T("Preferences", .section)
-                        Toggle(isOn: .constant(true)) { T("Enable Notification", .caption) }
-                        Toggle(isOn: $prefs.hapticsOnly) { T("Haptics Only: Vibration cues only", .caption)
+                        // NOTE: these are primary control labels; caption is too small/low-contrast
+                        Toggle(isOn: .constant(true)) { T("Enable Notification", .label) }
+                        Toggle(isOn: $prefs.hapticsOnly) { T("Haptics Only: Vibration cues only", .label)
                             .foregroundStyle(textSecondary) }
-                        Toggle(isOn: .constant(false)) { T("Sound Off", .caption) }
+                        Toggle(isOn: .constant(false)) { T("Sound Off", .label) }
                             .controlSize(.small)        /// Toggle size
                             .toggleStyle(SwitchToggleStyle(tint: p.accent))
                     }

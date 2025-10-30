@@ -42,10 +42,10 @@ struct RecalibrationV: View {
                         .padding(.top, 12)
                     
                     // Supporting copy: left-aligned, subdued
-                    T("Short resets help you start your next 20-minute focus chunk fresh.", .body)
+                    T("Short resets help you start your next 20-minute focus chunk fresh.", .title3)
                         .foregroundStyle(textSecondary)
                     
-                    T("Choose one below:", .body)
+                    T("Choose one below:", .title3)
                         .foregroundStyle(textSecondary)
                     
                     // the ONLY CTA/timer block
@@ -65,7 +65,7 @@ struct RecalibrationV: View {
                     if vm.mode == .balancing {
                         if !vm.eyesClosedMode {
                             Text(vm.promptText)
-                                .font(.title3).fontWeight(.semibold)
+                                .font(.title3)      // already semi-bold
                         }
                         BalanceSideDots(activeIndex: vm.balancingPhaseIndex, p: p)
                             .padding(.top, 6)
@@ -104,7 +104,7 @@ struct RecalibrationV: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { dismiss() } label: {
-                    Image(systemName: "xmark").imageScale(.small).font(.body).controlSize(.large)
+                    Image(systemName: "xmark").imageScale(.small).font(.headline).controlSize(.large)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Close")
