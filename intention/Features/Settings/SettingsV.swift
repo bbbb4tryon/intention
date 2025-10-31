@@ -283,15 +283,23 @@ struct SettingsV: View {
 }
 
 #if DEBUG
-#Preview("Stats & Settings") {
-    MainActor.assumeIsolated {
-        let stats = PreviewMocks.stats
-        stats.logSession(CompletedSession(date: .now, tileTexts: ["By Example", "Analysis checklist"], recalibration: .breathing))
-        
-        return PreviewWrapper {
-            SettingsV(statsVM: PreviewMocks.stats)
-                
-        }
-    }
+#Preview("Settings (dumb)") {
+    // Minimal real objects; no debug factories or preview wrappers.
+    let theme  = ThemeManager()
+    let prefs  = AppPreferencesVM()
+    let memVM  = MembershipVM(payment: PaymentService(productIDs: [])) // empty product list = inert
+    let focus  = FocusSessionVM(previewMode: true,
+                                haptics: NoopHapticsClient(),
+                                config: .current)
+    let stats  = StatsVM(persistence: PersistenceActor())
+    let debug  = DebugRouter() // safe; sheet toggles won’t present in previews
+
+    return SettingsV(statsVM: stats)
+        .environmentObject(theme)
+        .environmentObject(prefs)
+        .environmentObject(memVM)
+        .environmentObject(focus)
+        .environmentObject(debug)
+        .frame(maxWidth: 430)
 }
 #endif
