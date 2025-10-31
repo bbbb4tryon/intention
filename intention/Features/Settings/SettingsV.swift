@@ -104,7 +104,7 @@ struct SettingsV: View {
                         NavigationLink {
                             FeedbackV()
                         } label: {
-                            HStack {
+                            HStack(spacing: 12){
                                 Image(systemName: "paperplane.fill")
                                 T("Send Feedback", .action)
                                 Spacer()
@@ -112,11 +112,11 @@ struct SettingsV: View {
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
-                            .padding(.vertical, 6)
                         }
                         .primaryActionStyle(screen: .settings)
                         .frame(maxWidth: .infinity)
                         .tint(p.accent)
+                        .padding(.vertical, 6)
                     }
                     .edgesIgnoringSafeArea(.bottom)
                 }
@@ -126,12 +126,15 @@ struct SettingsV: View {
                     VStack(alignment: .leading, spacing: 8) {
                         T("Membership", .section)
                         //                        .friendlyHelper()
-                        T(memVM.isMember ? "Status: Active" : "Status: Not Active", .label)
-                        
-                        .foregroundStyle(memVM.isMember ? .green : .secondary)
-                        
-                        T("Your user ID/device ID: \(userID)", .caption)
+                        HStack {
+                            T(memVM.isMember ? "Status: Active" : "Status: Not Active", .label)
+                        }
+                            .foregroundStyle(memVM.isMember ? .green : .secondary)
+                        HStack {
+                            T("Your ID:", .caption)
+                        T(userID, .caption)
                             .foregroundStyle(textSecondary)
+                    }
                         HStack(spacing: 12) {
                             Button(action: {
                                 /// Instead of Link()
