@@ -52,17 +52,23 @@ enum AppFontTheme: String, CaseIterable {
     }
 }
 
+/* <----Normalized Color ----------------------->
+ 
+ Color(red: 0.##, green: 0.##, blue: 0.##)
+ 
+ <---------------------------> */
 // MARK: Color Constants (Moved from extension to local enums/structs for clarity)
 // Color Palette:
 // background_light: f6f6f6, background_medium: d9ddc7, surface: c1c1c1, accent: 8ea131, text: 555555, secondary_text_bg: 3e3e36
 
 private enum DefaultColors {
-    // R: 246, G: 246, B: 246 (#F6F6F6) - Very light, almost white background
+    // R: 246, G: 246, B: 246 (#F6F6F6) - really light reddish tan
     static let backgroundLight = Color(red: 0.965, green: 0.965, blue: 0.965)
     
-    //    // R: 217, G: 221, B: 199 (#D9DDC7) - Tan-gray (used for Recalibrate/Organizer background)
-    //    static let backgroundMedium = Color(red: 0.851, green: 0.867, blue: 0.788)
-    // R: 217, G: 221, B: 199 (#E0D8CB) - Tan-gray (used for Recalibrate/Organizer background)
+    // R: 217, G: 221, B: 199 (#e9e9e0) - greenish yellow for blending
+    static let backgroundMiddle = Color(red: 0.914, green: 0.914, blue: 0.878)
+    
+    // R: 217, G: 221, B: 199 (#E0D8CB) - really light orangish tan
     static let backgroundMedium = Color(red: 0.878, green: 0.847, blue: 0.796)
     
     // R: 193, G: 193, B: 193 (#C1C1C1) - Medium gray for cards/surfaces
@@ -75,34 +81,59 @@ private enum DefaultColors {
     static let text = Color(red: 0.333, green: 0.333, blue: 0.333)
 }
 
+private enum SeaDefaultColors {
+    // #C4ECF5 - very light aquaremarine blue
+    static let backgroundLight = Color(red: 0.769, green: 0.925, blue: 0.961)
+    // #67A5BB
+    static let backgroundMiddle = Color(red: 0.404, green: 0.647, blue: 0.733)
+    // #0A424E - aquamarie navy
+    static let backgroundMedium = Color(red: 0.039, green: 0.259, blue: 0.306)
+    // #377989 - aqua
+    static let surface = Color(red: 0.216, green: 0.475, blue: 0.537)
+    // #FF8C00 - orangish
+    static let accent = Color(red: 1.0, green: 0.55, blue: 0.0)
+    // #D9EBFF - white/blue
+    static let text = Color(red: 0.851, green: 0.922, blue: 1.0)
+}
+
+
+
 // MARK: OrganizerOverlay
 private enum OrgBG {
     // TopLight and BottomDark are now assigned based on the new backgroundMedium color if needed
     static let topLight = DefaultColors.backgroundLight
+    static let middleLight = DefaultColors.backgroundMiddle
     static let bottomDark = DefaultColors.backgroundMedium
 }
 
 // MARK: Recalibrate Sheet
 private enum RecalibrateBG {
-    // -> lighter = #335492, darker #001e64
-    // Keep the distinct Recalibrate blues, as they provide high contrast for that screen's specific context.
-    static let topLight  = Color(red: 0.2000, green: 0.3294, blue: 0.5725)
-    // converted from #001e64
-    static let bottomDark = Color(red: 0.0, green: 0.1176, blue: 0.3922)
+    // #5b89c9
+    static let topLight = Color(red: 0.357, green: 0.537, blue: 0.788)
+    // #f5f8ff
+//    static let topLight  = Color(red: 0.96, green: 0.97, blue: 1.00)
+    // #476FAD
+    static let middleBlend = Color(red: 0.278, green: 0.435, blue: 0.678)
+    // darker #335492
+    static let bottomDark = Color(red: 0.200, green: 0.329, blue: 0.573)
 }
 
 // MARK: Membership Sheet
 private enum MembershipBG {
-    static let topLight  = Color(red: 0.72, green: 0.86, blue: 1.00)
-    static let bottomDark = Color(red: 0.0, green: 0.1176, blue: 0.3922)
+    // #F6F6F6
+    static let topLight = Color(red: 0.965, green: 0.965, blue: 0.965)
+    // #C3C9AF
+    static let middleBlend = Color(red: 0.765, green: 0.788, blue: 0.686)
+    // #8EA131
+    static let bottomDark = Color(red: 0.557, green: 0.631, blue: 0.192)
 }
 
 // MARK: Sea theme
 private enum Sea {
-    // Light “Close” blue (used as top of gradient & general bg) #73a7f6
-    static let topLight  = Color(red: 0.45, green: 0.65, blue: 96)
-    // Darker body blue (used as bottom of gradient & accent/tint) #0d53bf
-    static let bottomDark = Color(red: 0.05, green: 0.33, blue: 0.75)
+    // c4ecf5
+    static let topLight  = Color(red: 0.769, green: 0.925, blue: 0.961)
+    // #0a4243
+    static let bottomDark = Color(red: 0.039, green: 0.259, blue: 0.306)
 }
 
 
@@ -120,15 +151,7 @@ enum AppColorTheme: String, CaseIterable {
     // Show fewer choices in Settings without deleting anything.
     // Change this list whenever you want to expose more/less.
     static var publicCases : [AppColorTheme] { [.default, .sea] }
-    
-    //    /// One accent per theme for consistency
-    //    private var accent: Color {
-    //        switch self {
-    //        case .default: DefaultColors.accent
-    //        case .sea:     Color(red: 0.35, green: 0.75, blue: 1.0)
-    //        }
-    //    }
-    
+
     func colors(for screen: ScreenName) -> ScreenStylePalette {
         switch self {
             // ---------- DEFAULT ----------
@@ -152,7 +175,7 @@ enum AppColorTheme: String, CaseIterable {
                     accent: DefaultColors.accent,               // CTA on sheet
                     text: DefaultColors.backgroundLight,       // light text over dark blue
                     gradientBackground: .init(
-                        colors: [(RecalibrateBG.topLight), (RecalibrateBG.bottomDark)],
+                        colors: [RecalibrateBG.topLight, RecalibrateBG.middleBlend, RecalibrateBG.bottomDark],
                         start: .topLeading,
                         end: .bottomTrailing
                     )
@@ -166,7 +189,7 @@ enum AppColorTheme: String, CaseIterable {
                     accent: DefaultColors.accent,               // CTA color (citron)
                     text: DefaultColors.text,                   // primary text color (dark gray)
                     gradientBackground: .init(
-                        colors: [(MembershipBG.topLight), (MembershipBG.bottomDark)],
+                        colors: [MembershipBG.topLight, MembershipBG.bottomDark],
                         start: .topTrailing,
                         end: .bottomLeading
                     )
@@ -184,82 +207,74 @@ enum AppColorTheme: String, CaseIterable {
                     text: organizerText,          // primary text
                     gradientBackground: .init(
                         colors: [OrgBG.topLight, OrgBG.bottomDark],
-                        start: .top,
-                        end: .bottom
+                        start: .topLeading,
+                        end: .bottomTrailing // ↖️ Diagonal flow
                     )
                 )
             }
             
             // ---------- SEA ----------
         case .sea:
-            // Background: #0B47A3 (Dark Blue)
-            let seaBG = Color(red: 0.043, green: 0.278, blue: 0.639)
-            // Text: #D9EBFF (Very Light Blue)
-            let seaText = Color(red: 0.851, green: 0.922, blue: 1.0)
-            // Accent: #FF8C00 (Orange)
-            let seaAccent = Color(red: 1.0, green: 0.55, blue: 0.0)
-            
-            
-            // Standard colors for the Sea gradient
-            let seaGradientColors: [Color] = [Sea.topLight, Sea.bottomDark]
+            let seaGradientColors: [Color] = [
+                SeaDefaultColors.backgroundLight,  // #C4ECF5 (High-contrast top)
+                        SeaDefaultColors.backgroundMedium // #0A424E (Dark aquamarine navy bottom)
+                ]
             
             switch screen {
             case .focus, .history, .settings:
-                // These main tabs use solid backgrounds
                 return .init(
-                    primary: Color(red: 0.00, green: 0.30, blue: 0.70),
-                    background: seaBG,
-                    surface: seaText.opacity(0.12),
-                    accent: seaAccent,
-                    text: seaText,
-                    gradientBackground: nil
-                )
+                            primary: SeaDefaultColors.surface, // Using Surface as primary (e.g., secondary button)
+                            background: SeaDefaultColors.backgroundMedium, // Using the dark base color for solid BG
+                            surface: SeaDefaultColors.surface.opacity(0.85), // Frosted surface card
+                            accent: SeaDefaultColors.accent,
+                            text: SeaDefaultColors.text,
+                            gradientBackground: nil
+                        )
                 
             case .recalibrate:
-                // Unique Gradient Direction: Diagonal
-                return .init(
-                    primary: Color(red: 0.00, green: 0.12, blue: 0.22),
-                    background: Sea.bottomDark.opacity(0.9),
-                    surface: seaText.opacity(0.15),
-                    accent: seaAccent,
-                    text: .white,
-                    gradientBackground: .init(
-                        colors: seaGradientColors,
-                        start: .topLeading,
-                        end: .bottomTrailing // ↖️ Diagonal flow
+                    // Unique Gradient Direction: Diagonal
+                    return .init(
+                        primary: SeaDefaultColors.backgroundMedium, // Dark primary tint
+                        background: SeaDefaultColors.backgroundMedium, // Dark solid fallback
+                        surface: SeaDefaultColors.surface.opacity(0.15), // Frosted cards
+                        accent: SeaDefaultColors.accent,
+                        text: SeaDefaultColors.text,
+                        gradientBackground: .init(
+                            colors: seaGradientColors,
+                            start: .top,
+                            end: .bottom // ⬇️ Verticall flow
+                        )
                     )
-                )
                 
             case .membership:
-                // Unique Gradient Direction: Horizontal
-                return .init(
-                    primary: Color(red: 0.00, green: 0.28, blue: 0.62),
-                    background: seaBG,
-                    surface: seaText.opacity(0.12),
-                    accent: seaAccent,
-                    text: seaText,
-                    gradientBackground: .init(
-                        colors: seaGradientColors,
-                        start: .leading,
-                        end: .trailing // ➡️ Horizontal flow
+                    // Unique Gradient Direction: Horizontal
+                    return .init(
+                        primary: SeaDefaultColors.surface,
+                        background: SeaDefaultColors.backgroundMedium, // Dark solid fallback
+                        surface: SeaDefaultColors.surface.opacity(0.85),
+                        accent: SeaDefaultColors.accent,
+                        text: SeaDefaultColors.text,
+                        gradientBackground: .init(
+                            colors: seaGradientColors,
+                            start: .leading,
+                            end: .trailing // ➡️ Horizontal flow
+                        )
                     )
-                )
                 
             case .organizer:
                 // Unique Gradient Direction: Vertical
-                return .init(
-                    primary: Color(red: 0.00, green: 0.28, blue: 0.62),
-                    // Background is .clear to ensure the gradient shows through FocusShell
-                    background: .clear,
-                    surface: seaText.opacity(0.12),
-                    accent: seaAccent,
-                    text: seaText,
-                    gradientBackground: .init(
-                        colors: seaGradientColors,
-                        start: .top,
-                        end: .bottom // ⬇️ Vertical flow
-                    )
-                )
+                    return .init(
+                        primary: SeaDefaultColors.surface,
+                        background: .clear, // clear, to see gradient through FocusShell
+                        surface: SeaDefaultColors.surface.opacity(0.12),
+                        accent: SeaDefaultColors.accent,
+                        text: SeaDefaultColors.text,
+                        gradientBackground: .init(
+                            colors: seaGradientColors,
+                            start: .top,
+                            end: .bottom // ⬇️ Vertical flow
+                        )
+                        )
             }
         }
     }

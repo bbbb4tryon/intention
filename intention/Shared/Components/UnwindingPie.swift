@@ -53,7 +53,7 @@ struct Pie: View {
                 .fill(palette.accent)
             
         }
-        .frame(width: 200, height: 200)
+        .frame(width: 400, height: 300)
         .onReceive(timer) { _ in
             if remainingTime > 0 {
                 remainingTime -= 1
@@ -64,5 +64,6 @@ struct Pie: View {
 #if DEBUG
 #Preview {
     Pie()
+        
 }
 #endif

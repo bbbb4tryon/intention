@@ -370,7 +370,6 @@ private struct TileSlot: View {
             focusVM: PreviewMocks.focusSession,
             recalibrationVM: RecalibrationVM(haptics: NoopHapticsClient())
         )
-        .previewTheme()
     }
 }
 #endif

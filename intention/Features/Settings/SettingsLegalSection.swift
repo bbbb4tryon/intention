@@ -33,8 +33,9 @@ struct SettingsLegalSection: View {
 }
 
 #if DEBUG
-#Preview {
+#Preview("Legal Section (dumb)") {
     SettingsLegalSection(onShowTerms: {}, onShowPrivacy: {}, onShowMedical: {})
+        .environmentObject(ThemeManager())
         .padding()
 }
 #endif

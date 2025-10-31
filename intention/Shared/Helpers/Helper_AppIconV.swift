@@ -32,5 +32,6 @@ struct Helper_AppIconV: View {
     Helper_AppIconV()
         .frame(width: 50, height: 50)
         .padding()
+        
 }
 #endif

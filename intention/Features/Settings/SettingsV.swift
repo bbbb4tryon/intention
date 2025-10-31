@@ -39,63 +39,63 @@ struct SettingsV: View {
             Page(top: 4, alignment: .center) {
                 T("Settings", .header)
                     .padding(.bottom, 4)
-                
-#if DEBUG
-                // DisclosureGroup<Label, Content>(label: Label, @ViewBuilder content: () -> Content)
-                // where the label is the first (non-closure) argument, and the content is the trailing closure
-                // use the implicit first and second trailing closures:
-                // The Label argument (mandatory for this initializer with DisclosureGroup)
-                DisclosureGroup {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Button("Debug: Clear All") {
-                            UserDefaults.standard.removeObject(forKey: "debug.chunkSeconds")
-                        }
-                        Button("Reset Session"){Task { await focusVM.resetSessionStateForNewStart() } }
-                        
-                        Toggle("Show Legal on Next Launch", isOn: $debugShowLegalNextLaunch)
-                        
-                        Button("Reset: Legal Gate") { LegalConsent.clearForDebug() }
-                            .controlSize(.large)
-                        
-                        Divider()
-                        T("BYPASS", .title3)
-                        
-                        Button("Recalibration View"){debug.presentRecalibration() }
-                        Button("Organizer View")     { debug.presentOrganizer() }
-                        Button("Membership View")    { debug.presentMembership() }
-                        Button("ErrorOverlay View")  {
-                            debug.presentError(
-                                title: "Debug View Activated",
-                                message: "This is a forced-view of the error overlay for visual confirmation."
-                            )
-                        }
+//                
+//#if DEBUG
+//                // DisclosureGroup<Label, Content>(label: Label, @ViewBuilder content: () -> Content)
+//                // where the label is the first (non-closure) argument, and the content is the trailing closure
+//                // use the implicit first and second trailing closures:
+//                // The Label argument (mandatory for this initializer with DisclosureGroup)
+//                DisclosureGroup {
+//                    VStack(alignment: .leading, spacing: 6) {
+//                        Button("Debug: Clear All") {
+//                            UserDefaults.standard.removeObject(forKey: "debug.chunkSeconds")
+//                        }
+//                        Button("Reset Session"){Task { await focusVM.resetSessionStateForNewStart() } }
 //                        
-//                        Button("Recalibration View"){NotificationCenter.default.post(
-//                            // Fires signal to the receiver (e.g. FocusActiveSessionV)
-//                            name: .devOpenRecalibration, object: nil) }
-//                        Button("Organizer View"){ NotificationCenter.default.post(
-//                            name: .devOpenOrganizerOverlay, object: nil) }
-//                        Button("Membership View"){NotificationCenter.default.post(
-//                            name: .devOpenMembership, object: nil) }
-//                        Button("ErrorOverlay View") {
-//                            // Pass sample data for the overlay's content
-//                            let userInfo: [AnyHashable: Any] = [
-//                                DebugNotificationKey.errorTitle: "Debug View Activated",
-//                                DebugNotificationKey.errorMessage: "This is a forced-view of the error overlay for visual confirmation."
-//                            ]
-//                            NotificationCenter.default.post(
-//                                name: .debugShowSampleError, object: nil) }
+//                        Toggle("Show Legal on Next Launch", isOn: $debugShowLegalNextLaunch)
 //                        
-                        Picker("Timer debug", selection: Binding(
-                            get: { UserDefaults.standard.integer(forKey: "debug.chunkSeconds") },
-                            set: { UserDefaults.standard.set($0, forKey: "debug.chunkSeconds") } )) {
-                                Text("10s").tag(10); Text("30s").tag(30)
-                                Text("OFF (20m)").tag(0) // 0 disables override
-                        }}.controlSize(.small) .font(.footnote) .buttonStyle(.bordered)
-                } label: {
-                    Label("Dev", systemImage: "wrench")         // Dumb words, but this is the CONTENT closure
-                }
-#endif
+//                        Button("Reset: Legal Gate") { LegalConsent.clearForDebug() }
+//                            .controlSize(.large)
+//                        
+//                        Divider()
+//                        T("BYPASS", .title3)
+//                        
+//                        Button("Recalibration View"){debug.presentRecalibration() }
+//                        Button("Organizer View")     { debug.presentOrganizer() }
+//                        Button("Membership View")    { debug.presentMembership() }
+//                        Button("ErrorOverlay View")  {
+//                            debug.presentError(
+//                                title: "Debug View Activated",
+//                                message: "This is a forced-view of the error overlay for visual confirmation."
+//                            )
+//                        }
+////                        
+////                        Button("Recalibration View"){NotificationCenter.default.post(
+////                            // Fires signal to the receiver (e.g. FocusActiveSessionV)
+////                            name: .devOpenRecalibration, object: nil) }
+////                        Button("Organizer View"){ NotificationCenter.default.post(
+////                            name: .devOpenOrganizerOverlay, object: nil) }
+////                        Button("Membership View"){NotificationCenter.default.post(
+////                            name: .devOpenMembership, object: nil) }
+////                        Button("ErrorOverlay View") {
+////                            // Pass sample data for the overlay's content
+////                            let userInfo: [AnyHashable: Any] = [
+////                                DebugNotificationKey.errorTitle: "Debug View Activated",
+////                                DebugNotificationKey.errorMessage: "This is a forced-view of the error overlay for visual confirmation."
+////                            ]
+////                            NotificationCenter.default.post(
+////                                name: .debugShowSampleError, object: nil) }
+////                        
+//                        Picker("Timer debug", selection: Binding(
+//                            get: { UserDefaults.standard.integer(forKey: "debug.chunkSeconds") },
+//                            set: { UserDefaults.standard.set($0, forKey: "debug.chunkSeconds") } )) {
+//                                Text("10s").tag(10); Text("30s").tag(30)
+//                                Text("OFF (20m)").tag(0) // 0 disables override
+//                        }}.controlSize(.small) .font(.footnote) .buttonStyle(.bordered)
+//                } label: {
+//                    Label("Dev", systemImage: "wrench")         // Dumb words, but this is the CONTENT closure
+//                }
+//#endif
                 
                 // MARK: Support
                 Card {
@@ -106,8 +106,9 @@ struct SettingsV: View {
                         } label: {
                             HStack(spacing: 12){
                                 Image(systemName: "paperplane.fill")
+                                    .padding(.horizontal, 2)
                                 T("Send Feedback", .action)
-                                Spacer()
+        
                                 Image(systemName: "chevron.right")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
@@ -289,7 +290,7 @@ struct SettingsV: View {
         
         return PreviewWrapper {
             SettingsV(statsVM: PreviewMocks.stats)
-                .previewTheme()
+                
         }
     }
 }

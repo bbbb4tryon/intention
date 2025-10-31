@@ -17,4 +17,5 @@ struct PillSandbox: View {
 
 #Preview {
     PillSandbox()
+        
 }

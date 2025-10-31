@@ -100,14 +100,14 @@ struct OverlayContainer: View {
             }
             
             // 5. Inject all necessary environment objects
-            .environmentObject(PreviewMocks.theme)
             .environmentObject(PreviewMocks.prefs)
-            // Add any other environment objects your view hierarchy might require
+            
         }
     }
 }
 #if DEBUG
 #Preview {
     OverlayContainer()
+        
 }
 #endif // DEBUG

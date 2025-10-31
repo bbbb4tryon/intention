@@ -37,5 +37,21 @@ struct BreathingPhaseGuide: View {
             }
         }
         .frame(maxWidth: .infinity)
+        .padding()
     }
 }
+
+
+#if DEBUG
+#Preview("Breathing Guide") {
+    let theme = ThemeManager()
+    let pal = theme.palette(for: .recalibrate)
+    return BreathingPhaseGuide(
+        phases: ["Inhale", "Hold", "Exhale", "Hold"],
+        activeIndex: 0,
+        p: pal
+    )
+    .environmentObject(theme)
+    
+}
+#endif

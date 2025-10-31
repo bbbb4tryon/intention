@@ -41,10 +41,23 @@ struct RecalibrationV: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 12)
                     
+                    // -- separator --
+                    Rectangle()
+                        .fill(p.accent)
+                        .frame(height: 1)
+                        .padding(.vertical, 4)
+                    
                     // Supporting copy: left-aligned, subdued
                     T("Short resets help you start your next 20-minute focus chunk fresh.", .title3)
                         .foregroundStyle(textSecondary)
                     
+                    // -- separator --
+                    Rectangle()
+                        .fill(p.accent)
+                        .frame(height: 1)
+                        .padding(.vertical, 4)
+                    
+                    Spacer()
                     T("Choose one below:", .title3)
                         .foregroundStyle(textSecondary)
                     
@@ -239,9 +252,9 @@ struct RecalibrationV: View {
 #Preview("Recalibrate - Running") {
     PreviewWrapper {
 //        RecalibrationV(vm: PreviewMocks.recalibrationRunning())
-//            .previewTheme()(haptics: NoopHapticsClient())
-        RecalibrationV(vm: RecalibrationVM.mockForDebug()).previewTheme()
-            .previewTheme()
+//            (haptics: NoopHapticsClient())
+        RecalibrationV(vm: RecalibrationVM.mockForDebug())
+            
     }
 }
 #endif

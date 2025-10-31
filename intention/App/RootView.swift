@@ -328,6 +328,7 @@ struct RootView: View {
                         onShowPrivacy: { activeSheet = .privacy },
                         onShowMedical: { activeSheet = .medical }
                     )
+                    .environmentObject(theme)
                     
                 case .terms:
                     NavigationStack {
@@ -447,10 +448,3 @@ struct RootView: View {
 //            modifier(RootSheets(activeSheet: activeSheet, memVM: memVM))
 //        }
 //}
-
-#if DEBUG
-#Preview {
-    RootView()
-        .previewTheme()
-}
-#endif

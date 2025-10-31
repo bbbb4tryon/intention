@@ -36,10 +36,19 @@ struct BalanceSideDots: View {
                 .fill(isActive ? p.accent : colorBorder)
                 .frame(width: isActive ? fWOn : fWOff, height: isActive ? fHOn : fHOff)
                 .overlay(Circle().stroke(colorBorder, lineWidth: isActive ? 0 : 1))
-                .animation(.spring(response: 0.22, dampingFraction: 0.85), value: isActive)
+                .scaleEffect(isActive ? 1.05 : 1.0)
+                .animation(.spring(response: 0.20, dampingFraction: 0.85), value: isActive)
             Text(label)
                 .font(.callout.weight(isActive ? .semibold : .regular))
                 .foregroundStyle(isActive ? p.text : textSecondary)
         }
     }
 }
+#if DEBUG
+#Preview("Balance Dots") {
+    let theme = ThemeManager()
+    let pal = theme.palette(for: .recalibrate)
+    return BalanceSideDots(activeIndex: 0, p: pal)
+        .environmentObject(theme)
+}
+#endif

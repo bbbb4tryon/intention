@@ -75,10 +75,12 @@ struct LegalAgreementSheetV: View {
 
 #if DEBUG
 #Preview {
-    LegalAgreementSheetV(
-        onAccept: {},
-        onShowTerms: {},
-        onShowPrivacy: {}
-    )
+    PreviewWrapper {
+        LegalAgreementSheetV(
+            onAccept: {},
+            onShowTerms: {},
+            onShowPrivacy: {}
+        )
+    }
 }
 #endif

@@ -154,12 +154,12 @@ struct MembershipSheetV: View {
         
         return MembershipSheetV()
         // Inject the exact env objects MembershipSheetV expects
-            .environmentObject(PreviewMocks.theme)
             .environmentObject(memberVM)
         // These keep parity with your app environment
             .environmentObject(PreviewMocks.prefs)
             .environmentObject(PreviewMocks.history)
             .environmentObject(PreviewMocks.stats)
+            
     }
 }
 #endif
