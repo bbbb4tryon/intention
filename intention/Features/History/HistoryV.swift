@@ -95,7 +95,7 @@ struct HistoryV: View {
         }
         .background(p.background)
         .opacity(isOrganizing ? 0.98 : 1.0) // so history bg wins against organizerOverlay
-        .zIndex(0)      // so the history background wins against organizerOverlay
+        .zIndex(0)      // so the history bg wins against organizerOverlay
         .tint(p.accent)
         // nav bar background reacts to edit mode
         .toolbarBackground(isOrganizing ? p.background.opacity(0.92) : .clear, for: .navigationBar)

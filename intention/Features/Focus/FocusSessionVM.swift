@@ -392,9 +392,7 @@ final class FocusSessionVM: ObservableObject {
     
     // MARK: Utilities
     var formattedTime: String {
-        let minutes = countdownRemaining / 60
-        let seconds = countdownRemaining % 60
-        return String(format: "%02d:%02d", minutes, seconds)
+        TimeString.mmss(countdownRemaining)
     }
     
     /// Sets flag to trigger recalibration modal
