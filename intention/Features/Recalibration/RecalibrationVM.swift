@@ -41,8 +41,7 @@ final class RecalibrationVM: ObservableObject {
     @Published var balancingPhaseIndex: Int = 0
     
     var formattedTime: String {
-        let m = timeRemaining / 60, s = timeRemaining % 60
-        return String(format: "%02d:%02d", m, s)
+        TimeString.mmss(timeRemaining)
     }
     
     // Counts
