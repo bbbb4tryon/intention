@@ -74,13 +74,15 @@ struct LegalAgreementSheetV: View {
 }
 
 #if DEBUG
-#Preview {
-    PreviewWrapper {
-        LegalAgreementSheetV(
-            onAccept: {},
-            onShowTerms: {},
-            onShowPrivacy: {}
-        )
-    }
+#Preview("Legal Sheet (dumb)") {
+    let theme = ThemeManager()
+
+    return LegalAgreementSheetV(
+        onAccept: {},
+        onShowTerms: {},
+        onShowPrivacy: {}
+    )
+    .environmentObject(theme)
+    .frame(maxWidth: 430)
 }
 #endif

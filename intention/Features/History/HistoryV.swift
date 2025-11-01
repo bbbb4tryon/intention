@@ -443,11 +443,11 @@ private extension String {
 }
 
 #if DEBUG
-extension HistoryV {   
+extension HistoryV {
     init(
-        viewModel: HistoryVM,                       // if needed for showing header actions
-        _preview_isOrganizing: Bool = false,          // <- opens the sheet
-        _preview_showRenameSheet: Bool = false,       // <- focuses that category
+        viewModel: HistoryVM,
+        _preview_isOrganizing: Bool = false,
+        _preview_showRenameSheet: Bool = false,
         _preview_targetCategoryID: UUID? = nil,
         _preview_renameText: String = ""
     ) {
@@ -459,112 +459,13 @@ extension HistoryV {
     }
 }
 #endif
-
-
-// Mock/ test data prepopulated
 #if DEBUG
-#Preview("History") {
-    MainActor.assumeIsolated {
-        let h = HistoryVM(persistence: PersistenceActor())
-        h.ensureGeneralCategory()
-        h.ensureArchiveCategory()
+#Preview("History (dumb)") {
+    let theme = ThemeManager()
+    let hist  = HistoryVM(persistence: PersistenceActor()) // no seeding
 
-        // Add one user category with 2 tiles
-        let userID = h.addEmptyUserCategory()
-               if let userID {
-                   h.renameCategory(id: userID, to: "Projects")
-                   h.addToHistory(TileM(text: "Write spec"), to: userID)
-                   h.addToHistory(TileM(text: "Code review"), to: userID)
-               }
-
-               // Add 1 tile to General so that header/ellipsis are visible
-               if let generalID = h.categories.first?.id {
-                   h.addToHistory(TileM(text: "Stretch break"), to: generalID)
-               }
-
-               return PreviewWrapper {
-                   HistoryV(viewModel: h)
-                       .frame(maxWidth: 430)            // iPhone-ish width
-                       
-               }
-           }
-}
-#endif
-
-#if DEBUG
-#Preview("org overlay") {
-    MainActor.assumeIsolated {
-        let h = HistoryVM(persistence: PersistenceActor())
-        h.ensureGeneralCategory()
-        h.ensureArchiveCategory()
-
-        if let userID = h.addEmptyUserCategory() {
-            h.renameCategory(id: userID, to: "Work")
-            h.addToHistory(TileM(text: "Refactor organizer"), to: userID)
-            h.addToHistory(TileM(text: "Prep screenshots"), to: userID)
-        }
-
-        return PreviewWrapper {
-            // Use the debug init to force organizing UI on
-            HistoryV(viewModel: h, _preview_isOrganizing: true)
-                .frame(maxWidth: 430)
-                
-        }
-    }
-}
-#endif
-
-#if DEBUG
-#Preview("rename") {
-    MainActor.assumeIsolated {
-        let h = HistoryVM(persistence: PersistenceActor())
-        h.ensureGeneralCategory()
-        h.ensureArchiveCategory()
-
-        // Create a user category and remember its ID
-        let userID = h.addEmptyUserCategory()
-        if let userID {
-            h.renameCategory(id: userID, to: "Next week")
-            h.addToHistory(TileM(text: "Call PM for weekly update"), to: userID)
-        }
-
-        return PreviewWrapper {
-            HistoryV(
-                viewModel: h,
-                _preview_isOrganizing: true,                  // if needed for showing header actions
-                _preview_showRenameSheet: true,               // <- opens the sheet
-                _preview_targetCategoryID: userID,            // <- focuses that category
-                _preview_renameText: "Personal"               // <- prefill current
-            )
-            .frame(maxWidth: 430)
-            
-        }
-    }
-}
-#endif
-
-// ---------------------------------------------------------
-// Ellipsis via EditMode if your overflow lives there
-//    If your "…" shows up in edit mode rather than organizing,
-//    this gives you that state without adding more tiles.
-// ---------------------------------------------------------
-#if DEBUG
-#Preview("editmode") {
-    MainActor.assumeIsolated {
-        let h = HistoryVM(persistence: PersistenceActor())
-        h.ensureGeneralCategory()
-        h.ensureArchiveCategory()
-
-        if let generalID = h.categories.first?.id {
-            h.addToHistory(TileM(text: "Light cleanup"), to: generalID)
-        }
-
-        return PreviewWrapper {
-            HistoryV(viewModel: h)
-                .environment(\.editMode, .constant(.active))
-                .frame(maxWidth: 430)
-                
-        }
-    }
+    return HistoryV(viewModel: hist)
+        .environmentObject(theme)
+        .frame(maxWidth: 430)
 }
 #endif

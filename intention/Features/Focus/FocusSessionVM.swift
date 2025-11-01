@@ -178,6 +178,9 @@ final class FocusSessionVM: ObservableObject {
         //        runningDeadline = Date().addingTimeInterval(TimeInterval(seconds)) // seconds = chunkDuration
         saveVMSnapshot()
         
+        // bail out in previews
+        if IS_PREVIEW { return }
+        
         await timeActor.startTicking(
             totalSeconds: total,
             onTick: { [ weak self ] secs in
@@ -373,11 +376,13 @@ final class FocusSessionVM: ObservableObject {
     }
     
     private func saveVMSnapshot() {
+        guard !IS_PREVIEW else { return }
         let snap = makeVMSnapshot()
         Task { try? await persistence.write(snap, to: vmSnapshotKey) }
     }
     
     private func clearVMSnapshot() {
+        guard !IS_PREVIEW else { return }
         Task { await persistence.clear(vmSnapshotKey)}
     }
     

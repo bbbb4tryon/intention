@@ -362,14 +362,19 @@ private struct TileSlot: View {
 
 
 
-// MARK: - Preview
 #if DEBUG
-#Preview("Focus") {
-    PreviewWrapper {
-        FocusSessionActiveV(
-            focusVM: PreviewMocks.focusSession,
-            recalibrationVM: RecalibrationVM(haptics: NoopHapticsClient())
-        )
-    }
+#Preview("Focus (dumb)") {
+    let theme = ThemeManager()
+    let focus = FocusSessionVM(previewMode: true,
+                               haptics: NoopHapticsClient(),
+                               config: .current)
+    let recal  = RecalibrationVM(haptics: NoopHapticsClient())
+
+    return FocusSessionActiveV(
+        focusVM: focus,
+        recalibrationVM: recal
+    )
+    .environmentObject(theme)
+    .frame(maxWidth: 430)
 }
 #endif

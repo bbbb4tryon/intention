@@ -9,17 +9,26 @@ import Foundation
 
 enum TimeString {
     /// Formats seconds as mm:ss using Swift FormatStyle.
+    ///  /// Formats seconds as "MM:SS". Clamps negatives to 0.
+    @inlinable
     static func mmss(_ seconds: Int) -> String {
-        if #available(iOS 15.0, *) {
-            return Duration.seconds(seconds).formatted(.time(pattern: .minuteSecond))
-        } else {
-            let f = DateComponentsFormatter()
-            f.allowedUnits = [.minute, .second]
-            f.unitsStyle = .positional
-            f.zeroFormattingBehavior = [.pad]
-            return f.string(from: TimeInterval(seconds)) ?? "00:00"
-        }
+        let s = seconds > 0 ? seconds : 0
+        let m = s / 60
+        let r = s % 60
+        // String(format:) is fast and locale-agnostic for this spec.
+        return String(format: "%02d:%02d", m, r)
     }
+//    static func mmss(_ seconds: Int) -> String {
+//        if #available(iOS 15.0, *) {
+//            return Duration.seconds(seconds).formatted(.time(pattern: .minuteSecond))
+//        } else {
+//            let f = DateComponentsFormatter()
+//            f.allowedUnits = [.minute, .second]
+//            f.unitsStyle = .positional
+//            f.zeroFormattingBehavior = [.pad]
+//            return f.string(from: TimeInterval(seconds)) ?? "00:00"
+//        }
+//    }
 }
 
 enum PercentString {

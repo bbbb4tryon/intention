@@ -249,12 +249,12 @@ struct RecalibrationV: View {
     }
 
 #if DEBUG
-#Preview("Recalibrate - Running") {
-    PreviewWrapper {
-//        RecalibrationV(vm: PreviewMocks.recalibrationRunning())
-//            (haptics: NoopHapticsClient())
-        RecalibrationV(vm: RecalibrationVM.mockForDebug())
-            
-    }
+#Preview("Recalibrate (dumb)") {
+    let theme = ThemeManager()
+    let vm    = RecalibrationVM(haptics: NoopHapticsClient())
+
+    return RecalibrationV(vm: vm)
+        .environmentObject(theme)
+        .frame(maxWidth: 430)
 }
 #endif

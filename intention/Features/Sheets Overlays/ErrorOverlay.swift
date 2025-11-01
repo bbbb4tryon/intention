@@ -51,6 +51,15 @@ struct ErrorOverlay: View {
             return description
     }
 }
+#if DEBUG
+#Preview("Error Overlay (dumb)") {
+    struct SampleErr: LocalizedError { var errorDescription: String? { "Something went wrong, please try again." } }
+    return ErrorOverlay(error: SampleErr(), dismissAction: {})
+        .environmentObject(ThemeManager())
+        .background(Color.black.opacity(0.1))
+}
+#endif
+
 
 /*
  Currently, error displays FocusSessionError.unexpected or HistoryError.categoryNotFound, etc.

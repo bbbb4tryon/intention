@@ -58,3 +58,16 @@ struct RenamingSheetChrome<Content: View>: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("Chrome") {
+    RenamingSheetChrome(onClose: {}) {
+        VStack(spacing: 12) {
+            Text("rename Content")
+            Button("Primary", action: {})
+        }
+        .padding()
+    }
+    .environmentObject(ThemeManager())
+}
+#endif

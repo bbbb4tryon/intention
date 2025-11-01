@@ -278,32 +278,40 @@ struct RootView: View {
             })
         // MARK: App launch + restore any active session state + legal gate
             .onAppear {
-                // 1) Set isBusy for the main async launch process
+                // Set isBusy for the main async launch process
                 isBusy = true
                 Task {
-                    defer { isBusy = false }      // Ensure reset after All onAppear tasks
+                    // Ensure reset after All appear tasks
+                    defer { isBusy = false }
                     
-                    await focusVM.restoreActiveSessionIfAny();
-                    hapticsEngine.warm()                        // Synchronous, but wrapped in the main Task
-                    
-                    if LegalConsent.needsConsent() {
-                        // Keep the legal sheet on the main thread
-                        await MainActor.run { activeSheet = .legal }
+                    if !IS_PREVIEW {
+                        await focusVM.restoreActiveSessionIfAny();
+                        // Synchronous, but wrapped in the main Task
+                        hapticsEngine.warm()
+                        if LegalConsent.needsConsent() {
+                            // Keeping the legal sheet on the main thread
+                            await MainActor.run { activeSheet = .legal }
+                        }
+                    } else {
+                        // Previews: no ticking, no persistence, no sheets
                     }
-                }
-                
-                hapticsEngine.warm()        // implemented as a no-op wrapper than just calls prepare()
-                
-                // Wrapped in #if debug to not affect release
+                    // implemented as a no-op wrapper than just calls prepare()
+                    hapticsEngine.warm()
+                    
+                    // Wrapped in #if debug to not affect release
 #if DEBUG
-                if ProcessInfo.processInfo.environment["RESET_LEGAL_ON_LAUNCH"] == "1" {
-                    UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedVersion)
-                    UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedAtEpoch)
-                    activeSheet = .legal
-                }
+                    if ProcessInfo.processInfo.environment["RESET_LEGAL_ON_LAUNCH"] == "1" {
+                        UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedVersion)
+                        UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedAtEpoch)
+                        if !IS_PREVIEW { activeSheet = .legal }
+                    }
 #endif
-
+                    
+                }
             }
+        /* Keep scenePhase handler as-is; previews rarely bounce phases.
+         Any timeouts, wrap the inactive/background branch bodies with if !IS_PREVIEW { ... } */
+        
         
         // Membership prompt choreography
         ///FIXME: remove one of the membership because they're "re"-presented?

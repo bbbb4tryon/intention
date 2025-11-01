@@ -144,23 +144,20 @@ struct MembershipSheetV: View {
 }
 
 #if DEBUG
-#Preview("Membership — Not Active") {
-    MainActor.assumeIsolated {
-        // Dedicated, isolated VM for this preview
-        let memberVM = MembershipVM(
-            payment: PaymentService(productIDs: ["com.argonnesoftware.intention"])
-        )
-        memberVM._debugSetIsMember(false)    // Preview the non-member state
-        
-        return MembershipSheetV()
-        // Inject the exact env objects MembershipSheetV expects
-            .environmentObject(memberVM)
-        // These keep parity with your app environment
-            .environmentObject(PreviewMocks.prefs)
-            .environmentObject(PreviewMocks.history)
-            .environmentObject(PreviewMocks.stats)
-            
-    }
+#Preview("Membership (dumb)") {
+    let theme  = ThemeManager()
+    let prefs  = AppPreferencesVM()
+    let hist   = HistoryVM(persistence: PersistenceActor())
+    let stats  = StatsVM(persistence: PersistenceActor())
+    let memVM  = MembershipVM(payment: PaymentService(productIDs: [])) // inert
+    memVM._debugSetIsMember(false) // purely visual; does not start network
+
+    return MembershipSheetV()
+        .environmentObject(memVM)
+        .environmentObject(theme)
+        .environmentObject(prefs)
+        .environmentObject(hist)
+        .environmentObject(stats)
 }
 #endif
 

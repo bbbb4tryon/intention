@@ -57,3 +57,16 @@ struct MembershipSheetChrome<Content: View>: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("Chrome") {
+    MembershipSheetChrome(onClose: {}) {
+        VStack(spacing: 12) {
+            Text("mem Content")
+            Button("Primary", action: {})
+        }
+        .padding()
+    }
+    .environmentObject(ThemeManager())
+}
+#endif

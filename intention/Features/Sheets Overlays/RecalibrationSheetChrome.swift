@@ -71,3 +71,16 @@ struct RecalibrationSheetChrome<Content: View>: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("Chrome") {
+    RecalibrationSheetChrome(onClose: {}) {
+        VStack(spacing: 12) {
+            Text("recal Content")
+            Button("Primary", action: {})
+        }
+        .padding()
+    }
+    .environmentObject(ThemeManager())
+}
+#endif
