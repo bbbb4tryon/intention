@@ -70,7 +70,7 @@ actor ContinuousClockActor {
         
         let total = max(0, totalSeconds ?? config.chunkDuration) // "clamps": UI never shows -00:01
         endInstant = clock.now.advanced(by: .seconds(total))
-
+        
         
         // run the loop on the actor via a private actor-isolated function (tickLoop), the Task only calls into that function
         tickingTask = Task { [weak self] in
@@ -112,7 +112,7 @@ actor ContinuousClockActor {
     
     func secondsRemaining() -> Int? {
         guard let end = endInstant else { return pausedRemaining }
-                return remainingSeconds(to: end)
+        return remainingSeconds(to: end)
     }
     
     // MARK: actor-isolated tickLoop
@@ -120,27 +120,28 @@ actor ContinuousClockActor {
         onTick:     @Sendable (Int) -> Void,
         onFinish:   @Sendable () -> Void
     ) async {
-            var lastEmitted = Int.max
-            while !Task.isCancelled {
-                // Sleep to the next second boundary
-                guard let end = endInstant else { break }
-                let secs = remainingSeconds(to: end)
-                if secs != lastEmitted {
-                    lastEmitted = secs
-                    onTick(secs)
-                }
-                if secs == 0 { break }
-                try? await clock.sleep(for: .seconds(1))
+        // a guard against any bug in 'secs' that misreads to count upwards and now a countdown
+        var lastEmitted = -1
+        while !Task.isCancelled {
+            // Sleep to the next second boundary
+            guard let end = endInstant else { break }
+            let secs = remainingSeconds(to: end)
+            if secs != lastEmitted {
+                lastEmitted = secs
+                onTick(secs)
             }
-            if !Task.isCancelled { onFinish() }
+            if secs == 0 { break }
+            try? await clock.sleep(for: .seconds(1))
+        }
+        if !Task.isCancelled { onFinish() }
     }
-
-// Use this helper anywhere you derive remaining time so it’s consistent and non-negative
-private func remainingSeconds(to end: ContinuousClock.Instant) -> Int {
-    let dur = clock.now.duration(to: end)                   // positive if end in the future
-    let secs = Int(ceil(Double(dur.components.seconds)))    // ignore attoseconds; 1 Hz UI
-    return max(0, secs)                                     // "clamps": UI never shows -00:01
-}
+    
+    // Use this helper anywhere you derive remaining time so it’s consistent and non-negative
+    private func remainingSeconds(to end: ContinuousClock.Instant) -> Int {
+        let dur = clock.now.duration(to: end)                   // positive if end in the future
+        let secs = Int(ceil(Double(dur.components.seconds)))    // ignore attoseconds; 1 Hz UI
+        return max(0, secs)                                     // "clamps": UI never shows -00:01
+    }
     
     private func cancelTicking(){
         tickingTask?.cancel()
