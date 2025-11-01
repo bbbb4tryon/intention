@@ -32,63 +32,87 @@ struct RecalibrationV: View {
     private let colorDanger = Color.red
     
     var body: some View {
+        ZStack {
+            // True gradient if available
+            if let g = p.gradientBackground {
+                LinearGradient(colors: g.colors, startPoint: g.start, endPoint: g.end)
+                    .ignoresSafeArea()
+            } else {
+                p.background.ignoresSafeArea()
+            }
+            
         VStack {
             ScrollView {
                 Page {
-                    // H1 centered; prose left-aligned = calmer eye path
+                    // MARK: H1 centered; prose
+                    /*left-aligned = calmer eye path*/
                     T("Reset & Recalibrate", .largeTitle)
-                    // really want flair? use a 1-pt bottom divider below the title instead of underline
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 12)
+                        .padding(.top, 24)
                     
                     // -- separator --
-                    Rectangle()
-                        .fill(p.accent)
-                        .frame(height: 1)
-                        .padding(.vertical, 4)
+                    VStack(spacing: 2) {
+                        Rectangle()
+                            .fill(p.accent)
+                            .frame(height: 1)
+                        // ↑ was 4
+//                            .padding(.vertical, 8)
+                        Rectangle()
+                            .fill(p.accent)
+                            .frame(height: 1)
+                        // ↑ was 4
+//                            .padding(.vertical, 4)
+                    }
                     
-                    // Supporting copy: left-aligned, subdued
-                    T("Short resets help you start your next 20-minute focus chunk fresh.", .title3)
+                    // MARK: Supporting copy
+                    /* left-aligned, subdued */
+                    T("These short physical resets relax and reinvigorate your focus.", .title3)
                         .foregroundStyle(textSecondary)
+                        // a bit below the separator
+//                        .padding(.top, 1)
                     
                     // -- separator --
                     Rectangle()
                         .fill(p.accent)
                         .frame(height: 1)
+                        // was 4, ↑ a touch
                         .padding(.vertical, 4)
                     
                     Spacer()
+                    // MARK: Action block
                     T("Choose one below:", .title3)
                         .foregroundStyle(textSecondary)
+                        // a bit below the separator
+                        .padding(.top, 28)
                     
                     // the ONLY CTA/timer block
                     actionArea
-                        .padding(.top)
+                        .padding(.top, 16)
                     
-                    // Lightweight guidance
-                    //FIXME: or use == .none or .notStarted?
+                    // MARK: Guidance
                     if vm.phase == .none || vm.phase == .idle, let theMode = vm.mode {
                         InstructionList( items: theMode.instructions, p: p, theme: theme )
-                            .padding(.top, 8)
+                            .padding(.top, 12)
                     }
                     
-                    // Live indicators:
+                    // MARK: Live indicators
                     // Balancing - “Switch feet” flashes briefly each minute
                     // Breathing - modes and expanding dot
                     if vm.mode == .balancing {
                         if !vm.eyesClosedMode {
-                            Text(vm.promptText)
-                                .font(.title3)      // already semi-bold
+                            // already semi-bold
+                            Text(vm.promptText).font(.title3)
                         }
                         BalanceSideDots(activeIndex: vm.balancingPhaseIndex, p: p)
-                            .padding(.top, 6)
+                            .padding(.top, 8)
+                        
                     } else if vm.mode == .breathing, vm.phase != .none, vm.phase != .idle {
                         BreathingPhaseGuide(
                             phases: vm.breathingPhases,
                             activeIndex: vm.breathingPhaseIndex,
                             p: p
                         )
-                        .padding(.top, 6)
+                        .padding(.top, 10)
                     }
                 }
                 // Room for sticky inset + it never covers buttons/picker
@@ -96,7 +120,8 @@ struct RecalibrationV: View {
                 .padding(.horizontal, 16)
             }
         }
-        .background(p.background.ignoresSafeArea())
+    }
+//        .background(p.background.ignoresSafeArea())
         .tint(p.accent)
         // instant task, OK for previews
         .task { breathingChoice = vm.currentBreathingMinutes }
@@ -109,12 +134,13 @@ struct RecalibrationV: View {
 //                .background(.ultraThinMaterial)
 //                .readHeight($insetHeight)   // helper below to measure height
 //        }
+        // MARK: error overlay
         .overlay {
             if let err = vm.lastError {
                 ErrorOverlay(error: err) { vm.lastError = nil }
             }
         }
-        // Let people leave
+        // MARK: Let people leave
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { dismiss() } label: {
