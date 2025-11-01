@@ -141,6 +141,7 @@ struct FocusSessionActiveV: View {
                     }
                     .padding(.top, 8)
                     .onDisappear { intentionFocused = false }
+                    // doesn’t kick timers or I/O. Keep it
                     .onAppear {
                         focusVM.enterIdleIfNeeded()
                         // Auto-focus on first load, if we still can add text

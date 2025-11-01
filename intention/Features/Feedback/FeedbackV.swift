@@ -200,8 +200,13 @@ struct FeedbackV: View {
         .scrollDismissesKeyboard(.interactively) // swipe down to dismiss
         .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 8) } // keeps content visible above the keyboard on small screens
         .onAppear {
-            Task { @MainActor in
-                userID = await KeychainHelper.shared.getUserIdentifier()
+            // Keychain won't get involved in previews, only in real runs
+            if IS_PREVIEW {
+                userID = "PREVIEW-DEVICE-ID"
+            } else {
+                Task { @MainActor in
+                    userID = await KeychainHelper.shared.getUserIdentifier()
+                }
             }
         }
         .sheet(isPresented: $showComposer) { composerSheet }

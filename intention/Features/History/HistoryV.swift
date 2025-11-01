@@ -85,6 +85,7 @@ struct HistoryV: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
                         .background(.ultraThinMaterial, in: Capsule())
+                    // a 2s sleep to auto-dismiss a banner. OK for previews
                         .task {
                             try? await Task.sleep(nanoseconds: 2_000_000_000)
                             await MainActor.run { viewModel.tileLimitWarning = false }

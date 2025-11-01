@@ -208,14 +208,11 @@ final class FocusSessionVM: ObservableObject {
             throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
         }
         await timeActor.startSessionTracking()
-        if phase == .finished && currentSessionChunk == 1 {
-            // start next chunk, explicitly //FIXME: should ask Next, per DynamicMessageAndAction
-            await startCurrent20MinCountdown()
-        } else {
-            await startCurrent20MinCountdown()
-        }
-        //        sessionActive = true
-        //        try startCurrent20MinCountdown()
+        await startCurrent20MinCountdown()
+/*
+ after await timeActor.startSessionTracking(), you always hit startCurrent20MinCountdown() regardless of phase/currentSessionChunk
+      need different behavior for “next chunk,” pass a parameter there instead of duplicating the call
+*/
     }
     
     // MARK: User pause / resume

@@ -98,6 +98,7 @@ struct RecalibrationV: View {
         }
         .background(p.background.ignoresSafeArea())
         .tint(p.accent)
+        // instant task, OK for previews
         .task { breathingChoice = vm.currentBreathingMinutes }
         .presentationDragIndicator(.visible)
         // Fill-height sheet so users don’t have to expand it first

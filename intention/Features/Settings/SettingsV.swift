@@ -267,8 +267,11 @@ struct SettingsV: View {
         .background(p.background.ignoresSafeArea())
         .tint(p.accent)
         .task {
-            /// Read it directly from your keychain on-demand - actor requires only await, not async here
-            userID = await KeychainHelper.shared.getUserIdentifier()
+            // Keychain won't get involved in previews, only in real runs
+            // reads directly from Keychain, no async needed, only await
+            userID = IS_PREVIEW
+            ? "PREVIEW-DEVICE-ID"
+            : await KeychainHelper.shared.getUserIdentifier()
         }
     }
     
