@@ -22,6 +22,10 @@ enum ScreenName {
 enum TextRole {
     case largeTitle, header, section, title3, label, body, tile, secondary, caption, action, placeholder
 }
+
+// MARK: Utility Gray Constant for Overlays/Borders
+private let DefaultUtilityGray = Color(red: 0.333, green: 0.333, blue: 0.333)
+
 // MARK: - Per-screen color tokens
 struct ScreenStylePalette {
     let primary: Color          // secondary button bg or highlighting
@@ -37,6 +41,24 @@ struct ScreenStylePalette {
     }
     let gradientBackground: LinearGradientSpecial?      // nil == use `background` color
     //    dynamic foreground color that automatically adjusts based on the background color.
+    
+    // specifically for ErrorOverlay
+    struct RadialGradientSpecial {
+        let colors: [Color]
+        let center: UnitPoint
+        let startRadius: CGFloat
+        let endRadius: CGFloat
+    }
+    let radialBackground: RadialGradientSpecial = .init(
+        colors: [
+                DefaultUtilityGray.opacity(0.8), // Inner (visible) gray
+                DefaultUtilityGray.opacity(0.6),
+                Color.clear // Outer (faded)
+            ],
+            center: .center,
+            startRadius: 0, // Starts at the center
+            endRadius: 500 // Adjust this value to control the fade distance
+    )
 }
 // MARK: - App Font Theme
 enum AppFontTheme: String, CaseIterable {
@@ -61,6 +83,7 @@ enum AppFontTheme: String, CaseIterable {
 // Color Palette:
 // background_light: f6f6f6, background_medium: d9ddc7, surface: c1c1c1, accent: 8ea131, text: 555555, secondary_text_bg: 3e3e36
 
+
 private enum DefaultColors {
     // R: 246, G: 246, B: 246 (#F6F6F6) - really light reddish tan
     static let backgroundLight = Color(red: 0.965, green: 0.965, blue: 0.965)
@@ -78,7 +101,7 @@ private enum DefaultColors {
     static let accent = Color(red: 0.557, green: 0.631, blue: 0.192)
     
     // R: 85, G: 85, B: 85 (#555555) - Dark Gray (Primary Text)
-    static let text = Color(red: 0.333, green: 0.333, blue: 0.333)
+    static let text = DefaultUtilityGray
 }
 
 private enum SeaDefaultColors {
@@ -108,20 +131,22 @@ private enum OrgBG {
 
 // MARK: Recalibrate Sheet
 private enum RecalibrateBG {
-    // #5b89c9
-    static let topLight = Color(red: 0.357, green: 0.537, blue: 0.788)
+    // #eef3f9
+    static let topLight = Color(red: 0.933, green: 0.953, blue: 0.976)
     // #f5f8ff
 //    static let topLight  = Color(red: 0.96, green: 0.97, blue: 1.00)
-    // #476FAD
-    static let middleBlend = Color(red: 0.278, green: 0.435, blue: 0.678)
+//    // #476FAD
+//    static let middleBlend = Color(red: 0.278, green: 0.435, blue: 0.678)
+    // #b5c5de
+//    static let middleBlend = Color(red: 0.71, green: 0.77, blue: 087)
     // darker #335492
     static let bottomDark = Color(red: 0.200, green: 0.329, blue: 0.573)
 }
 
 // MARK: Membership Sheet
 private enum MembershipBG {
-    // #F6F6F6
-    static let topLight = Color(red: 0.965, green: 0.965, blue: 0.965)
+    // #dee7f4
+    static let topLight = Color(red: 0.871, green: 0.906, blue: 0.957)
     // #C3C9AF
     static let middleBlend = Color(red: 0.765, green: 0.788, blue: 0.686)
     // #8EA131
@@ -175,9 +200,11 @@ enum AppColorTheme: String, CaseIterable {
                     accent: DefaultColors.accent,               // CTA on sheet
                     text: DefaultColors.backgroundLight,       // light text over dark blue
                     gradientBackground: .init(
-                        colors: [RecalibrateBG.topLight, RecalibrateBG.middleBlend, RecalibrateBG.bottomDark],
-                        start: .topLeading,
-                        end: .bottomTrailing
+                        colors: [RecalibrateBG.topLight, RecalibrateBG.bottomDark],
+                        // start: .topLeading,
+                        start: UnitPoint(x: 1.5, y: -0.5),
+                         end: .bottomTrailing
+//                        end: UnitPoint(x: 0.5, y: 1.2)
                     )
                 )
                 

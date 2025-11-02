@@ -54,12 +54,14 @@ struct RecalibrationV: View {
                     VStack(spacing: 2) {
                         Rectangle()
                             .fill(p.accent)
-                            .frame(height: 1)
+                            .frame(height: 2)
+                            .shadow(radius: 2, y: 1)
                         // ↑ was 4
-//                            .padding(.vertical, 8)
+                        // .padding(.vertical, 8)
                         Rectangle()
                             .fill(p.accent)
-                            .frame(height: 1)
+                            .frame(height: 2)
+                            .shadow(radius: 2, y: 1)
                         // ↑ was 4
 //                            .padding(.vertical, 4)
                     }
@@ -74,9 +76,10 @@ struct RecalibrationV: View {
                     // -- separator --
                     Rectangle()
                         .fill(p.accent)
-                        .frame(height: 1)
+                        .frame(height: 2)
                         // was 4, ↑ a touch
                         .padding(.vertical, 4)
+                        .shadow(radius: 2, y: 1)
                     
                     Spacer()
                     // MARK: Action block

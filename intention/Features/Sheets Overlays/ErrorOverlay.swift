@@ -14,7 +14,7 @@ struct ErrorOverlay: View {
     let dismissAction: () -> Void
     
     private let screen: ScreenName = .focus // or whichever main screen hosts this overlay
-        private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
     
     // --- Local Color Definitions by way of Recalibration ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
@@ -22,6 +22,14 @@ struct ErrorOverlay: View {
     private let colorDanger = Color.red
     
     var body: some View {
+        ZStack {
+            RadialGradient(
+                        gradient: Gradient(colors: p.radialBackground.colors),
+                        center: p.radialBackground.center,
+                        startRadius: p.radialBackground.startRadius,
+                        endRadius: p.radialBackground.endRadius
+                    )
+            .ignoresSafeArea()
         VStack(spacing: 12) {
             Text("⚠️ Something went wrong")
                 .bold()
@@ -35,25 +43,26 @@ struct ErrorOverlay: View {
             // Use theme's primary CTA/Accent color
             Button("Dismiss", action: dismissAction)
                 .buttonStyle(.borderedProminent)
-                                .tint(p.accent) // Use the theme's accent color for the button
+                .tint(p.accent) // Use the theme's accent color for the button
         }
         .padding(20)            // Lots, for visual spacing
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
         .shadow(radius: 8, y: 4)    // softer
         .padding(30)        // Ensures overlay doesn't hug screen edges
     }
+}
     
     private func displayMessage(for error: Error) -> String {
         let description = error.localizedDescription
         if description == "The operation could not be completed." {
-            return "Something went wrong, please try again"
+            return "Please try again"
     }
             return description
     }
 }
 #if DEBUG
 #Preview("Error Overlay (dumb)") {
-    struct SampleErr: LocalizedError { var errorDescription: String? { "Something went wrong, please try again." } }
+    struct SampleErr: LocalizedError { var errorDescription: String? { "sample err" } }
     return ErrorOverlay(error: SampleErr(), dismissAction: {})
         .environmentObject(ThemeManager())
         .background(Color.black.opacity(0.1))
