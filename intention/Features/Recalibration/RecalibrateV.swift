@@ -30,16 +30,12 @@ struct RecalibrationV: View {
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
+    private let recColor = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
     
     var body: some View {
         ZStack {
             // True gradient if available
-            if let g = p.gradientBackground {
-                LinearGradient(colors: g.colors, startPoint: g.start, endPoint: g.end)
-                    .ignoresSafeArea()
-            } else {
-                p.background.ignoresSafeArea()
-            }
+            BackplateGradient(p: p)
             
         VStack {
             ScrollView {
@@ -53,13 +49,13 @@ struct RecalibrationV: View {
                     // -- separator --
                     VStack(spacing: 2) {
                         Rectangle()
-                            .fill(p.accent)
+                            .fill(recColor)
                             .frame(height: 2)
                             .shadow(radius: 2, y: 1)
                         // ↑ was 4
                         // .padding(.vertical, 8)
                         Rectangle()
-                            .fill(p.accent)
+                            .fill(recColor)
                             .frame(height: 2)
                             .shadow(radius: 2, y: 1)
                         // ↑ was 4
@@ -124,7 +120,7 @@ struct RecalibrationV: View {
             }
         }
     }
-//        .background(p.background.ignoresSafeArea())
+        //.background(p.background.ignoresSafeArea())
         .tint(p.accent)
         // instant task, OK for previews
         .task { breathingChoice = vm.currentBreathingMinutes }

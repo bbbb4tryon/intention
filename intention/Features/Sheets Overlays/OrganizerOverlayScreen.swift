@@ -36,11 +36,8 @@ struct OrganizerOverlayScreen: View {
                 
                 // This replaces .clipShape and .shadow from the original code:
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                // -------------------------------------------------------------
-                //                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                //                .shadow(radius: 3, y: 1)
-                //                .padding(5)
-            } // For when we had a Zstack
+                // -------------------------------------------------------------)
+            }
             .navigationTitle("Organize")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarTitleMenu {
@@ -71,4 +68,22 @@ struct OrganizerOverlayScreen: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("org overlay(dumb)") {
+    @State var categories: [CategoriesModel] = []   // empty; no seeded data
+
+    return OrganizerOverlayChrome(onClose: {}) {
+        OrganizerOverlayScreen(
+            categories: $categories,
+            onMoveTile: { _, _, _ in },   // inert
+            onReorder:  { _, _ in },      // inert
+            onDone: {}
+        )
+    }
+    .environmentObject(ThemeManager())
+    .frame(maxWidth: 430)
+}
+#endif
+
 

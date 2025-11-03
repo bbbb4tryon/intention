@@ -131,8 +131,11 @@ private enum OrgBG {
 
 // MARK: Recalibrate Sheet
 private enum RecalibrateBG {
-    // #eef3f9
-    static let topLight = Color(red: 0.933, green: 0.953, blue: 0.976)
+    // darker #335492
+        static let topDark = Color(red: 0.200, green: 0.329, blue: 0.573)
+//        static let topLight = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
+//    // #eef3f9
+//    static let topLight = Color(red: 0.933, green: 0.953, blue: 0.976)
     // #f5f8ff
 //    static let topLight  = Color(red: 0.96, green: 0.97, blue: 1.00)
 //    // #476FAD
@@ -140,7 +143,8 @@ private enum RecalibrateBG {
     // #b5c5de
 //    static let middleBlend = Color(red: 0.71, green: 0.77, blue: 087)
     // darker #335492
-    static let bottomDark = Color(red: 0.200, green: 0.329, blue: 0.573)
+//    static let bottomDark = Color(red: 0.200, green: 0.329, blue: 0.573)
+            static let bottomLight = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
 }
 
 // MARK: Membership Sheet
@@ -194,15 +198,15 @@ enum AppColorTheme: String, CaseIterable {
                 
             case .recalibrate:
                 return .init(
-                    primary: RecalibrateBG.bottomDark,          // icon tints if needed
-                    background: RecalibrateBG.topLight,         // fallback if gradient is nil
+                    primary: RecalibrateBG.topDark,          // icon tints if needed
+                    background: RecalibrateBG.bottomLight,         // fallback if gradient is nil
                     surface: DefaultColors.surface.opacity(0.10),   // frosted cards
                     accent: DefaultColors.accent,               // CTA on sheet
                     text: DefaultColors.backgroundLight,       // light text over dark blue
                     gradientBackground: .init(
-                        colors: [RecalibrateBG.topLight, RecalibrateBG.bottomDark],
-                        // start: .topLeading,
-                        start: UnitPoint(x: 1.5, y: -0.5),
+                        colors: [RecalibrateBG.bottomLight, RecalibrateBG.topDark],
+                         start: .topLeading,
+//                        start: UnitPoint(x: 1.5, y: -0.5),
                          end: .bottomTrailing
 //                        end: UnitPoint(x: 0.5, y: 1.2)
                     )

@@ -24,17 +24,11 @@ struct RecalibrationSheetChrome<Content: View>: View {
 
     var body: some View {
         ZStack {
+            // ^^ ZStack paints the big gradient
             // The themed gradient or fallback background
-            if let g = p.gradientBackground {
-                LinearGradient(colors: g.colors, startPoint: g.start, endPoint: g.end)
-                    .ignoresSafeArea()
-            } else {
-                p.background.ignoresSafeArea()
-            }
-
-            // “Sheet” container
+BackplateGradient(p: p)
+            // Sheet container/body, kept clear for gradient to shine throw
             VStack(spacing: 0) {
-                // Grabber + close
                 HStack {
                     Capsule().frame(width: 40, height: 5).opacity(0.35)
                         .padding(.vertical, 8)
@@ -49,13 +43,22 @@ struct RecalibrationSheetChrome<Content: View>: View {
                         }
                 }
                 .contentShape(Rectangle())
-
+                                                                                
                 // Your sheet content
                 content
-                    .background(p.surface.opacity(0.0))
+                    // keep inner content transparent
+                    .background(.clear)
+                    //.background(p.surface.opacity(0.0))
             }
+            // lets ZStack gradient through because container has no fill/ is clear
             .background(.clear)
-            .clipShape(.rect(cornerRadius: 22, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            // --- inner-top highlight OVERLAY, not background --
+            .sheetInnerHighlight()
+            // softened lift, then contact shadow
+            .shadow(color: Color.black.opacity(0.18), radius: 24, x: 0, y: 18)
+            .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 1)
+
             .offset(y: max(0, offsetY))
             .gesture(
                 DragGesture()

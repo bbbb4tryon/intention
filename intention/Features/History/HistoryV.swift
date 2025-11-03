@@ -105,6 +105,7 @@ struct HistoryV: View {
         .animation(.easeInOut(duration: 0.2), value: viewModel.lastUndoableMove != nil)
         .toolbar { historyToolbar }
         .environmentObject(theme)
+        .environmentObject(viewModel)
         //        /// [.medium] is half-screen, .visible affordance
         //        .sheet(isPresented: $showRenameSheet) {
         //            renameSheet
@@ -467,6 +468,7 @@ extension HistoryV {
 
     return HistoryV(viewModel: hist)
         .environmentObject(theme)
+        .environmentObject(hist)
         .frame(maxWidth: 430)
 }
 #endif
