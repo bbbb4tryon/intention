@@ -61,7 +61,7 @@ custom_rules:
 identifier_name:
   min_length: 1
   allowed_symbols: ["_"]
-  excluded: ["p", "T", "m", "vm", "pal", "id", "idx", "cat", "delIdx", "archIdx", "msgs", "txt"]  # add any local idioms you use
+  excluded: ["p", "T", "t", "m", "vm", "pal", "id", "idx", "cat", "delIdx", "archIdx", "msgs", "txt"]  # add any local idioms you use
   
 # (Optional) If SwiftUI bodies still trip these, keep your thresholds—or loosen 10–20% more:
 function_body_length:

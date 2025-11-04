@@ -14,3 +14,20 @@ var IS_PREVIEW: Bool {
     return false
     #endif
 }
+
+/// Wrap any async/side-effect call you never want to run in Canvas.
+@inline(__always)
+func previewGuard(_ work: () -> Void) {
+    if !IS_PREVIEW { work() }
+}
+
+extension View {
+    /// Disable animations + transitions in Canvas (avoids AG graph thrash).
+    func canvasCheap() -> some View {
+        self
+            .transaction { t in
+                t.disablesAnimations = true
+                t.animation = nil
+            }
+    }
+}

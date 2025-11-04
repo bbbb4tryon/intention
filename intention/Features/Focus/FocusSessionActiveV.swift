@@ -67,6 +67,7 @@ struct FocusSessionActiveV: View {
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
     
+    
     var body: some View {
         VStack(spacing: 0){             // Main VStack to control vertical layout
             // All your content that should appear above the tiles
@@ -143,9 +144,12 @@ struct FocusSessionActiveV: View {
                     .onDisappear { intentionFocused = false }
                     // doesn’t kick timers or I/O. Keep it
                     .onAppear {
-                        focusVM.enterIdleIfNeeded()
-                        // Auto-focus on first load, if we still can add text
-                        intentionFocused = (focusVM.phase != .running && focusVM.tiles.count < 2)
+                        // guard side-effects
+                        if !IS_PREVIEW {
+                            focusVM.enterIdleIfNeeded()
+                            // Auto-focus on first load, if we still can add text
+                            intentionFocused = (focusVM.phase != .running && focusVM.tiles.count < 2)
+                        }
                     }
                     // Drops focus when we start running or when we leave the screen
                     .onChange(of: focusVM.phase) { phase in
@@ -236,6 +240,7 @@ struct FocusSessionActiveV: View {
                 T(focusVM.primaryCTATile, .action).monospacedDigit()
             }
             .primaryActionStyle(screen: screen)
+            .pulseAura(color: p.accent, active: focusVM.ui_isReadyForBegin)   // VM-driven
             .frame(maxWidth: .infinity)
             .disabled(!focusVM.canPrimary)
             .accessibilityIdentifier("primaryCTA")
@@ -371,11 +376,12 @@ private struct TileSlot: View {
                                config: .current)
     let recal  = RecalibrationVM(haptics: NoopHapticsClient())
 
-    return FocusSessionActiveV(
+    FocusSessionActiveV(
         focusVM: focus,
         recalibrationVM: recal
     )
     .environmentObject(theme)
+    .canvasCheap()
     .frame(maxWidth: 430)
 }
 #endif

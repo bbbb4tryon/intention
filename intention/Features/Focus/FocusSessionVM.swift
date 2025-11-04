@@ -98,6 +98,14 @@ final class FocusSessionVM: ObservableObject {
         return !t.isEmpty && t.taskValidationMessages.isEmpty
     }
     
+    /// Tap handler here, the button widget lives in the Focus view -> Lets the View bind `.disabled(!viewModel.canPrimary)`
+    var primaryCTATile: String {
+        if !hasTwoTiles { return "Add" }
+        if phase == .finished && currentSessionChunk == 1 { return "Next" }
+        return "Begin"
+    }
+    
+    
     var canPrimary: Bool {
         // Only allow "Add" when the current input is valid AND you’re not running
         if !hasTwoTiles { return inputIsValid && phase != .running }
@@ -106,11 +114,11 @@ final class FocusSessionVM: ObservableObject {
         }
     }
     
-    /// Tap handler here, the button widget lives in the Focus view -> Lets the View bind `.disabled(!viewModel.canPrimary)`
-    var primaryCTATile: String {
-        if !hasTwoTiles { return "Add" }
-        if phase == .finished && currentSessionChunk == 1 { return "Next" }
-        return "Begin"
+    /// View hint: pulse the primary CTA when we're truly ready to "Begin". struct PulseAura
+    var ui_isReadyForBegin: Bool {
+        tiles.count == 2
+        && (phase == .idle || phase == .none)
+        && canPrimary
     }
     
     /// Enter idle early and consistently; cases never returns an empty label
@@ -209,10 +217,10 @@ final class FocusSessionVM: ObservableObject {
         }
         await timeActor.startSessionTracking()
         await startCurrent20MinCountdown()
-/*
- after await timeActor.startSessionTracking(), you always hit startCurrent20MinCountdown() regardless of phase/currentSessionChunk
-      need different behavior for “next chunk,” pass a parameter there instead of duplicating the call
-*/
+        /*
+         after await timeActor.startSessionTracking(), you always hit startCurrent20MinCountdown() regardless of phase/currentSessionChunk
+         need different behavior for “next chunk,” pass a parameter there instead of duplicating the call
+         */
     }
     
     // MARK: User pause / resume
