@@ -186,8 +186,8 @@ final class FocusSessionVM: ObservableObject {
         //        runningDeadline = Date().addingTimeInterval(TimeInterval(seconds)) // seconds = chunkDuration
         saveVMSnapshot()
         
-        // bail out in previews
-        if IS_PREVIEW { return }
+        // bail out in previews -- a hard stop for Canvas
+        guard !IS_PREVIEW else { return }
         
         await timeActor.startTicking(
             totalSeconds: total,
@@ -215,6 +215,7 @@ final class FocusSessionVM: ObservableObject {
         guard hasTwoTiles else {
             throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
         }
+        guard !IS_PREVIEW else { return }
         await timeActor.startSessionTracking()
         await startCurrent20MinCountdown()
         /*
@@ -257,6 +258,7 @@ final class FocusSessionVM: ObservableObject {
     func suspendTickingForBackground() async {
         // 1) Save *VM* snapshot (canonical UI/session)
         saveVMSnapshot()
+        guard !IS_PREVIEW else { return }
         // 2) Let actor stop work but keep endInstant so wall-time continues
         await timeActor.suspendForBackground()
         // 3) (Optional) write actor safety snapshot to disk for kill-restore
@@ -266,6 +268,7 @@ final class FocusSessionVM: ObservableObject {
     }
     
     func resumeTickingAfterForeground() async {
+        guard !IS_PREVIEW else { return }
         // First, try the actor’s monotonic recompute
         if let remaining = await timeActor.remainingAfterForeground() {
             if remaining <= 0 {

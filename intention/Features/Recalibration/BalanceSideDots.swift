@@ -44,11 +44,16 @@ struct BalanceSideDots: View {
         }
     }
 }
+
+
 #if DEBUG
 #Preview("Balance Dots") {
     let theme = ThemeManager()
     let pal = theme.palette(for: .recalibrate)
-    return BalanceSideDots(activeIndex: 0, p: pal)
+    
+    BalanceSideDots(
+        activeIndex: 0, p: pal
+    )
         .environmentObject(theme)
 }
 #endif

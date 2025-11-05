@@ -35,6 +35,7 @@ actor ContinuousClockActor {
     /// Starts a new session window; clears actor's tile buffer.
     // MARK: Session lifecycle (called by VM)
     func startSessionTracking() {
+        guard !IS_PREVIEW else { return }
         sessionStartDate = Date()
         currentTiles = []           /// Clear tiles for new session
         pausedRemaining = nil
@@ -66,6 +67,7 @@ actor ContinuousClockActor {
         onTick: @Sendable @escaping (Int) -> Void,
         onFinish: @Sendable @escaping () -> Void
     ) async {
+        guard !IS_PREVIEW else { return }
         cancelTicking()
         
         let total = max(0, totalSeconds ?? config.chunkDuration) // "clamps": UI never shows -00:01
@@ -91,6 +93,7 @@ actor ContinuousClockActor {
         onTick:     @Sendable @escaping (Int) -> Void,
         onFinish:   @Sendable @escaping () -> Void
     ) async {
+        guard !IS_PREVIEW else { return }
         let resumeFrom = pausedRemaining ?? secondsRemaining() ?? config.chunkDuration
         pausedRemaining = nil
         await startTicking(totalSeconds: resumeFrom, onTick: onTick, onFinish: onFinish)

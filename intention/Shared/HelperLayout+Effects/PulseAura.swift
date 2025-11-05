@@ -38,49 +38,50 @@ struct PulseAura: ViewModifier {
         }
     }
 }
+
+extension View {
+    func pulseAura(color: Color, active: Bool) -> some View {
+        modifier(PulseAura(color: color, isActive: active))
+    }
+}
+// MARK: - Minimal Demo Views (for Previews only)
+
+private struct PulseButtonDemo: View {
+    @EnvironmentObject var theme: ThemeManager
+    @State private var isActive = true
     
-    extension View {
-        func pulseAura(color: Color, active: Bool) -> some View {
-            modifier(PulseAura(color: color, isActive: active))
+    var body: some View {
+        let p = theme.palette(for: .focus)
+        
+        VStack(spacing: 16) {
+            Button("Pulse Aura") { /* no-op */ }
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .pulseAura(color: p.accent, active: isActive)
+                .buttonStyle(.plain) // you’ll likely use your PrimaryActionStyle elsewhere
+            
+            Toggle("Active", isOn: $isActive)
+                .toggleStyle(.switch)
         }
+        .padding(20)
+        .background(p.background.ignoresSafeArea())
     }
-    // MARK: - Minimal Demo Views (for Previews only)
+}
 
-    private struct PulseButtonDemo: View {
-        @EnvironmentObject var theme: ThemeManager
-        @State private var isActive = true
+// MARK: - Previews
+#Preview("Always Active") {
+    let theme = ThemeManager()
+    
+    Button("Pulse Aura") { }
+        .frame(maxWidth: .infinity, minHeight: 48)
+        .pulseAura(color: theme.palette(for: .focus).accent, active: true)
+        .padding(20)
+        .background(theme.palette(for: .focus).background)
+        .environmentObject(theme)
+}
 
-        var body: some View {
-            let p = theme.palette(for: .focus)
-
-            VStack(spacing: 16) {
-                Button("Pulse Aura") { /* no-op */ }
-                    .frame(maxWidth: .infinity, minHeight: 48)
-                    .pulseAura(color: p.accent, active: isActive)
-                    .buttonStyle(.plain) // you’ll likely use your PrimaryActionStyle elsewhere
-
-                Toggle("Active", isOn: $isActive)
-                    .toggleStyle(.switch)
-            }
-            .padding(20)
-            .background(p.background.ignoresSafeArea())
-        }
-    }
-
-    // MARK: - Previews
-
-    #Preview("Always Active") {
-        let theme = ThemeManager()
-        return Button("Pulse Aura") { }
-            .frame(maxWidth: .infinity, minHeight: 48)
-            .pulseAura(color: theme.palette(for: .focus).accent, active: true)
-            .padding(20)
-            .background(theme.palette(for: .focus).background)
-            .environmentObject(theme)
-    }
-
-    #Preview("Interactive Toggle") {
-        let theme = ThemeManager()
-        return PulseButtonDemo()
-            .environmentObject(theme)
-    }
+#Preview("Interactive Toggle") {
+    let theme = ThemeManager()
+    
+    PulseButtonDemo()
+        .environmentObject(theme)
+}

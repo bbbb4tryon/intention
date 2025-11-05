@@ -4,6 +4,7 @@
 //
 //  Created by Benjamin Tryon on 11/1/25.
 
+import SwiftUI
 import Foundation
 
 @inline(__always)

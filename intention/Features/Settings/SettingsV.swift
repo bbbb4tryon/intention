@@ -297,7 +297,7 @@ struct SettingsV: View {
     let stats  = StatsVM(persistence: PersistenceActor())
     let debug  = DebugRouter() // safe; sheet toggles won’t present in previews
 
-    return SettingsV(statsVM: stats)
+    SettingsV(statsVM: stats)
         .environmentObject(theme)
         .environmentObject(prefs)
         .environmentObject(memVM)

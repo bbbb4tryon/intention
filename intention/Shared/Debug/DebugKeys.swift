@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+#if DEBUG
 struct DebugKeys {
     static let forceLegalNextLaunch = "debug.forceLegalNextLaunch"
 }
@@ -22,3 +23,5 @@ func bootstrapLegalGate() {
         UserDefaults.standard.set(false, forKey: DebugKeys.forceLegalNextLaunch)
     }
 }
+#endif
+

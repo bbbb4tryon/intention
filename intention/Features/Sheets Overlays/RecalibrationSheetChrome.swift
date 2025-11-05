@@ -53,8 +53,6 @@ BackplateGradient(p: p)
             // lets ZStack gradient through because container has no fill/ is clear
             .background(.clear)
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-            // --- inner-top highlight OVERLAY, not background --
-            .sheetInnerHighlight()
             // softened lift, then contact shadow
             .shadow(color: Color.black.opacity(0.18), radius: 24, x: 0, y: 18)
             .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 1)

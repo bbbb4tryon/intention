@@ -23,6 +23,7 @@ struct MembershipSheetChrome<Content: View>: View {
             // ^^ ZStack paints the big gradient
             // The themed gradient or fallback background
             BackplateGradient(p: p)
+            // Sheet container/body, kept clear for gradient to shine throw
             VStack(spacing: 0) {
                 HStack {
                     Capsule().frame(width: 40, height: 5).opacity(0.35)
@@ -45,8 +46,6 @@ struct MembershipSheetChrome<Content: View>: View {
             // lets ZStack gradient through because container has no fill/ is clear
             .background(.clear)
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-            // --- inner-top highlight OVERLAY, not background --
-            .sheetInnerHighlight()
             // softened lift, then contact shadow
             .shadow(color: Color.black.opacity(0.18), radius: 24, x: 0, y: 18)
             .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 1)

@@ -36,7 +36,7 @@ struct FocusSessionActiveV: View {
     // MARK: View Models
     @ObservedObject var focusVM: FocusSessionVM
     @ObservedObject var recalibrationVM: RecalibrationVM
- 
+    
     // MARK: Local UI State
     /// manages both focus to textfield AND return from background
     /// single flag `showValidation`controls when to show validation checks
@@ -84,39 +84,55 @@ struct FocusSessionActiveV: View {
                         if isInputActive {
                             // onSubmit and primaryCTA both call the same VM method handlePrimaryTap() -> "same funnel"
                             // lifted .placeholder / .caption contrast in ThemeManager and that boots this textfield
-                            TextField("", text: $focusVM.tileText, prompt: T("Add Your Intended Task", .caption))
-                                .focused($intentionFocused)
-                                .submitLabel(.done)
-                                .validatingField(state: vState, palette: p) // charcoal until showValidation == true & invalid
-                                .disabled(!isInputActive)                   // lock after 2
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.sentences)
-                                .onSubmit {
-                                    showValidation = true                   // turn validation on
-                                    guard vState.isInvalid == false else { return } // stay focused and show message
-                                    // Valid -> add
-                                    let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-                                    Task {
-                                        do {
-                                            _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed)
-                                        } catch {
-                                            FocusSessionError.unexpected
-                                        }
-                                    }
-                                    focusVM.tileText = ""                   // Clear text field
-                                    intentionFocused = (focusVM.tiles.count < 2) // re-focus UNTIL two tiles
-                                    showValidation = false                  // reset to neutral for next entry
-                                }
-                            // Display ValidationCaption BELOW Textfield
-                            //      Caption only after first submit AND invalid
-                            if showValidation, case .invalid = vState {
-                                // Use VState logic for the correct messages
-                                ValidationCaption( state: vState)
-                                //FIXME: USE THIS BELOW, OR KEEP state: vState, palette: p
-                                //                                    state: vState.isInvalid ? vState : .invalid(messages: ["Please enter a task, what you intend to do."]),
-                                //                                    palette: p
-                                
-                            }
+//                            
+//                            IntentionField(
+//                                p: p,
+//                                text: $focusVM.tileText,
+//                                showValidation: $showValidation,
+//                                vState: vState,
+//                                isEnabled: isInputActive,
+//                                //                                onValidatedSubmit: <#T##(String) -> Void#>,
+//                                //                                isFocused: <#T##Bool#>
+//                                
+//                            ) { trimmed in
+//                                Task { try await focusVM.handlePrimaryTap(validatedInput: trimmed) }
+//                            }
+                            // << ---------------------------------------------------------------------------------------------------------------------------------------- >> //
+                                                        TextField("", text: $focusVM.tileText, prompt: T("Add Your Intended Task", .caption))
+                                                            .focused($intentionFocused)
+                                                            .submitLabel(.done)
+                                                            .validatingField(state: vState, palette: p) // charcoal until showValidation == true & invalid
+                                                            .disabled(!isInputActive)                   // lock after 2
+                                                            .autocorrectionDisabled()
+                                                            .textInputAutocapitalization(.sentences)
+                                                            .onSubmit {
+                                                                showValidation = true                   // turn validation on
+                                                                guard vState.isInvalid == false else { return } // stay focused and show message
+                                                                // Valid -> add
+                                                                let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                                                Task {
+                                                                    do {
+                                                                        _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed)
+                                                                    } catch {
+                                                                        FocusSessionError.unexpected
+                                                                    }
+                                                                }
+                                                                focusVM.tileText = ""                   // Clear text field
+                                                                intentionFocused = (focusVM.tiles.count < 2) // re-focus UNTIL two tiles
+                                                                showValidation = false                  // reset to neutral for next entry
+                                                            }
+                                                        // Display ValidationCaption BELOW Textfield
+                                                        //      Caption only after first submit AND invalid
+                                                        if showValidation, case .invalid = vState {
+                                                            // Use VState logic for the correct messages
+                                                            ValidationCaption( state: vState)
+                                                            //FIXME: USE THIS BELOW, OR KEEP state: vState, palette: p
+                                                            //                                    state: vState.isInvalid ? vState : .invalid(messages: ["Please enter a task, what you intend to do."]),
+                                                            //                                    palette: p
+                            
+                                                        }
+                            
+                            // << ---------------------------------------------------------------------------------------------------------------------------------------- >> //
                         }
                         // Guidance  Messages (no Add/Begin here)
                         DynamicMessageAndActionArea(
@@ -176,13 +192,13 @@ struct FocusSessionActiveV: View {
         //      if user taps Close or swipes down, this stops a running recalibration
         .fullScreenCover(isPresented: $focusVM.showRecalibrate) {
             RecalibrationSheetChrome(onClose: {
-                    recalibrationVM.performAsyncAction {
-                        if recalibrationVM.phase == .running || recalibrationVM.phase == .pause {
-                            try await recalibrationVM.stop()
-                        }
+                recalibrationVM.performAsyncAction {
+                    if recalibrationVM.phase == .running || recalibrationVM.phase == .pause {
+                        try await recalibrationVM.stop()
                     }
-                    focusVM.showRecalibrate = false
                 }
+                focusVM.showRecalibrate = false
+            }
             ) {
                 NavigationStack {
                     RecalibrationV(vm: recalibrationVM) .navigationBarHidden(true)          // own chrome owns the close
@@ -198,13 +214,12 @@ struct FocusSessionActiveV: View {
                 }
             }
         }
-//        .sheet(isPresented: $showMembership) {
-//            // present your membership UI
-//            MembershipV()
-//        }
-
+        //        .sheet(isPresented: $showMembership) {
+        //            // present your membership UI
+        //            MembershipV()
+        //        }
+        
     }
-    
     
     // MARK: Bottom composer
     @ViewBuilder
@@ -289,84 +304,131 @@ struct FocusSessionActiveV: View {
             return false
         }
     }
-}
-
-// MARK: TileSlot view (compact min height; segment-like look, multi-line text wraps fully,)
-
-private struct TileSlot: View {
-    @EnvironmentObject var theme: ThemeManager
-    let text: String
-    let isFilled: Bool
-    let isCompleted: Bool
-    let isActive: Bool
-    let p: ScreenStylePalette
-    let diffNoColor: Bool
     
-    // Layout constants
-    private let hPad: CGFloat = 10
-    private let vPad: CGFloat = 8
-    private let minDesiredHeight: CGFloat = 1
-    
-    // --- Local Color Definitions for Focus ---
-    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
-    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
-    private let colorDanger = Color.red
-    private let colorSuccess = Color.green
-    
-    var body: some View {
-        let bg = isActive ? p.surface : p.surface.opacity(0.35)
-        let stroke = colorBorder
+    // MARK: keeps "show validation, submit, text" in one location
+    private struct IntentionField: View {
+        @EnvironmentObject var theme: ThemeManager
+        let p: ScreenStylePalette
+        @Binding var text: String
+        @Binding var showValidation: Bool
+        let vState: ValidationState
+        let isEnabled: Bool
+        let onValidatedSubmit: (String) -> Void
         
-        // MARK: - tiles container
-        VStack {
-            if isFilled {
-                HStack(alignment: .top, spacing: 8) {
-                    theme.styledText(text, as: .tile, in: .focus)
-                        .foregroundStyle(p.text)
-                    // Tiny leading for multi-line readability
-                        .lineSpacing(2)
-                    // Allow text to wrap to as many lines as needed
-                        .lineLimit(nil)
-                    // This allows the Text view to expand vertically while being constrained horizontally
-                        .fixedSize(horizontal: false, vertical: true)
-                    
-                    // Fills the button width, actually
-                    Spacer(minLength: 8)
-                    
-                    // Always show a checkmark for filled tiles
-                    Image(systemName: isCompleted ? "checkmark.circle.fill" : "checkmark.circle")
-                        .font(.body)                        // slightly increases size
-                        .foregroundStyle(colorSuccess)   // more vivid than "accent"
-                        .accessibilityHidden(true)
+        @FocusState private var isFocused: Bool
+        
+        // MARK: View Models
+        @ObservedObject var focusVM: FocusSessionVM
+        
+        var body: some View {
+            VStack(alignment: .leading, spacing: 8) {
+                TextField("", text: $text, prompt: theme.styledText("Add Your Intended Task", as: .caption, in: .focus))
+                    .focused($isFocused)
+                    .submitLabel(.done)
+                    .validatingField(state: vState, palette: p)
+                    .disabled(!isEnabled)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.sentences)
+                    .onSubmit { handleSubmit() }
+                
+                if showValidation, case .invalid = vState {
+                    ValidationCaption(state: vState)
                 }
-                .baselineOffset(1)
-                .padding(.horizontal, hPad)
-                .padding(.vertical, vPad)
-            } else {
-                // Empty state - no checkmarks yet
-                HStack(alignment: .firstTextBaseline, spacing: 20) {
-                    Image(systemName: "text.alignleft").font(.body).accessibilityHidden(true)
-                    Text("").foregroundStyle(textSecondary)
-                }
-                .padding(.horizontal, hPad)
-                .padding(.vertical, vPad)
+            }
+            .onAppear {
+                isFocused = isEnabled
+            }
+            .onChange(of: isEnabled) { enabled in
+                if !enabled { isFocused = false }
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous).fill(bg)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(stroke, lineWidth: 1)
-        )
-        // subtle lift to separate from page
-        .shadow(radius: 0.5,y: 0.5)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(isFilled ? (isCompleted ? "Intention completed" : "Intention") : "Empty slot")
-        .accessibilityHint(isFilled ? "" : "Add an intention above, then press Add.")
+        
+        private func handleSubmit() {
+            showValidation = true
+            guard !vState.isInvalid else { return }
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            onValidatedSubmit(trimmed)
+            text = ""
+            isFocused = isEnabled // re-focus until two tiles
+            showValidation = false
+        }
+    }
+    
+    // MARK: TileSlot view (compact min height; segment-like look, multi-line text wraps fully,)
+    private struct TileSlot: View {
+        @EnvironmentObject var theme: ThemeManager
+        let text: String
+        let isFilled: Bool
+        let isCompleted: Bool
+        let isActive: Bool
+        let p: ScreenStylePalette
+        let diffNoColor: Bool
+        
+        // Layout constants
+        private let hPad: CGFloat = 10
+        private let vPad: CGFloat = 8
+        private let minDesiredHeight: CGFloat = 1
+        
+        // --- Local Color Definitions for Focus ---
+        private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
+        private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
+        private let colorDanger = Color.red
+        private let colorSuccess = Color.green
+        
+        var body: some View {
+            let bg = isActive ? p.surface : p.surface.opacity(0.35)
+            let stroke = colorBorder
+            
+            // MARK: - tiles container
+            VStack {
+                if isFilled {
+                    HStack(alignment: .top, spacing: 8) {
+                        theme.styledText(text, as: .tile, in: .focus)
+                            .foregroundStyle(p.text)
+                        // Tiny leading for multi-line readability
+                            .lineSpacing(2)
+                        // Allow text to wrap to as many lines as needed
+                            .lineLimit(nil)
+                        // This allows the Text view to expand vertically while being constrained horizontally
+                            .fixedSize(horizontal: false, vertical: true)
+                        
+                        // Fills the button width, actually
+                        Spacer(minLength: 8)
+                        
+                        // Always show a checkmark for filled tiles
+                        Image(systemName: isCompleted ? "checkmark.circle.fill" : "checkmark.circle")
+                            .font(.body)                        // slightly increases size
+                            .foregroundStyle(colorSuccess)   // more vivid than "accent"
+                            .accessibilityHidden(true)
+                    }
+                    .baselineOffset(1)
+                    .padding(.horizontal, hPad)
+                    .padding(.vertical, vPad)
+                } else {
+                    // Empty state - no checkmarks yet
+                    HStack(alignment: .firstTextBaseline, spacing: 20) {
+                        Image(systemName: "text.alignleft").font(.body).accessibilityHidden(true)
+                        Text("").foregroundStyle(textSecondary)
+                    }
+                    .padding(.horizontal, hPad)
+                    .padding(.vertical, vPad)
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(bg)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(stroke, lineWidth: 1)
+            )
+            // subtle lift to separate from page
+            .shadow(radius: 0.5,y: 0.5)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(isFilled ? (isCompleted ? "Intention completed" : "Intention") : "Empty slot")
+            .accessibilityHint(isFilled ? "" : "Add an intention above, then press Add.")
+        }
     }
 }
-
-
+    
 
 #if DEBUG
 #Preview("Focus (dumb)") {
@@ -381,7 +443,9 @@ private struct TileSlot: View {
         recalibrationVM: recal
     )
     .environmentObject(theme)
-    .canvasCheap()
+    /* readd ONLY if/when everything else is stable */
+    /// .canvasCheap()
     .frame(maxWidth: 430)
 }
 #endif
+

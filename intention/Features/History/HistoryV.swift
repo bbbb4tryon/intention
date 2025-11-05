@@ -461,12 +461,14 @@ extension HistoryV {
     }
 }
 #endif
+
+
 #if DEBUG
 #Preview("History (dumb)") {
     let theme = ThemeManager()
     let hist  = HistoryVM(persistence: PersistenceActor()) // no seeding
 
-    return HistoryV(viewModel: hist)
+    HistoryV(viewModel: hist)
         .environmentObject(theme)
         .environmentObject(hist)
         .frame(maxWidth: 430)

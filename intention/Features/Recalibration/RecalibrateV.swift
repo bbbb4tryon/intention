@@ -279,8 +279,10 @@ struct RecalibrationV: View {
     let theme = ThemeManager()
     let vm    = RecalibrationVM(haptics: NoopHapticsClient())
 
-    return RecalibrationV(vm: vm)
+    RecalibrationV(vm: vm)
         .environmentObject(theme)
+    /* read ONLY if/when everything else is stable */
+    /// .canvasCheap()
         .frame(maxWidth: 430)
 }
 #endif

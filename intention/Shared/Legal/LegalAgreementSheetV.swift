@@ -77,7 +77,7 @@ struct LegalAgreementSheetV: View {
 #Preview("Legal Sheet (dumb)") {
     let theme = ThemeManager()
 
-    return LegalAgreementSheetV(
+    LegalAgreementSheetV(
         onAccept: {},
         onShowTerms: {},
         onShowPrivacy: {}

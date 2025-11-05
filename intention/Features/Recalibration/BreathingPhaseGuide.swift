@@ -61,12 +61,12 @@ struct BreathingPhaseGuide: View {
 #Preview("Breathing Guide") {
     let theme = ThemeManager()
     let pal = theme.palette(for: .recalibrate)
-    return BreathingPhaseGuide(
+    
+    BreathingPhaseGuide(
         phases: ["Inhale", "Hold", "Exhale", "Hold"],
         activeIndex: 0,
         p: pal
     )
     .environmentObject(theme)
-    
 }
 #endif

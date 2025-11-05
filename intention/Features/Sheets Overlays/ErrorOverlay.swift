@@ -60,10 +60,16 @@ struct ErrorOverlay: View {
             return description
     }
 }
+
+struct SampleErr: LocalizedError {
+    var errorDescription: String? { "sample err" }
+}
+
 #if DEBUG
 #Preview("Error Overlay (dumb)") {
-    struct SampleErr: LocalizedError { var errorDescription: String? { "sample err" } }
-    return ErrorOverlay(error: SampleErr(), dismissAction: {})
+    ErrorOverlay(
+        error: SampleErr(), dismissAction: {}
+    )
         .environmentObject(ThemeManager())
         .background(Color.black.opacity(0.1))
 }

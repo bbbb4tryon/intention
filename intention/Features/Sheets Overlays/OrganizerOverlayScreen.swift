@@ -73,7 +73,7 @@ struct OrganizerOverlayScreen: View {
 #Preview("org overlay(dumb)") {
     @State var categories: [CategoriesModel] = []   // empty; no seeded data
 
-    return OrganizerOverlayChrome(onClose: {}) {
+    OrganizerOverlayChrome(onClose: {}) {
         OrganizerOverlayScreen(
             categories: $categories,
             onMoveTile: { _, _, _ in },   // inert
@@ -82,6 +82,8 @@ struct OrganizerOverlayScreen: View {
         )
     }
     .environmentObject(ThemeManager())
+    /* readd ONLY if/when everything else is stable */
+    /// .canvasCheap()
     .frame(maxWidth: 430)
 }
 #endif

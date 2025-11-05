@@ -21,9 +21,8 @@ struct MembershipSheetV: View {
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: screen) }
     }
-    // 1) Place this INSIDE the struct, but OUTSIDE `body`
+    // tailText to remain INSIDE the struct, but OUTSIDE `body`
     private var tailText: String { "All while helping us keep the lights on, the mortgage paid, and the \(useDogEmoji ? "🐕" : "dog") fed & happy!" }
-    
     
     // --- Local Color Definitions ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
@@ -144,15 +143,21 @@ struct MembershipSheetV: View {
 }
 
 #if DEBUG
-#Preview("Membership (dumb)") {
+#Preview {
     let theme  = ThemeManager()
     let prefs  = AppPreferencesVM()
     let hist   = HistoryVM(persistence: PersistenceActor())
     let stats  = StatsVM(persistence: PersistenceActor())
-    let memVM  = MembershipVM(payment: PaymentService(productIDs: [])) // inert
-    memVM._debugSetIsMember(false) // purely visual; does not start network
+//    let memVM  = MembershipVM(payment: PaymentService(productIDs: [])) // inert
+//    memVM._debugSetIsMember(false) // purely visual; does not start network
+    // Local factory to keep side effects out of the ViewBuilder expression list
+    let memVM: MembershipVM = {
+        let vm = MembershipVM(payment: PaymentService(productIDs: [])) // inert
+        vm._debugSetIsMember(false)    // purely visual; does not start network
+        return vm
+    }()
 
-    return MembershipSheetV()
+    MembershipSheetV()
         .environmentObject(memVM)
         .environmentObject(theme)
         .environmentObject(prefs)
