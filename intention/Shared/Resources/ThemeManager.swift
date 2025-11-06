@@ -26,6 +26,15 @@ enum TextRole {
 // MARK: Utility Gray Constant for Overlays/Borders
 private let DefaultUtilityGray = Color(red: 0.333, green: 0.333, blue: 0.333)
 
+// Global app-wide background bridge for App entry / UIKit surfaces. IS AT THE BOTTOM
+//extension ThemeManager {
+//    static var appBackgroundColor: Color {
+//        // Use the default color theme and the Focus screen palette
+//        AppColorTheme.default.colors(for: .focus).background
+//    }
+//}
+
+
 // MARK: - Per-screen color tokens
 struct ScreenStylePalette {
     let primary: Color          // secondary button bg or highlighting
@@ -180,8 +189,8 @@ enum AppColorTheme: String, CaseIterable {
     // Show fewer choices in Settings without deleting anything.
     // Change this list whenever you want to expose more/less.
     static var publicCases : [AppColorTheme] { [.default, .sea] }
-
-ch    func colors(for screen: ScreenName) -> ScreenStylePalette {
+    
+    func colors(for screen: ScreenName) -> ScreenStylePalette {
         switch self {
             // ---------- DEFAULT ----------
         case .default:
@@ -404,6 +413,15 @@ final class ThemeManager: ObservableObject {
             // Actions (buttons) often use white/light text for contrast against a filled background.
             return .white
         }
+    }
+}
+
+// MARK: Bridge
+// Global app-wide background bridge for App entry / UIKit surfaces.
+extension ThemeManager {
+    static var appBackgroundColor: Color {
+        // Use the default color theme and the Focus screen palette
+        AppColorTheme.default.colors(for: .focus).background
     }
 }
 

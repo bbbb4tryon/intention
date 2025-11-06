@@ -49,6 +49,7 @@ struct MembershipSheetV: View {
                             .font(theme.fontTheme.toFont(.headline))
                             .padding(.horizontal, 12).padding(.vertical, 6)
                             .background(Capsule().fill(p.accent).shadow(radius: 8, y: 3)) // subtle lift
+                        // or use Color.defaultUtilityGray?
                             .foregroundStyle(Color.intText)
                             .padding(.bottom, 6)
                     }

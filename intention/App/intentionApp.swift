@@ -14,12 +14,14 @@ struct intentionApp: App {
     
     init(){
         // Match launch color immediately
-        UIWindow.appearance().backgroundColor = UIColor(named: "background")
+//        UIWindow.appearance().backgroundColor = UIColor(named: "background")
     }
     var body: some Scene {
         WindowGroup {
             RootView()
-                .background(Color("LaunchscreenTan").ignoresSafeArea())
+                .background(ThemeManager.appBackgroundColor.ignoresSafeArea())
+//                .background(Color("LaunchscreenTan").ignoresSafeArea())
         }
     }
 }
+

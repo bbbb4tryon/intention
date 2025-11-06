@@ -51,6 +51,8 @@ struct DynamicCountdown: View {
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
+    
+    // MARK: Countdown Label (digits with outline + shadow)
     private var countdownLabel: some View {
         // Base styled text from ThemeManager (role: .label)
         let base = T(fVM.formattedTime, .label)
@@ -65,6 +67,7 @@ struct DynamicCountdown: View {
         
         // Soft pseudo-outline by drawing the same text 4x slightly offset
         let outlineLayer = ZStack {
+            // or styled.foregroundStyle(Color.defaultUtilityGray?).offset(x:  0.75, y:  0.75)
             styled.foregroundStyle(Color.intText).offset(x:  0.75, y:  0.75)
             styled.foregroundStyle(Color.intText).offset(x: -0.75, y:  0.75)
             styled.foregroundStyle(Color.intText).offset(x:  0.75, y: -0.75)
@@ -81,7 +84,8 @@ struct DynamicCountdown: View {
             ZStack {
                 // Background circle
                 Circle()
-                    .fill(palette.background.opacity( 0.2))     // Use opacity(0.2) or Color.clear here, the dimmed effect is applied below
+                // Use opacity(0.2) or Color.clear here, the dimmed effect is applied below
+                    .fill(palette.background.opacity( 0.2))
                 
                 // Pause overlay -- appears last, on top of everything
                 if fVM.phase == .paused {
@@ -102,39 +106,20 @@ struct DynamicCountdown: View {
                                 .fontWeight(.bold)
                         }
                     }
-                    .clipShape(Circle())                        // Clips ZStack to the circle area so it doesn't cover surrounding content
+                    .clipShape(Circle())                        // Clips ZStack to circle here
                     .transition(.opacity)
                 } else {
                     // RUNNING/ACTIVE STATE
+                    
                     // Pie slicing
                     UnwindingPieShape(progress: progress)
                         .fill(palette.accent)
-                    //                    .fill(palette.primary.opacity(fVM.phase == .paused ? 0.4 : 1.0))
                     
-                    // Time text in the center - always present, but lower Z-index than the pause overlay
-                    VStack(spacing: 4) {
-                        let digits = T("\(fVM.formattedTime)", .label)
-                        // label with .font doing heavy lifting
-                            .font(.system(size: digitSize, weight: .bold, design: .monospaced))
-                        
-                        // Main fill color
-                        digits
-                        foregroundStyle(palette.text) // dark gray over light areas
-                        // Soft outline intText(F5F5F5)
-                            .overlay(
-                                ZStack {
-                                    digits.foregroundStyle(Color.intText).offset(x:  0.75, y:  0.75)
-                                    digits.foregroundStyle(Color.intText).offset(x: -0.75, y:  0.75)
-                                    digits.foregroundStyle(Color.intText).offset(x:  0.75, y: -0.75)
-                                    digits.foregroundStyle(Color.intText).offset(x: -0.75, y: -0.75)
-                                }
-                            )
-                        // Drop shadow for depth
-                            .shadow(color: .black.opacity(0.20), radius: 2, x: 0, y: 1)
-                    }
-                    //                .opacity(fVM.phase == .paused ? 0.2 : 1.0)      // Modifier to dim the time text when paused
                     
-                    // add a subtle transition
+                    // Time text in the center
+                    countdownLabel
+                    // optional dim when paused; here it's only active/running so keep full
+                        .opacity(fVM.phase == .paused ? 0.3 : 1.0)
                 }
             }
             .frame(width: activeSize, height: activeSize)
@@ -149,17 +134,18 @@ struct DynamicCountdown: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 4)
                     .fill(palette.background.opacity(0.1))
-                //                Text("✓").font(.largeTitle).foregroundStyle(palette.primary)
+                // Text("✓").font(.largeTitle).foregroundStyle(palette.primary)
                 
             }
             .frame(width: compactSize, height: compactSize)
             .transition(.opacity)
             .animation(.easeInOut(duration: 0.2), value: isBetweenChunks)
+            
         } else if isBothChunksDone {
             ZStack {
                 RoundedRectangle(cornerRadius: 4)
                     .fill(palette.background.opacity(0.1))
-                //                Text("✓").font(.largeTitle).foregroundStyle(palette.primary)
+                // Text("✓").font(.largeTitle).foregroundStyle(palette.primary)
             }
             .frame(width: compactSize, height: compactSize)
             .transition(.opacity)
@@ -169,48 +155,3 @@ struct DynamicCountdown: View {
         }
     }
 }
-//
-//    var body: some View {
-//
-//
-//        Group {
-//            if shouldShowFullTimer {
-//                ZStack {
-//                    Circle()
-//                        .fill(palette.background.opacity(0.2))
-//                        .frame(width: 200, height: 200)
-//
-//                    UnwindingPieShape(progress: progress)
-//                        .fill(palette.primary)
-//
-//                    Text("\(viewModel.formattedTime)")
-//                        .font(.system(size: 48, weight: .bold, design: .monospaced))
-//                        .id("countdownTimer")
-//                        .transition(.opacity)
-//                        .foregroundStyle(palette.text)
-//                }
-//                .animation(.easeInOut(duration: 0.2), value: progress)
-//            } else if shouldShowCompactCheckmark {
-//                ZStack {
-//                    Circle()
-//                        .fill(palette.background.opacity(0.1))
-//                        .frame(width: 60, height: 60)
-//
-//                    Text("✓")
-//                        .font(.title)
-//                        .foregroundStyle(palette.primary)
-//                }
-//                .transition(.opacity)
-//                .animation(.easeInOut(duration: 0.2), value: progress)
-//            }
-//        }
-//    }
-//    private var shouldShowFullTimer: Bool {
-//        viewModel.phase == .running ||
-//        (viewModel.phase == .finished && viewModel.currentSessionChunk == 2)
-//    }
-//
-//    private var shouldShowCompactCheckmark: Bool {
-//        viewModel.phase == .finished && viewModel.currentSessionChunk == 1
-//    }
-// }

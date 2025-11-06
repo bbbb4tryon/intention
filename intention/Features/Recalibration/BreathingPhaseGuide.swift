@@ -26,13 +26,13 @@ struct BreathingPhaseGuide: View {
                     .font(.footnote.weight(i == activeIndex ? .semibold : .regular))
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(
-                        Capsule().fill(i == activeIndex ? p.surface.opacity(0.90) : .clear)
+                        Capsule().fill(i == activeIndex ? p.accent.opacity(0.90) : .clear)
                     )
                     .overlay(
                         Capsule().stroke(i == activeIndex ? colorBorder : .clear, lineWidth: 1)
                     )
                     .foregroundStyle(i == activeIndex ? p.text : textSecondary)
-                    .scaleEffect(i == activeIndex ? 1.06 : 1.0)
+                    .scaleEffect(i == activeIndex ? 1.5 : 1.0)
                     .animation(.spring(response: 0.22, dampingFraction: 0.85), value: activeIndex)
                 
                 // MARK: Active phase dot
@@ -50,7 +50,7 @@ struct BreathingPhaseGuide: View {
         // thin accent border around the whole guide
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(p.accent.opacity(0.85), lineWidth: 1)
+                .stroke(p.accent.opacity(0.85), lineWidth: 1.5)
         )
         .padding(.horizontal, 2)
     }
