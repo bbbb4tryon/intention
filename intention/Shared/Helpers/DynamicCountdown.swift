@@ -47,11 +47,35 @@ struct DynamicCountdown: View {
         }
     }
     
-    // --- Local Color Definitions for History ---
+    // --- Local Color Definitions for the Pie and Countdown ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
-    
+    private var countdownLabel: some View {
+        // Base styled text from ThemeManager (role: .label)
+        let base = T(fVM.formattedTime, .label)
+        
+        // Apply the monospaced, large font *once*
+        let styled = base
+            .font(.system(size: digitSize, weight: .bold, design: .monospaced))
+        
+        // Main “visible” layer
+        let mainLayer = styled
+            .foregroundStyle(palette.text)
+        
+        // Soft pseudo-outline by drawing the same text 4x slightly offset
+        let outlineLayer = ZStack {
+            styled.foregroundStyle(Color.intText).offset(x:  0.75, y:  0.75)
+            styled.foregroundStyle(Color.intText).offset(x: -0.75, y:  0.75)
+            styled.foregroundStyle(Color.intText).offset(x:  0.75, y: -0.75)
+            styled.foregroundStyle(Color.intText).offset(x: -0.75, y: -0.75)
+        }
+        
+        return mainLayer
+            .overlay(outlineLayer)
+            .shadow(color: .black.opacity(0.20), radius: 2, x: 0, y: 1)
+    }
+
     var body: some View {
         if isActive {
             ZStack {
