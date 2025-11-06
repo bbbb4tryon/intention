@@ -16,6 +16,12 @@ enum TimeString {
         let m: Int = s / 60
         let r: Int  = s % 60
         
+        // Manual zero-padding - do not use String(format: "%02d:%02d",m,r)
+        // avoids objC entirely
+        let mm = m < 10 ? "0\(m)" : "\(m)"
+        let ss = r < 10 ? "0\(r)" : "\(r)"
+
+        return "\(mm):\(ss)"
     }
 //    static func mmss(_ seconds: Int) -> String {
 //        if #available(iOS 15.0, *) {
