@@ -15,8 +15,7 @@ enum TimeString {
         let s: Int = max(0, seconds)
         let m: Int = s / 60
         let r: Int  = s % 60
-        // String(format:) is fast and locale-agnostic for this spec.
-        return String(format: "%02d:%02d", m, r)
+        
     }
 //    static func mmss(_ seconds: Int) -> String {
 //        if #available(iOS 15.0, *) {
