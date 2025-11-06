@@ -19,7 +19,7 @@ struct BackplateGradient: View {
             if let g = p.gradientBackground {
                 LinearGradient(colors: g.colors,
                                startPoint: UnitPoint(x: g.start.x, y: g.start.y + offset),
-                               endPoint: UnitPoint(x: g.end.x, y: g.end.y, + offset)
+                               endPoint: UnitPoint(x: g.end.x, y: g.end.y + offset)
                                )
             } else {
                 p.background
@@ -34,7 +34,7 @@ struct BackplateGradient: View {
             // auto-cancelled when view disappears
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 200_000_000)     // 0.2s tick
-                    .animation(.linear(duration: 0.2)) { timedrift += 0.04 }
+                    withAnimation(.linear(duration: 0.2)) { tinydrift += 0.04 }
             }
         }
         .accessibilityHidden(true)

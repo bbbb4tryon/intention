@@ -8,13 +8,13 @@
 import Foundation
 
 enum TimeString {
-    /// Formats seconds as mm:ss using Swift FormatStyle.
-    ///  /// Formats seconds as "MM:SS". Clamps negatives to 0.
+    /// Formats seconds as "MM:SS". Clamps negatives to 0.
     @inlinable
     static func mmss(_ seconds: Int) -> String {
-        let s = seconds > 0 ? seconds : 0
-        let m = s / 60
-        let r = s % 60
+        // any negative clamps to `0`; `0` stays `0`; positive values are passed through
+        let s: Int = max(0, seconds)
+        let m: Int = s / 60
+        let r: Int  = s % 60
         // String(format:) is fast and locale-agnostic for this spec.
         return String(format: "%02d:%02d", m, r)
     }

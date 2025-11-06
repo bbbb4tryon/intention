@@ -91,8 +91,6 @@ struct FocusSessionActiveV: View {
 //                                showValidation: $showValidation,
 //                                vState: vState,
 //                                isEnabled: isInputActive,
-//                                //                                onValidatedSubmit: <#T##(String) -> Void#>,
-//                                //                                isFocused: <#T##Bool#>
 //                                
 //                            ) { trimmed in
 //                                Task { try await focusVM.handlePrimaryTap(validatedInput: trimmed) }
@@ -308,6 +306,7 @@ struct FocusSessionActiveV: View {
     // MARK: keeps "show validation, submit, text" in one location
     private struct IntentionField: View {
         @EnvironmentObject var theme: ThemeManager
+        
         let p: ScreenStylePalette
         @Binding var text: String
         @Binding var showValidation: Bool
@@ -316,13 +315,15 @@ struct FocusSessionActiveV: View {
         let onValidatedSubmit: (String) -> Void
         
         @FocusState private var isFocused: Bool
-        
-        // MARK: View Models
-        @ObservedObject var focusVM: FocusSessionVM
+
         
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
-                TextField("", text: $text, prompt: theme.styledText("Add Your Intended Task", as: .caption, in: .focus))
+                TextField(
+                    "",
+                    text: $text,
+                    prompt: theme.styledText("Add Your Intended Task", as: .caption, in: .focus)
+                )
                     .focused($isFocused)
                     .submitLabel(.done)
                     .validatingField(state: vState, palette: p)
@@ -346,8 +347,10 @@ struct FocusSessionActiveV: View {
         private func handleSubmit() {
             showValidation = true
             guard !vState.isInvalid else { return }
+            
             let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
             onValidatedSubmit(trimmed)
+            
             text = ""
             isFocused = isEnabled // re-focus until two tiles
             showValidation = false
@@ -428,7 +431,21 @@ struct FocusSessionActiveV: View {
         }
     }
 }
-    
+   
+#if DEBUG
+@MainActor private extension FocusSessionVM {
+    static var preview: FocusSessionVM {
+        let vm = FocusSessionVM(previewMode: true, haptics: NoopHapticsClient())
+        // In preview, show two tiles and a plausible remaining time
+        vm.tiles = [TileM(text: "Write intro"), TileM(text: "Outline section 1")]
+        vm.phase = .running                   // UI shows active state
+        vm.currentSessionChunk = 0
+        vm.countdownRemaining = 17 * 60 + 42  // static value prevents constant updates
+        return vm
+    }
+}
+#endif
+
 
 #if DEBUG
 #Preview("Focus (dumb)") {

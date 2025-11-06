@@ -23,7 +23,7 @@ struct StatsSummaryBar: View {
             .frame(maxWidth: .infinity)         // Not a child -> parent problem: makes equal columns
 
             StatPill(icon: "checkmark",
-                     value: PercentString.whole(vm.averageCompletionRate * 100), // FIXME: value: vm.avgCompletionString, label: "Avg.")
+                     value: PercentString.whole(vm.averageCompletionRate), // FIXME: value: vm.avgCompletionString, label: "Avg.")
                       caption: "Completion",
                       screen: .settings)
             .frame(maxWidth: .infinity)         // Not a child -> parent problem: makes equal columns
