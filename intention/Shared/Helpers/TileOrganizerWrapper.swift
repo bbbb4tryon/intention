@@ -31,7 +31,7 @@ struct TileOrganizerWrapper: UIViewControllerRepresentable {
         
         let p = theme.palette(for: .organizer)
         vc.textColor = UIColor(p.accent)            //FIXME: is .accent correct?
-        vc.tileSeparatorColor = UIColor(Color.intTan)   //FIXME: is .intTan correct?
+        vc.tileSeparatorColor = UIColor(p.accent)   //FIXME: is .intTan correct?
         vc.sectionSeparatorColor = UIColor(colorBorder)
         vc.headerTextColor = UIColor(theme.palette(for: .history).text)
         vc.view.backgroundColor = .clear

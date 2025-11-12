@@ -262,6 +262,10 @@ struct SettingsV: View {
                         }
                     }
                 }
+                
+                Helper_AppIconV()
+                    .frame(width: 64, height: 64)
+                    .padding(.top, 8)
             }
         }
         .background(p.background.ignoresSafeArea())

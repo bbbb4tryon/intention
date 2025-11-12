@@ -21,7 +21,7 @@ struct Helper_AppIconV: View {
             Image(systemName: "app.fill")   // Generic app icon SF Symbol
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .foregroundStyle(.intGreen)
+                .foregroundStyle(Color.intGreen)
                 .progressOverlay($isBusy, text: "Loading...")
         }
     }

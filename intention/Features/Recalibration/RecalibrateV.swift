@@ -98,13 +98,8 @@ struct RecalibrationV: View {
                     // Balancing - “Switch feet” flashes briefly each minute
                     // Breathing - modes and expanding dot
                     if vm.mode == .balancing {
-                        if !vm.eyesClosedMode {
-                            // already semi-bold
-                            Text(vm.promptText).font(.title3)
-                        }
                         BalanceSideDots(activeIndex: vm.balancingPhaseIndex, p: p)
-                            .padding(.top, 8)
-                        
+                                .padding(.top, 12)
                     } else if vm.mode == .breathing, vm.phase != .none, vm.phase != .idle {
                         BreathingPhaseGuide(
                             phases: vm.breathingPhases,

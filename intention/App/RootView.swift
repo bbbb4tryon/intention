@@ -149,13 +149,19 @@ struct RootView: View {
 
         recal.onCompleted = { [weak stats, weak focus] (mode: RecalibrationMode) in
             guard let stats = stats else { return }
+            
             let texts = focus?.tiles.map(\.text) ?? []
             stats.logSession(CompletedSession(
                 date: .now,
                 tileTexts: texts,
                 recalibration: mode
             ))
-            Task { @MainActor in await focus?.resetSessionStateForNewStart() }
+            Task { @MainActor in
+                await focus?.resetSessionStateForNewStart()
+                // ensures session is back to idle & is fresh
+                // & recal Completes, the fullScreenCover bound to $focusVM.showRecalibrate dismisses itself
+                focus?.showRecalibrate = false
+            }
         }
         
         // Assign "wrappers" `_StateObject` backing vars

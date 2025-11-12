@@ -430,4 +430,6 @@ extension Color {
     // New utility color for actions where white might be too harsh
     static let intText = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
     
+    static let intGreen = Color(red: 0.231, green: 0.733, blue: 0.639) // #3BBBA3
+    
 }

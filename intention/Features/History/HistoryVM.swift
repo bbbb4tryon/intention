@@ -9,7 +9,7 @@ import SwiftUI
 
 enum HistoryError: Error, Equatable, LocalizedError {
     case categoryNotFound, historyNotLoaded, saveHistoryFailed, moveFailed
-
+    
     var errorDescription: String? {
         switch self {
         case .categoryNotFound: return "Category not found."
@@ -25,16 +25,17 @@ enum HistoryError: Error, Equatable, LocalizedError {
 @MainActor
 final class HistoryVM: ObservableObject {
     // MARK: - Published UI state
-        @Published var categories: [CategoriesModel] = []
-        @Published var categoryValidationMessages: [UUID: [String]] = [:]
-        @Published var tileLimitWarning: Bool = false
-        @Published var lastUndoableMove: (tile: TileM, from: UUID, to: UUID)?
+    @Published var categories: [CategoriesModel] = []
+    @Published var categoryValidationMessages: [UUID: [String]] = [:]
+    @Published var tileLimitWarning: Bool = false
+    @Published var lastUndoableMove: (tile: TileM, from: UUID, to: UUID)?
     @Published var lastError: Error?                /// Used to trigger the UI visual error overlay
+    @Published private(set) var pendingUndoMove: PendingUndoMove?       // see Undow Window Policy
     
     // MARK: - Dependencies
     private let persistence: any Persistence
     private let archiveActor = ArchiveActor()
-
+    
     // MARK: - Storage keys / caps / debounce
     private let storageKey = "categoriesData"
     private let tileSoftCap = 200                      // Archive cap
@@ -43,10 +44,15 @@ final class HistoryVM: ObservableObject {
     private var lastSavedSignature: Int = 0
     private let saveDebouncedDelayNanos: UInt64 = 300_000_000 // 300 ms
     
+    // MARK: Undo Window policy
+    private let undoWindowSeconds: Int = 8
+    private let undoMaxTilesInDestination: Int = 5
+    private var undoTickerTask: Task<Void, Never>?      // new
+    
     // MARK: - Canonical IDs (persisted)
     @AppStorage("generalCategoryID") private var generalCategoryIDString: String = ""
     @AppStorage("archiveCategoryID") private var archiveCategoryIDString: String = ""
-
+    
     var generalCategoryID: UUID {
         get { UUID(uuidString: generalCategoryIDString) ?? { let u = UUID(); generalCategoryIDString = u.uuidString; return u }() }
         set { generalCategoryIDString = newValue.uuidString }
@@ -63,69 +69,85 @@ final class HistoryVM: ObservableObject {
     }
     
     func setError(_ error: Error?) { lastError = error }
-
+    
     // MARK: - Load / Bootstrap / Reconcile
-       private func loadHistory() async {
-           do {
-               // 1) Load categories from disk (without Archive tiles; those hydrate from ArchiveActor)
-               if let loaded: [CategoriesModel] = try await persistence.readIfExists([CategoriesModel].self, from: storageKey) {
-                   categories = loaded
-               } else {
-                   categories = []
-               }
-
-               // 2) Reconcile built-in IDs by name, if present
-               if let g = categories.first(where: { $0.persistedInput == "General" }) { generalCategoryID = g.id }
-               if let a = categories.first(where: { $0.persistedInput == "Archive" }) { archiveCategoryID = a.id }
-
-               // 3) Ensure both built-ins exist using canonical IDs
-               if !categories.contains(where: { $0.id == generalCategoryID }) {
-                   categories.insert(CategoriesModel(id: generalCategoryID, persistedInput: "General"), at: 0)
-               }
-               if !categories.contains(where: { $0.id == archiveCategoryID }) {
-                   categories.append(CategoriesModel(id: archiveCategoryID, persistedInput: "Archive"))
-               }
-
-               // 4) Hydrate Archive tiles from ArchiveActor and enforce cap (now that the archive ID is canonical)
-               let archived = await archiveActor.loadArchivedTiles()
-               if let aIdx = categories.firstIndex(where: { $0.id == archiveCategoryID }) {
-                   categories[aIdx].tiles = archived
-                   applyCaps(afterInsertingIn: aIdx) // trims if > 200 and mirrors back to actor
-               }
-
-               // 5) /Persist if anything changed during steps 2–4
-               // keeps data in order
-               normalizeCategoryOrder()
-               // save the sanitized (Archive-empty) snapshot
-               saveHistory()
-
-           } catch {
-               debugPrint("[HistoryVM.loadHistory] error:", error)
-               lastError = error
-           }
-       }
-
-       /// Reconcile built-ins again on demand; then persist.
-       func reconcileAndEnsureBuiltIns() {
-           // 1) If categories already contain built-ins, prefer those IDs and write them back to AppStorage.
-           if let g = categories.first(where: { $0.persistedInput == "General" }) { generalCategoryID = g.id }
-           if let a = categories.first(where: { $0.persistedInput == "Archive" }) { archiveCategoryID = a.id }
-           
-           // 2) Ensure both exist using the canonical IDs (lazily created if empty).
-           if !categories.contains(where: { $0.id == generalCategoryID }) {
-               categories.insert(CategoriesModel(id: generalCategoryID, persistedInput: "General"), at: 0)
-           }
-           if !categories.contains(where: { $0.id == archiveCategoryID }) {
-               categories.append(CategoriesModel(id: archiveCategoryID, persistedInput: "Archive"))
-           }
-           
-           // the debounced/immediate server
-           normalizeCategoryOrder()
-           saveHistory()
-       }
+    private func loadHistory() async {
+        do {
+            // 1) Load categories from disk (without Archive tiles; those hydrate from ArchiveActor)
+            if let loaded: [CategoriesModel] = try await persistence.readIfExists([CategoriesModel].self, from: storageKey) {
+                categories = loaded
+            } else {
+                categories = []
+            }
+            
+            // 2) Reconcile built-in IDs by name, if present
+            if let g = categories.first(where: { $0.persistedInput == "General" }) { generalCategoryID = g.id }
+            if let a = categories.first(where: { $0.persistedInput == "Archive" }) { archiveCategoryID = a.id }
+            
+            // 3) Ensure both built-ins exist using canonical IDs
+            if !categories.contains(where: { $0.id == generalCategoryID }) {
+                categories.insert(CategoriesModel(id: generalCategoryID, persistedInput: "General"), at: 0)
+            }
+            if !categories.contains(where: { $0.id == archiveCategoryID }) {
+                categories.append(CategoriesModel(id: archiveCategoryID, persistedInput: "Archive"))
+            }
+            
+            // 4) Hydrate Archive tiles from ArchiveActor and enforce cap (now that the archive ID is canonical)
+            let archived = await archiveActor.loadArchivedTiles()
+            if let aIdx = categories.firstIndex(where: { $0.id == archiveCategoryID }) {
+                categories[aIdx].tiles = archived
+                applyCaps(afterInsertingIn: aIdx) // trims if > 200 and mirrors back to actor
+            }
+            
+            // 5) /Persist if anything changed during steps 2–4
+            // keeps data in order
+            normalizeCategoryOrder()
+            // save the sanitized (Archive-empty) snapshot
+            saveHistory()
+            
+        } catch {
+            debugPrint("[HistoryVM.loadHistory] error:", error)
+            lastError = error
+        }
+    }
+    
+    /// Reconcile built-ins again on demand; then persist.
+    func reconcileAndEnsureBuiltIns() {
+        // 1) If categories already contain built-ins, prefer those IDs and write them back to AppStorage.
+        if let g = categories.first(where: { $0.persistedInput == "General" }) { generalCategoryID = g.id }
+        if let a = categories.first(where: { $0.persistedInput == "Archive" }) { archiveCategoryID = a.id }
+        
+        // 2) Ensure both exist using the canonical IDs (lazily created if empty).
+        if !categories.contains(where: { $0.id == generalCategoryID }) {
+            categories.insert(CategoriesModel(id: generalCategoryID, persistedInput: "General"), at: 0)
+        }
+        if !categories.contains(where: { $0.id == archiveCategoryID }) {
+            categories.append(CategoriesModel(id: archiveCategoryID, persistedInput: "Archive"))
+        }
+        
+        // the debounced/immediate server
+        normalizeCategoryOrder()
+        saveHistory()
+    }
+    
+    // MARK: Undo helpers
+    //FIXME: clarity as toSourceID, fromCategoies?\
+    //FIXME: lastUndoableMove = (moving, sourceID, destinationID) example?
+    private var now: Date { Date() }
+    private func categoryIndex(for id: UUID) -> Int? {
+        categories.firstIndex(where: { $0.id == id })
+    }
+    private func category(for id: UUID) -> CategoriesModel? {
+        categories.first(where: { $0.id == id })
+    }
+    private func canUndoCurrentMove() -> Bool {
+        guard let p = pendingUndoMove,
+              let destCount = category(for: p.toCategoryID)?.tiles.count else { return false }
+        return now < p.expiresAt && destCount <= undoMaxTilesInDestination
+    }
     
     // MARK: - Ordering (Canonical - General -> A-Z users, cats -> Archive)
-
+    
     /// Rebuilds array as: General → (user categories, A–Z by name) → Archive
     /// Call after *every* mutation that could affect order.
     fileprivate func normalizeCategoryOrder() {
@@ -134,7 +156,7 @@ final class HistoryVM: ObservableObject {
             let gIdx = categories.firstIndex(where: { $0.id == generalCategoryID }),
             let aIdx = categories.firstIndex(where: { $0.id == archiveCategoryID })
         else { return }
-
+        
         let general = categories[gIdx]
         let archive = categories[aIdx]
         
@@ -180,23 +202,23 @@ final class HistoryVM: ObservableObject {
     }
     
     /// Public save entrypoint.
-       func saveHistory(immediate: Bool = false) {
-           if immediate {
-               let snapshot = categories
-               pendingSnapshot = nil
-               debouncedSaveTask?.cancel()
-               debouncedSaveTask = nil
-               Task { await performSaveIfChanged(snapshot) }
-               return
-           }
-           scheduleDebouncedSave()
-       }
-
-
+    func saveHistory(immediate: Bool = false) {
+        if immediate {
+            let snapshot = categories
+            pendingSnapshot = nil
+            debouncedSaveTask?.cancel()
+            debouncedSaveTask = nil
+            Task { await performSaveIfChanged(snapshot) }
+            return
+        }
+        scheduleDebouncedSave()
+    }
+    
+    
     private func scheduleDebouncedSave() {
         let snapshot = categories       // Capture now; UI may keep mutating
         pendingSnapshot = snapshot
-
+        
         debouncedSaveTask?.cancel()
         debouncedSaveTask = Task { [weak self, snapshot ] in
             guard let self else { return }
@@ -205,7 +227,7 @@ final class HistoryVM: ObservableObject {
             await MainActor.run { self.pendingSnapshot = nil }
         }
     }
-
+    
     // Call on scenePhase changes, or when leaving organizer mode.
     func flushPendingSaves() {
         let snapshot = pendingSnapshot
@@ -233,59 +255,59 @@ final class HistoryVM: ObservableObject {
         saveHistory()
         return new.id
     }
-
+    
     /// Rename category and persist. Validates and coalesces via saveHistory(). IF General is renamed...
     @MainActor
-       func renameCategory(id: UUID, to newNameRaw: String) {
-           let newName = newNameRaw.trimmingCharacters(in: .whitespacesAndNewlines)
-           guard !newName.isEmpty else { return }
-           guard let idx = categories.firstIndex(where: { $0.id == id }) else { lastError = HistoryError.categoryNotFound; return }
-           
-           let renamingGeneral = (id == generalCategoryID)
-           categories[idx].persistedInput = newName
-           validateCategory(id: id, title: newName)
-           
-           // If General is renamed, create a new empty "General" and repoint the anchor
-           if renamingGeneral && newName != "General" {
-                      let newGeneral = CategoriesModel(id: UUID(), persistedInput: "General", tiles: [])
-//                      categories.insert(newGeneral, at: 0)         // temp—normalize will place correctly //FIXME: Use *.insert* or *.append*
-               categories.append(newGeneral)
-                      generalCategoryID = newGeneral.id            // didSet also normalizes (see below)
-           }
-           
-           normalizeCategoryOrder()
-           saveHistory()
-       }
-
-       /// Delete a user-defined category. Tiles are moved to Archive first (safe).
-       @discardableResult
-       func deleteCategory(id: UUID) -> Bool {
-           // 1) Prevent permanently deleting anchors
-           guard id != generalCategoryID, id != archiveCategoryID else { return false }
-           guard
-               let delIdx = categories.firstIndex(where: { $0.id == id }),
-               let archIdx = categories.firstIndex(where: { $0.id == archiveCategoryID })
-           else { lastError = HistoryError.categoryNotFound ; return false }
-
-           // 2) Move tiles to Archive, "top locally" first
-           let moving = categories[delIdx].tiles
-           if !moving.isEmpty {
-               categories[archIdx].tiles.insert(contentsOf: moving, at: 0)
-               applyCaps(afterInsertingIn: archIdx)                         // 3) Trims and mirrors to actor
-               
-               //FIXME: This or
-//               let arch = categories.first(where: { $0.id == archiveCategoryID })?.tiles ?? []
-//               Task { await archiveActor.saveArchivedTiles(arch) }
-               
-               //FIXME: This? Which acts as we need it to?
-           }
-
-           categories.remove(at: delIdx)
-           normalizeCategoryOrder()
-           saveHistory()
-           return true
-       }
-
+    func renameCategory(id: UUID, to newNameRaw: String) {
+        let newName = newNameRaw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !newName.isEmpty else { return }
+        guard let idx = categories.firstIndex(where: { $0.id == id }) else { lastError = HistoryError.categoryNotFound; return }
+        
+        let renamingGeneral = (id == generalCategoryID)
+        categories[idx].persistedInput = newName
+        validateCategory(id: id, title: newName)
+        
+        // If General is renamed, create a new empty "General" and repoint the anchor
+        if renamingGeneral && newName != "General" {
+            let newGeneral = CategoriesModel(id: UUID(), persistedInput: "General", tiles: [])
+            //                      categories.insert(newGeneral, at: 0)         // temp—normalize will place correctly //FIXME: Use *.insert* or *.append*
+            categories.append(newGeneral)
+            generalCategoryID = newGeneral.id            // didSet also normalizes (see below)
+        }
+        
+        normalizeCategoryOrder()
+        saveHistory()
+    }
+    
+    /// Delete a user-defined category. Tiles are moved to Archive first (safe).
+    @discardableResult
+    func deleteCategory(id: UUID) -> Bool {
+        // 1) Prevent permanently deleting anchors
+        guard id != generalCategoryID, id != archiveCategoryID else { return false }
+        guard
+            let delIdx = categories.firstIndex(where: { $0.id == id }),
+            let archIdx = categories.firstIndex(where: { $0.id == archiveCategoryID })
+        else { lastError = HistoryError.categoryNotFound ; return false }
+        
+        // 2) Move tiles to Archive, "top locally" first
+        let moving = categories[delIdx].tiles
+        if !moving.isEmpty {
+            categories[archIdx].tiles.insert(contentsOf: moving, at: 0)
+            applyCaps(afterInsertingIn: archIdx)                         // 3) Trims and mirrors to actor
+            
+            //FIXME: This or
+            //               let arch = categories.first(where: { $0.id == archiveCategoryID })?.tiles ?? []
+            //               Task { await archiveActor.saveArchivedTiles(arch) }
+            
+            //FIXME: This? Which acts as we need it to?
+        }
+        
+        categories.remove(at: delIdx)
+        normalizeCategoryOrder()
+        saveHistory()
+        return true
+    }
+    
     // MARK: - Tiles API
     /// Called by Focus on completion; safe regardless of UI order (uses IDs).
     func addToHistory(_ newTile: TileM, to categoryID: UUID) {
@@ -311,7 +333,7 @@ final class HistoryVM: ObservableObject {
             catch { await MainActor.run { self.lastError = error } }
         }
     }
-
+    
     func undoLastMove() {
         guard let move = lastUndoableMove else { return }
         Task {
@@ -348,11 +370,11 @@ final class HistoryVM: ObservableObject {
     /// Replace an entire category’s tiles (e.g., within-category reorder).
     func updateTiles(in categoryID: UUID, to newTiles: [TileM]) {
         guard let index = categories.firstIndex(where: { $0.id == categoryID }) else { return }
-            categories[index].tiles = newTiles
-            /// does the Archive=200 / General+2=10 trims
-            applyCaps(afterInsertingIn: index)
-            saveHistory()       /// Persist change
-        }
+        categories[index].tiles = newTiles
+        /// does the Archive=200 / General+2=10 trims
+        applyCaps(afterInsertingIn: index)
+        saveHistory()       /// Persist change
+    }
     
     /// If a VC provides a full category order, we still re-assert canonical order afterward.
     func reorderCategories(_ newOrder: [CategoriesModel]) {
@@ -385,17 +407,17 @@ final class HistoryVM: ObservableObject {
             Task { await archiveActor.saveArchivedTiles(intoArchive) }
             return
         }
-
+        
         // 2) Build the dynamic "capped@10" set: General + first two user-defined categories
         //    (user-defined = not General, not Archive). Uses current array order.
         let userIDs = categories
             .map(\.id)
             .filter { $0 != generalCategoryID && $0 != archiveCategoryID }
-
+        
         var capped10 = Set<UUID>()
         capped10.insert(generalCategoryID)
         for id in userIDs.prefix(2) { capped10.insert(id) }
-
+        
         if capped10.contains(catID) {
             let overflow = categories[idx].tiles.count - 10
             if overflow > 0 { categories[idx].tiles.removeLast(overflow) }
@@ -403,20 +425,19 @@ final class HistoryVM: ObservableObject {
     }
     
     
-   // MARK: Utilities / Convenience
-    
+    // MARK: Utilities / Convenience
     var userDefinedCategoryCount: Int {
-//        categories.filter { $0.id != generalCategoryID && $0.id != archiveCategoryID }.count
+        //        categories.filter { $0.id != generalCategoryID && $0.id != archiveCategoryID }.count
         userCategoryIDs.count
     }
     
     func canAddUserCategory(limit: Int = 2) -> Bool {
         userDefinedCategoryCount < limit
     }
-
-//       func name(for id: UUID) -> String {
-//           categories.first(where: { $0.id == id })?.persistedInput ?? ""
-//       }
+    
+    //       func name(for id: UUID) -> String {
+    //           categories.first(where: { $0.id == id })?.persistedInput ?? ""
+    //       }
     
     /// Sets automatic "General" category aka "bootstrapping"
     func ensureGeneralCategory(named name: String = "General") {
@@ -424,7 +445,7 @@ final class HistoryVM: ObservableObject {
         if !categories.contains(where: { generalCategoryItem in generalCategoryItem.id == generalID }) {
             let new = CategoriesModel(id: generalID, persistedInput: name)
             categories.append(new)                                                      //FIXME: use `.insert(new, at: 0)` instead?
-//            debugPrint("[HistoryVM.ensureGeneralCategory] error creating 'General'")
+            //            debugPrint("[HistoryVM.ensureGeneralCategory] error creating 'General'")
             normalizeCategoryOrder()
             saveHistory()
         }
@@ -436,7 +457,7 @@ final class HistoryVM: ObservableObject {
         if !categories.contains(where: { archiveCategoryItem in archiveCategoryItem.id == archiveID }) {
             let new = CategoriesModel(id: archiveID, persistedInput: name)
             categories.append(new)                                                  //FIXME: use `.insert(new, at: 0)` instead?
-//            debugPrint("[HistoryVM.ensureArchiveCategory] error creating 'Archive'")
+            //            debugPrint("[HistoryVM.ensureArchiveCategory] error creating 'Archive'")
             normalizeCategoryOrder()
             saveHistory()
         }
@@ -467,12 +488,16 @@ final class HistoryVM: ObservableObject {
     
     // (yes #2)
     /// For cross-category moves: awaiting archive persistence before returning
-    func moveTileThrowing(_ tile: TileM, fromCategory sourceID: UUID, toCategory destinationID: UUID) async throws {
+    func moveTileThrowing(_ tile: TileM,
+                          fromCategory sourceID: UUID,
+                          toCategory destinationID: UUID
+    ) async throws {
         guard
             let fromIndex = categories.firstIndex(where: { $0.id == sourceID }),
             let toIndex = categories.firstIndex(where: { $0.id == destinationID }),
             let tileIndex = categories[fromIndex].tiles.firstIndex(of: tile)
-        else { debugPrint("[HistoryVM.moveTileThrowing //core] Category ID not found. Tile not added."); throw HistoryError.moveFailed }
+        else { debugPrint("[HistoryVM.moveTileThrowing //core] Category ID not found. Tile not added."); throw HistoryError.moveFailed}
+//        return nil?
         
         let moving = categories[fromIndex].tiles.remove(at: tileIndex)
         categories[toIndex].tiles.insert(moving, at: 0)
@@ -493,4 +518,6 @@ final class HistoryVM: ObservableObject {
             self.lastUndoableMove = nil
         }
     }
+    
+    //
 }

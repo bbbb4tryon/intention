@@ -196,8 +196,7 @@ struct FocusSessionActiveV: View {
                     }
                 }
                 focusVM.showRecalibrate = false
-            }
-            ) {
+            }) {
                 NavigationStack {
                     RecalibrationV(vm: recalibrationVM) .navigationBarHidden(true)          // own chrome owns the close
                 }

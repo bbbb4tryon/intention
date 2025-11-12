@@ -108,9 +108,13 @@ final class FocusSessionVM: ObservableObject {
     
     var canPrimary: Bool {
         // Only allow "Add" when the current input is valid AND you’re not running
-        if !hasTwoTiles { return inputIsValid && phase != .running }
+        if !hasTwoTiles {
+            return inputIsValid && phase != .running
+        } else {
         // Only allow "Begin" when not running (fresh or between chunks)
-        else { return phase == .idle || phase == .none || (phase == .finished && currentSessionChunk == 1)
+        return phase == .idle
+            || phase == .none
+            || (phase == .finished && currentSessionChunk == 1)
         }
     }
     
