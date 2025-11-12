@@ -470,6 +470,56 @@ final class HistoryVM: ObservableObject {
         Task {  await persistence.clear(storageKey); await archiveActor.clearArchive() }
     }
     
+    // MARK: MOVE mutation and related - DRY helpers
+    @discardableResult
+    private func mutateMove(_ tile: TileM,
+                            fromCategory sourceID: UUID,
+                            toCategory destinationID: UUID
+    ) -> TileM? {
+        guard let fromIndex = categoryIndex(for: sourceID),
+                  let toIndex   = categoryIndex(for: destinationID),
+                  let tileIndex = categories[fromIndex].tiles.firstIndex(of: tile)
+            else { return nil }
+
+            let moving = categories[fromIndex].tiles.remove(at: tileIndex)
+            categories[toIndex].tiles.insert(moving, at: 0)
+            applyCaps(afterInsertingIn: toIndex)
+            return moving
+    }
+    
+    // MARK: MOVE archive mirror - if anything's added
+    private func mirrorArchiveIfInvolved(fromCategory sourceCategoryID: UUID,
+                                         toCategory destinationCategoryID: UUID
+    ){
+        guard sourceCategoryID == archiveCategoryID || destinationCategoryID == archiveCategoryID else { return }
+           let intoArchive = categories.first(where: { $0.id == archiveCategoryID })?.tiles ?? []
+           Task { await archiveActor.saveArchivedTiles(intoArchive) }
+    }
+    
+    // MARK: MOVE Undo Window Scheduler that owns timing
+    private func startUndoWindow(for tile: TileM,
+                                 fromCategory sourceCategoryID: UUID,
+                                 toCategory destnationCategoryID: UUID
+    ){
+        pendingUndoMove = PendingUndoMove(tile: tile,
+                                          fromCategoryID: sourceCategoryID,
+                                          toCategoryID: destnationCategoryID,
+                                          expiresAt: now.addingTimeInterval(TimeInterval(undoWindowSeconds))
+        )
+        lastUndoableMove = (tile, sourceCategoryID, destnationCategoryID)
+        
+        undoTickerTask?.cancel()
+        undoTickerTask = Task { [weak self] in
+            guard let self else { return }
+            while self.canUndoCurrentMove() {
+                try? await Task.sleep(for: .seconds(0.25))
+            }
+            await MainActor.run { self.commitPendingUndoIfAny() }
+        }
+        
+    }
+
+    
     // MARK: - Throwing save (direct)
     func saveHistoryThrowing() async throws {
         try await persistence.write(sanitizedForSave(categories), to: storageKey)
@@ -514,7 +564,7 @@ final class HistoryVM: ObservableObject {
         
         // Auto-clear undo affordance
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            try? await Task.sleep(for: .seconds(3))
             self.lastUndoableMove = nil
         }
     }
