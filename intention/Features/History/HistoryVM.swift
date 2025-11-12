@@ -576,6 +576,13 @@ final class HistoryVM: ObservableObject {
     }
     
     
+    
+    // MARK: Commit any pending move; then flush debounced writes
+    func finalizeHistoryIfNeededOnDisappear() {
+        commitPendingUndoIfAny()
+        flushPendingSaves()
+    }
+    
     // MARK: - Throwing save (direct)
     func saveHistoryThrowing() async throws {
         try await persistence.write(sanitizedForSave(categories), to: storageKey)

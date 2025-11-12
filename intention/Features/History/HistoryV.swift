@@ -13,7 +13,7 @@ struct HistoryV: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var theme: ThemeManager
     @ObservedObject var viewModel: HistoryVM
-
+    
     @State private var createdCategoryID: UUID?
     @State private var targetCategoryID: UUID?
     @State private var showRenamePicker = false
@@ -32,13 +32,6 @@ struct HistoryV: View {
     // --- Local Color Definitions for History ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
-
-    
-    // MARK: Commit any pending move; then flush debounced writes
-    func finalizeHistoryIfNeededOnDisappear() {
-        viewModel.commitPendingUndoIfAny()
-        viewModel.flushPendingSaves()
-    }
     
     var body: some View {
         ScrollView {
@@ -73,10 +66,11 @@ struct HistoryV: View {
                         Image(systemName: "arrow.uturn.backward")
                         Text("Moved. Undo?")
                         Spacer()
-                        Button {viewModel.undoPendingMoveIfPossible()} label: { T("Undo?", .action) }.primaryActionStyle(screen: screen)
+                        Button {viewModel.undoPendingMoveIfPossible() } label: {
+                            T("Undo?", .action) }.primaryActionStyle(screen: screen)
                     }
-                    .padding(.horizontal, 12)           // Card instead?
-                    .padding(.vertical, 10)             // Card instead?
+                    .padding(.horizontal, 12)               // to Card instead?
+                    .padding(.vertical, 10)                 // to Card instead?
                     .background(.ultraThinMaterial, in: Capsule())
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -88,36 +82,22 @@ struct HistoryV: View {
                         .background(.ultraThinMaterial, in: Capsule())
                     // a 2s sleep to auto-dismiss a banner. OK for previews
                         .task {
-                            try? await Task.sleep(nanoseconds: 2_000_000_000)
+                            try? await Task.sleep(for: .seconds(2))
                             await MainActor.run { viewModel.tileLimitWarning = false }
                         }
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-
-            /* --------------------------------------------------------------------- */
-                    .onDisappear { finalizeHistoryIfNeededOnDisappear }
-            /* --------------------------------------------------------------------- */
+            .padding(.bottom, 8)
         }
         .background(p.background)
-        .opacity(isOrganizing ? 0.98 : 1.0) // so history bg wins against organizerOverlay
-        .zIndex(0)      // so the history bg wins against organizerOverlay
         .tint(p.accent)
-        // nav bar background reacts to edit mode
-        .toolbarBackground(isOrganizing ? p.background.opacity(0.92) : .clear, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
-        
         .animation(.easeInOut(duration: 0.2), value: viewModel.lastUndoableMove != nil)
         .toolbar { historyToolbar }
         .environmentObject(theme)
         .environmentObject(viewModel)
-
-        //        /// [.medium] is half-screen, .visible affordance
-        //        .sheet(isPresented: $showRenameSheet) {
-        //            renameSheet
-        //                .presentationDetents([.medium])
-        //                .presentationDragIndicator(.visible)
-        //        }
+        
         .fullScreenCover(isPresented: $showRenameSheet) {
             RenamingSheetChrome(onClose: {
                 showRenameSheet = false
@@ -152,46 +132,6 @@ struct HistoryV: View {
             }
             Button("Cancel", role: .cancel) { }
         } message: { Text("Tiles will be moved to Archive.") }
-        
-            .fullScreenCover(isPresented: $isOrganizing
-                             //                             //FIXME: - Does this =work without onDismiss?
-                             //                             onDismiss: { viewModel.flushPendingSaves() }
-            ) {
-                OrganizerOverlayChrome(onClose: {
-                    //FIXME: - Does this CLOSE AND save without flushPendingSaves?
-                    //                    viewModel.flushPendingSaves()
-                    isOrganizing = false
-                }) {
-                    OrganizerOverlayScreen(
-                        categories: $viewModel.categories,
-                        onMoveTile: { tile, sourceID, destinationID in
-                            Task { @MainActor in
-                                do { try await viewModel.moveTileThrowing(tile, fromCategory: sourceID, toCategory: destinationID) }
-                                catch { viewModel.lastError = error }
-                            }
-                        },
-                        onReorder: { newTiles, categoryID in
-                            // reorderTiles already applies caps AND persists, saveHistory() isn't needed
-                            viewModel.reorderTiles(newTiles, in: categoryID)
-                        },
-                        onDone: {
-                            // close path X/drag like RecalibrationChrome
-                            //FIXME: - Does this CLOSE AND save without flushPendingSaves?
-                            // viewModel.flushPendingSaves()
-                            isOrganizing = false
-                        }
-                    )
-                    .environmentObject(theme)
-                }
-                // Chrome owns gesture/X dismissal
-                .interactiveDismissDisabled(true)
-            }
-        // HistoryV: the flush in .task(id: isOrganizing) when it becomes false,
-        // - happens ONCE here, when the cover closes
-            .task(id: isOrganizing) {
-                // On leaving organize mode, force-flush pending saves.
-                if !isOrganizing { viewModel.flushPendingSaves() }
-            }
             .overlay {
                 if let error = viewModel.lastError {
                     ErrorOverlay(error: error) { viewModel.setError(nil) }
@@ -200,7 +140,10 @@ struct HistoryV: View {
                         .allowsHitTesting(true)     // opt-in to hits only when visible
                 }
             }
-        Spacer(minLength: 0)
+            .onDisappear {
+                viewModel.finalizeHistoryIfNeededOnDisappear()
+            }
+        //        Spacer(minLength: 0)
     }
     
     
@@ -209,154 +152,57 @@ struct HistoryV: View {
     @ToolbarContentBuilder
     private var historyToolbar: some ToolbarContent {
         // Primary edit/done toggle - keep as trailing item
-        ToolbarItemGroup(placement: .topBarTrailing) {
-            Button {
-                if isOrganizing { viewModel.flushPendingSaves() }
-                withAnimation { isOrganizing.toggle() }
-            } label: {
-                Label(isOrganizing ? "Done" : "Edit", systemImage: "arrow.up.and.down.text.designator"
-                ).foregroundStyle(p.primary)
-            }
-        }
-        
-        // Menu {
-        // Title menu = category management + quick actions
-        ToolbarItem(placement: .principal) {
-            List {}
+        ToolbarItemGroup(placement: .principal) {
             T("History", .header)
                 .toolbarTitleMenu {
-                    // --- Organize toggle (mirrors the top-right button) ---
-                    Button(isOrganizing ? "Done Organizing" : "Organize") {
-                        if isOrganizing { viewModel.flushPendingSaves() }
-                        withAnimation { isOrganizing.toggle() }
-                    }
-                    
-                    Divider()
-                    
-                    // --- Add category (guarded by VM cap) ---
-                    //                        Button("Add Category") {
-                    Button( action: {
-                        if let id = viewModel.addEmptyUserCategory() { createdCategoryID = id
-                        } else {
+                    // Add category - guarded by VM cap
+                    Button {
+                        if let id = viewModel.addEmptyUserCategory() { createdCategoryID = id } else {
                             debugPrint("Add Not Possible")
                         }
-                    }, label: {
-                        Image(systemName: "plus")
-                        T("Add Category", .action)
-                    })
+                    } label: {
+                        Image(systemName: "plus"); T("Add Category", .action)
+                    }
                     .disabled(!viewModel.canAddUserCategory())
+                    .background(colorBorder)
+                    //                    .imageScale(.small).font(.headline).controlSize(.large).tint(p.accent)
                     
-                    // --- Rename category (picker if multiple) ---
-                    //                        Button("Rename Category") {
-                    Button( action: {
-                        if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
+                    // Rename (single category fast path, else show picker in your UI)
+                    Button {
+                        if let only = viewModel.userCategoryIDs.only {
                             targetCategoryID = only
                             renameText = viewModel.name(for: only)
                             showRenameSheet = true
                         } else {
                             showRenamePicker = true
                         }
-                    }, label: {
-                        Image(systemName: "pen")
-                        T("Rename Category", .action)
-                    })
+                    } label: {
+                        Image(systemName: "pencil"); T("Rename Category", .action)
+                    }
                     
-                    // --- Delete category (moves tiles to Archive by spec) ---
-                    // Button("Delete Category", role: .destructive) {
-                    Button(role: .destructive, action: {
-                        if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
+                    // Delete (moves tiles to Archive)
+                    Button(role: .destructive) {
+                        if let only = viewModel.userCategoryIDs.only {
                             targetCategoryID = only
                             showDeleteConfirm = true
                         } else {
                             showDeletePicker = true
                         }
-                    },label: {
-                        Image(systemName: "trash")
-                        T("Delete Category", .action)
-                    })
+                    } label: {
+                        Image(systemName: "trash"); T("Delete Category", .action)
+                    }
                     
                     Divider()
                     
-                    // --- Quick Archive: archive latest General tile ---
-                    Button(action: {
-                        Task { @MainActor in
-                            await viewModel.archiveMostRecentFromGeneral()
-                        }}) {
-                            Image(systemName: "arrow.up.circle")
-                            T("Archive Most Recent From General", .action)
-                        }
-                        .disabled(!viewModel.hasAnyGeneralTiles)
+                    // Quick archive from General
+                    Button {
+                        Task { await viewModel.archiveMostRecentFromGeneral() }
+                    } label: {
+                        Image(systemName: "arrow.up.circle"); T("Archive Most Recent From General", .action)
+                    }
+                    .disabled(!viewModel.hasAnyGeneralTiles)
                 }
-            //
-            //                .background(colorBorder)
-            //                .clipShape(Capsule())
-            //                .foregroundStyle(colorDanger)
-            //                .imageScale(.small).font(.headline).controlSize(.large).tint(.red)
-            
-            //                Button("Rename") {
-            //                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
-            //                        targetCategoryID = only
-            //                        renameText = viewModel.name(for: only)
-            //                        showRenameSheet = true
-            //                    } else {
-            //                        showRenamePicker = true
-            //                    }
-            //                }
-            
-            //                Button(role: .destructive, action: {
-            //                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
-            //                        targetCategoryID = only
-            //                        showDeleteConfirm = true
-            //                    }
-            //                    else {
-            //                        showDeletePicker = true
-            //                    }
-            //                },label: {
-            //                    Image(systemName: "trash")
-            //                })
-            //                .background(colorBorder)
-            //                .clipShape(Capsule())
-            //                .foregroundStyle(colorDanger)
-            //                .imageScale(.small).font(.headline).controlSize(.large).tint(.red)
-            //
-            Button( action: {
-                if let id = viewModel.addEmptyUserCategory() {
-                    createdCategoryID = id
-                } else {
-                    debugPrint("Add Not Possible")
-                }
-            }, label: {
-                Image("plus")
-            })
-            .disabled(!viewModel.canAddUserCategory())
-            .background(colorBorder)
-            .clipShape(Capsule())
-            .imageScale(.small).font(.headline).controlSize(.large).tint(p.accent)
-            
-            //                Button("Delete", role: .destructive) {
-            //                    if let only = viewModel.userCategoryIDs.first, viewModel.userCategoryIDs.count == 1 {
-            //                        targetCategoryID = only
-            //                        showDeleteConfirm = true
-            //                    } else {
-            //                        showDeletePicker = true
-            //                    }
-            //                }
-            //                    Image(systemName: "trash").imageScale(.small).font(.headline).controlSize(.large)
-            
-            
-            //                Button("Add") {
-            //                    if let id = viewModel.addEmptyUserCategory() {
-            //                        createdCategoryID = id
-            //                    }
-            //                } label: {
-            //                    Image(systemName: "plus").imageScale(.small).font(.headline).controlSize(.large)
-            //                }
-            //                .disabled(!viewModel.canAddUserCategory())
         }
-        //            } label: {
-        //                Image(systemName: "line.3.horizontal").imageScale(.small).font(.headline).controlSize(.large).tint(p.accent)
-        //            }
-        //            .buttonStyle(.plain)
     }
 }
 
@@ -365,8 +211,8 @@ extension Array {
     var only: Element? { count == 1 ? first : nil }
 }
 
-// MARK: - Category Card (local) Header  Tile List
-///composes CategoryHeaderRow  CategoryTileList with the rounded card chrome. Keeping it private avoids scattering styling across files and keeps the view tree simple
+// MARK: - Category Card (local)
+///composes CategoryHeaderRow  + CategoryTileList with the rounded card chrome
 private struct CategoryCard: View {
     @Binding var category: CategoriesModel
     let isArchive: Bool
@@ -374,6 +220,9 @@ private struct CategoryCard: View {
     
     @EnvironmentObject private var viewModel: HistoryVM
     @EnvironmentObject private var theme: ThemeManager
+    
+    private let screen: ScreenName = .history
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -384,18 +233,21 @@ private struct CategoryCard: View {
                 allowEdit: !isArchive && category.id != viewModel.generalCategoryID,
                 onRename: {  onRename(category.id) },       // NOTE: CategoryHeaderRow expects () -> Void, adapt by calling the closure with category.id
             )
-            
-            CategoryTileList(category: $category, isArchive: isArchive)
-                .padding(.vertical, 12)
-                .environmentObject(viewModel)
-                .environmentObject(theme)
+            CategoryTileList(
+                category: $category,
+                isArchive: isArchive
+            )
+            .padding(.vertical, 12)
+            .environmentObject(viewModel)
+            .environmentObject(theme)
         }
+        .padding(.horizontal, 6)
     }
-    
 }
 
 
-// MARK: - RenameCategoryV (local, a form)
+// MARK: - RenameCategoryV
+// a form - it is shown in RenamingSheetChrome
 private struct RenameCategoryV: View {
     @EnvironmentObject var theme: ThemeManager
     let screen: ScreenName = .history
@@ -454,13 +306,11 @@ private extension String {
 extension HistoryV {
     init(
         viewModel: HistoryVM,
-        _preview_isOrganizing: Bool = false,
         _preview_showRenameSheet: Bool = false,
         _preview_targetCategoryID: UUID? = nil,
         _preview_renameText: String = ""
     ) {
         self.viewModel = viewModel
-        _isOrganizing    = State(initialValue: _preview_isOrganizing)
         _showRenameSheet = State(initialValue: _preview_showRenameSheet)
         _targetCategoryID = State(initialValue: _preview_targetCategoryID)
         _renameText      = State(initialValue: _preview_renameText)
@@ -473,7 +323,7 @@ extension HistoryV {
 #Preview("History (dumb)") {
     let theme = ThemeManager()
     let hist  = HistoryVM(persistence: PersistenceActor()) // no seeding
-
+    
     HistoryV(viewModel: hist)
         .environmentObject(theme)
         .environmentObject(hist)
