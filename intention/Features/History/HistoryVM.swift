@@ -474,17 +474,16 @@ final class HistoryVM: ObservableObject {
     @discardableResult
     private func mutateMove(_ tile: TileM,
                             fromCategory sourceID: UUID,
-                            toCategory destinationID: UUID
-    ) -> TileM? {
+                            toCategory destinationID: UUID) -> TileM? {
         guard let fromIndex = categoryIndex(for: sourceID),
-                  let toIndex   = categoryIndex(for: destinationID),
-                  let tileIndex = categories[fromIndex].tiles.firstIndex(of: tile)
-            else { return nil }
-
-            let moving = categories[fromIndex].tiles.remove(at: tileIndex)
-            categories[toIndex].tiles.insert(moving, at: 0)
-            applyCaps(afterInsertingIn: toIndex)
-            return moving
+              let toIndex   = categoryIndex(for: destinationID),
+              let tileIndex = categories[fromIndex].tiles.firstIndex(of: tile)
+        else { return nil }
+        
+        let moving = categories[fromIndex].tiles.remove(at: tileIndex)
+        categories[toIndex].tiles.insert(moving, at: 0)
+        applyCaps(afterInsertingIn: toIndex)
+        return moving
     }
     
     // MARK: MOVE archive mirror - if anything's added
@@ -492,8 +491,8 @@ final class HistoryVM: ObservableObject {
                                          toCategory destinationCategoryID: UUID
     ){
         guard sourceCategoryID == archiveCategoryID || destinationCategoryID == archiveCategoryID else { return }
-           let intoArchive = categories.first(where: { $0.id == archiveCategoryID })?.tiles ?? []
-           Task { await archiveActor.saveArchivedTiles(intoArchive) }
+        let intoArchive = categories.first(where: { $0.id == archiveCategoryID })?.tiles ?? []
+        Task { await archiveActor.saveArchivedTiles(intoArchive) }
     }
     
     // MARK: MOVE Undo Window Scheduler that owns timing
@@ -516,8 +515,31 @@ final class HistoryVM: ObservableObject {
             }
             await MainActor.run { self.commitPendingUndoIfAny() }
         }
-        
     }
+    
+    // MARK: Only commits to storage when the window expires (or user leaves History / can no longer undo)
+    // Delayed-persist move for non-Archive (undo window)
+    func moveTileWithUndoWindow(_ tile: TileM,
+                                fromCategory sourceCategoryID: UUID,
+                                toCategory destinationCategoryID: UUID) {
+        // Non-Archive path only: call sites should route Archive to *moveTileThrowing*
+        guard destinationCategoryID != archiveCategoryID else { return }
+        
+        guard let moved = mutateMove(tile,
+                                     fromCategory: sourceCategoryID,
+                                     toCategory: destinationCategoryID) else {
+            lastError = HistoryError.moveFailed
+            return
+        }
+        
+        // Open the undo window (single timing place)
+        startUndoWindow(for: moved,
+                        fromCategory: sourceCategoryID,
+                        toCategory: destinationCategoryID)
+        
+        // No save here — commit happens when window expires / onDisappear / undo invalid
+    }
+    
     
     // MARK: MOVE Commit or Undo Move
     func commitPendingUndoIfAny() {
@@ -552,12 +574,13 @@ final class HistoryVM: ObservableObject {
         undoTickerTask?.cancel()
         undoTickerTask = nil
     }
-
+    
     
     // MARK: - Throwing save (direct)
     func saveHistoryThrowing() async throws {
         try await persistence.write(sanitizedForSave(categories), to: storageKey)
     }
+    
     
     // MARK: - Convenience throwers for call sites that want explicit errors
     func addToHistoryThrowing(_ tile: TileM, to categoryID: UUID) async throws {
@@ -571,37 +594,33 @@ final class HistoryVM: ObservableObject {
     }
     
     // (yes #2)
-    /// For cross-category moves: awaiting archive persistence before returning
+    /// For cross-category moves: IMMEDIATE move and save, awaits ARCHIVE persistence before returning
     func moveTileThrowing(_ tile: TileM,
                           fromCategory sourceID: UUID,
-                          toCategory destinationID: UUID
-    ) async throws {
-        guard
-            let fromIndex = categories.firstIndex(where: { $0.id == sourceID }),
-            let toIndex = categories.firstIndex(where: { $0.id == destinationID }),
-            let tileIndex = categories[fromIndex].tiles.firstIndex(of: tile)
-        else { debugPrint("[HistoryVM.moveTileThrowing //core] Category ID not found. Tile not added."); throw HistoryError.moveFailed}
-//        return nil?
-        
-        let moving = categories[fromIndex].tiles.remove(at: tileIndex)
-        categories[toIndex].tiles.insert(moving, at: 0)
-        applyCaps(afterInsertingIn: toIndex)
+                          toCategory destinationID: UUID) async throws {
+        guard let moved = mutateMove(tile,
+                                     fromCategory: sourceID,
+                                     toCategory: destinationID) else {
+            debugPrint("[HistoryVM.moveTileThrowing //core] Category ID not found. Tile not added."); throw HistoryError.moveFailed
+        }
         
         // If Archive is involved, mirror the authoritative store
-        if sourceID == archiveCategoryID || destinationID == archiveCategoryID {
-            let intoArchive = categories.first(where: { $0.id == archiveCategoryID })?.tiles ?? []
-            Task { await archiveActor.saveArchivedTiles(intoArchive) }
-        }
+        mirrorArchiveIfInvolved(fromCategory: sourceID, toCategory: destinationID)
         
+        // persist immediately
         saveHistory()
-        lastUndoableMove = (moving, sourceID, destinationID)
         
-        // Auto-clear undo affordance
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(3))
-            self.lastUndoableMove = nil
+        // Only show legacy "lastUndoableMove" if NO archive involved
+        if sourceID != archiveCategoryID && destinationID != archiveCategoryID {
+            lastUndoableMove = (moved, sourceID, destinationID)
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(3))
+                self.lastUndoableMove = nil
+            }
+        } else {
+            // Archive moves are irreversible in UI → ensure no undo affordance lingers
+            lastUndoableMove = nil
+            clearUndoWindow()
         }
     }
-    
-    //
 }

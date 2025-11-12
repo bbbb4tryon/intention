@@ -5,6 +5,7 @@
 //  Created by Benjamin Tryon on 10/21/25.
 //
 
+#if !NO_POWER_ORGANIZER
 import SwiftUI
 
 /// A full-screen wrapper that *looks* like a sheet: rounded top, grabber, swipe down to dismiss.
@@ -80,4 +81,5 @@ struct OrganizerOverlayChrome<Content: View>: View {
     .environmentObject(ThemeManager())
     .frame(maxWidth: 430)
 }
+#endif
 #endif

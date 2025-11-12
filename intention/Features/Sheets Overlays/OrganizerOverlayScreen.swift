@@ -5,6 +5,7 @@
 //  Created by Benjamin Tryon on 10/20/25.
 //
 
+#if !NO_POWER_ORGANIZER
 import SwiftUI
 
 struct OrganizerOverlayScreen: View {
@@ -87,5 +88,5 @@ struct OrganizerOverlayScreen: View {
     .frame(maxWidth: 430)
 }
 #endif
-
+#endif
 

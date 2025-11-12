@@ -5,6 +5,7 @@
 //  Created by Benjamin Tryon on 8/5/25.
 //
 
+#if !NO_POWER_ORGANIZER
 import UIKit
 // Authority on delegates and section headers - with reorder support and onReorder callback
 //Within-category reorder (UIKit reordering, SwiftUI list drag end)
@@ -174,3 +175,4 @@ extension TileOrganizerVC: UICollectionViewDragDelegate, UICollectionViewDropDel
         dragSourceIndexPath = nil
     }
 }
+#endif

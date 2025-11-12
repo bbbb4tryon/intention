@@ -382,25 +382,25 @@ struct RootView: View {
 
             // Organizer overlay using LIVE history categories (no mocks).
             // We pass a Binding into OrganizerOverlayScreen so reordering acts on your real data.
-            .fullScreenCover(isPresented: $debug.showOrganizer) {
-                OrganizerOverlayChrome(onClose: { debug.showOrganizer = false }) {
-                    OrganizerOverlayScreen(
-                        categories: Binding(
-                            get: { historyVM.categories },
-                            set: { historyVM.categories = $0 }
-                        ),
-                        onMoveTile: { tile, sourceID, destinationID in
-                            historyVM.moveTileBetweenCategories(tile, fromCategory: sourceID, toCategory: destinationID)
-                        },
-                        onReorder: { newTiles, catID in
-                            historyVM.reorderTiles(newTiles, in: catID)
-                            
-                        },
-                        onDone: { debug.showOrganizer = false }
-                    )
-                }
-                .environmentObject(theme)
-            }
+//            .fullScreenCover(isPresented: $debug.showOrganizer) {
+//                OrganizerOverlayChrome(onClose: { debug.showOrganizer = false }) {
+//                    OrganizerOverlayScreen(
+//                        categories: Binding(
+//                            get: { historyVM.categories },
+//                            set: { historyVM.categories = $0 }
+//                        ),
+//                        onMoveTile: { tile, sourceID, destinationID in
+//                            historyVM.moveTileBetweenCategories(tile, fromCategory: sourceID, toCategory: destinationID)
+//                        },
+//                        onReorder: { newTiles, catID in
+//                            historyVM.reorderTiles(newTiles, in: catID)
+//                            
+//                        },
+//                        onDone: { debug.showOrganizer = false }
+//                    )
+//                }
+//                .environmentObject(theme)
+//            }
         
         
             .fullScreenCover(isPresented: memVM.showSheetBinding) {

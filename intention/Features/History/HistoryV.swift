@@ -6,18 +6,14 @@
 //
 
 import SwiftUI
-/// content-management screen with an explicit Edit/Done mode
+
+/// content-management screen
+/// swipes live in CategoryTileList
 struct HistoryV: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var theme: ThemeManager
     @ObservedObject var viewModel: HistoryVM
-    @Environment(\.editMode) private var editMode
-    
-    // UI State
-    //    @State private var newTextTiles: [UUID: String] = [:]       /// Store new tile text per category using its `id` as key
-    @State private var isOrganizing = false
-    @State private var showOrganizerOverlay = false
-    @State private var showErrorOverlay = false
+
     @State private var createdCategoryID: UUID?
     @State private var targetCategoryID: UUID?
     @State private var showRenamePicker = false
@@ -36,15 +32,19 @@ struct HistoryV: View {
     // --- Local Color Definitions for History ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
-    private let colorDanger = Color.red
+
+    
+    // MARK: Commit any pending move; then flush debounced writes
+    func finalizeHistoryIfNeededOnDisappear() {
+        viewModel.commitPendingUndoIfAny()
+        viewModel.flushPendingSaves()
+    }
     
     var body: some View {
         ScrollView {
             Page(top: 6, alignment: .center) {
-                
                 LazyVStack(alignment: .leading, spacing: 8) {
                     // $Bindings are so rows can edit categories
-                    
                     ForEach($viewModel.categories) { $category in
                         CategoryCard(
                             category: $category,
@@ -68,11 +68,12 @@ struct HistoryV: View {
             
             // Toasts
             VStack(spacing: 8) {
-                if let move = viewModel.lastUndoableMove {
-                    HStack {
-                        //                        Text("\(move.tile.text) moved").font(.footnote)
-                        //                        Spacer()
-                        Button {viewModel.undoLastMove()} label: { T("Undo?", .action) }.primaryActionStyle(screen: screen)
+                if let _ = viewModel.pendingUndoMove {
+                    HStack(spacing: 12) {
+                        Image(systemName: "arrow.uturn.backward")
+                        Text("Moved. Undo?")
+                        Spacer()
+                        Button {viewModel.undoPendingMoveIfPossible()} label: { T("Undo?", .action) }.primaryActionStyle(screen: screen)
                     }
                     .padding(.horizontal, 12)           // Card instead?
                     .padding(.vertical, 10)             // Card instead?
@@ -93,6 +94,10 @@ struct HistoryV: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
+
+            /* --------------------------------------------------------------------- */
+                    .onDisappear { finalizeHistoryIfNeededOnDisappear }
+            /* --------------------------------------------------------------------- */
         }
         .background(p.background)
         .opacity(isOrganizing ? 0.98 : 1.0) // so history bg wins against organizerOverlay
@@ -106,6 +111,7 @@ struct HistoryV: View {
         .toolbar { historyToolbar }
         .environmentObject(theme)
         .environmentObject(viewModel)
+
         //        /// [.medium] is half-screen, .visible affordance
         //        .sheet(isPresented: $showRenameSheet) {
         //            renameSheet
