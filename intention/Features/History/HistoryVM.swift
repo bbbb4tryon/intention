@@ -518,6 +518,40 @@ final class HistoryVM: ObservableObject {
         }
         
     }
+    
+    // MARK: MOVE Commit or Undo Move
+    func commitPendingUndoIfAny() {
+        // Delaying move until confirmed
+        guard pendingUndoMove != nil else { return }
+        // Persist current category state
+        saveHistory()
+        clearUndoWindow()
+    }
+    
+    func undoPendingMoveIfPossible() {
+        guard let p = pendingUndoMove, canUndoCurrentMove(),
+              let toIdx = categoryIndex(for: p.toCategoryID),
+              let fromIdx = categoryIndex(for: p.fromCategoryID),
+              let tileIdx = categories[toIdx].tiles.firstIndex(of: p.tile)
+        else { return }
+        
+        // revert
+        let revertBack = categories[toIdx].tiles.remove(at: tileIdx)
+        categories[fromIdx].tiles.insert(revertBack, at: 0)
+        applyCaps(afterInsertingIn: fromIdx)
+        
+        // persist the reversion immediately (keeps state consistent)
+        saveHistory()
+        
+        clearUndoWindow()
+    }
+    
+    private func clearUndoWindow() {
+        pendingUndoMove = nil
+        lastUndoableMove = nil
+        undoTickerTask?.cancel()
+        undoTickerTask = nil
+    }
 
     
     // MARK: - Throwing save (direct)
