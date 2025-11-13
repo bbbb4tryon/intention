@@ -9,35 +9,9 @@ import SwiftUI
 import Foundation
 
 extension HistoryVM {
-    
-    // User-defined categories (not General/Archive)
-    var userCategoryIDs: [UUID] {
-        categories
-            .map(\.id)
-            .filter { $0 != generalCategoryID && $0 != archiveCategoryID }
-    }
-    
-    // Archive helpers
-    var hasAnyGeneralTiles: Bool {
-        categories.first(where: { $0.id == generalCategoryID })?.tiles.isEmpty == false
-    }
 
-    // Name lookup by ID (safe default)
-    func name(for id: UUID) -> String {
-        categories.first(where: { $0.id == id })?.persistedInput ?? "Untitled"
-    }
     
-    // Archive the most recent from General -> Archive (keeps your cap + actor mirroring)
-    @MainActor
-    func archiveMostRecentFromGeneral() async {
-        guard
-            let gIdx = categories.firstIndex(where: { $0.id == generalCategoryID }),
-            let first = categories[gIdx].tiles.first
-        else { return }
-        do {
-            try await moveTileThrowing(first, fromCategory: generalCategoryID, toCategory: archiveCategoryID)
-        } catch { self.lastError = error }
-    }
+
 }
 
 //
