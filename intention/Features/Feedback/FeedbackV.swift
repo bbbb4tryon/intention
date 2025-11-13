@@ -45,9 +45,7 @@ struct FeedbackV: View {
     
     private let screen: ScreenName = .settings
     private var p: ScreenStylePalette { theme.palette(for: screen) }
-    private var T: (String, TextRole) -> Text {
-        { key, role in theme.styledText(key, as: role, in: screen) }
-    }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     // --- Local Color Definitions for FeedbackV ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)

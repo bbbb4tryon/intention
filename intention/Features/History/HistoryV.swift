@@ -14,6 +14,7 @@ struct HistoryV: View {
     @EnvironmentObject var theme: ThemeManager
     @ObservedObject var viewModel: HistoryVM
     
+    // UI State
     @State private var createdCategoryID: UUID?
     @State private var targetCategoryID: UUID?
     @State private var showRenamePicker = false
@@ -25,9 +26,7 @@ struct HistoryV: View {
     
     private let screen: ScreenName = .history
     private var p: ScreenStylePalette { theme.palette(for: screen) }
-    private var T: (String, TextRole) -> Text {
-        { key, role in theme.styledText(key, as: role, in: screen) }
-    }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     // --- Local Color Definitions for History ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
@@ -66,8 +65,11 @@ struct HistoryV: View {
                         Image(systemName: "arrow.uturn.backward")
                         Text("Moved. Undo?")
                         Spacer()
-                        Button {viewModel.undoPendingMoveIfPossible() } label: {
-                            T("Undo?", .action) }.primaryActionStyle(screen: screen)
+                        Button {viewModel.undoPendingMoveIfPossible()
+                        } label: {
+                            T("Undo?", .action)
+                        }
+                        .primaryActionStyle(screen: screen)
                     }
                     .padding(.horizontal, 12)               // to Card instead?
                     .padding(.vertical, 10)                 // to Card instead?
@@ -97,6 +99,18 @@ struct HistoryV: View {
         .toolbar { historyToolbar }
         .environmentObject(theme)
         .environmentObject(viewModel)
+        .overlay {
+            if let error = viewModel.lastError {
+                ErrorOverlay(error: error) { viewModel.setError(nil) }
+                    .transition(.opacity.combined(with: .scale))
+                    .zIndex(1)
+                    .allowsHitTesting(true)     // opt-in to hits only when visible
+            }
+        }
+        .onDisappear {
+            viewModel.finalizeHistoryIfNeededOnDisappear()
+        }
+    //        Spacer(minLength: 0)
         
         .fullScreenCover(isPresented: $showRenameSheet) {
             RenamingSheetChrome(onClose: {
@@ -131,19 +145,9 @@ struct HistoryV: View {
                 }
             }
             Button("Cancel", role: .cancel) { }
-        } message: { Text("Tiles will be moved to Archive.") }
-            .overlay {
-                if let error = viewModel.lastError {
-                    ErrorOverlay(error: error) { viewModel.setError(nil) }
-                        .transition(.opacity.combined(with: .scale))
-                        .zIndex(1)
-                        .allowsHitTesting(true)     // opt-in to hits only when visible
-                }
-            }
-            .onDisappear {
-                viewModel.finalizeHistoryIfNeededOnDisappear()
-            }
-        //        Spacer(minLength: 0)
+        } message: {
+            T("Tiles will be moved to Archive.", .tile)
+        }
     }
     
     
@@ -212,7 +216,7 @@ extension Array {
 }
 
 // MARK: - Category Card (local)
-///composes CategoryHeaderRow  + CategoryTileList with the rounded card chrome
+// Creates rounded card chrome around CategoryHeaderRow and CategoryTileList
 private struct CategoryCard: View {
     @Binding var category: CategoriesModel
     let isArchive: Bool

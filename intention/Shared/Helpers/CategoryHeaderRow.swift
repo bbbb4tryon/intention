@@ -12,9 +12,7 @@ struct CategoryHeaderRow: View {
     
     private let screen: ScreenName = .history
     private var p: ScreenStylePalette { theme.palette(for: screen) }
-    private var T: (String, TextRole) -> Text {
-        { key, role in theme.styledText(key, as: role, in: screen) }
-    }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     let title: String
     let count: Int
