@@ -18,41 +18,79 @@ struct CategoryHeaderRow: View {
     let count: Int
     let isArchive: Bool
     
-    /// Only allow edit menu for user categories (not General/Archive).
+    // Only allow edit menu for user categories (not General/Archive).
     var allowEdit: Bool = true
     var onRename: () -> Void
     
     // --- Local Color Definitions for History ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
-    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
-    private let colorDanger = Color.red
+    
+    // MARK: - Computed helpers
+    
+    private var iconName: String? {
+        isArchive ? "archivebox.fill" : nil
+    }
+    
+    private var iconTint: Color {
+        isArchive ? p.text : p.accent
+    }
+    
+    private var countText: String {
+        "\(count)"
+    }
+    
+    private var canEdit: Bool {
+        allowEdit
+    }
+    
+    private var accessibilityLabelText: String {
+        "\(title), \(count) items"
+    }
+    
+    // MARK: - Body
     
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: isArchive ? "archivebox.fill" : "")
-                .imageScale(.small)
-                .foregroundStyle(isArchive ? p.text : p.accent)
+            if let iconName {
+                Image(systemName: iconName)
+                    .imageScale(.small)
+                    .foregroundStyle(iconTint)
+            }
             
             T(title, .label)
                 .lineLimit(2)
             
             Spacer()
             
-            Text("\(count)")
+            Text(countText)
                 .font(.callout.monospacedDigit())
                 .foregroundStyle(textSecondary)
             
-            if allowEdit {
-                Menu {
-                    Button("Rename", action: onRename).padding()
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .foregroundStyle(p.primary)
-                        .imageScale(.medium)
-                }
+            if canEdit {
+                editMenu
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title), \(count) items")
+        .accessibilityLabel(accessibilityLabelText)
+    }
+    
+    // MARK: Edit menu
+    
+    private var editMenu: some View {
+        Menu {
+            Button(action: onRename) {
+                HStack {
+                    Image(systemName: "pencil")
+                    T("Rename Category", .action)
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "ellipsis.circle")
+                T("More", .action)
+            }
+            .imageScale(.medium)
+            .foregroundStyle(p.primary)
+        }
     }
 }
