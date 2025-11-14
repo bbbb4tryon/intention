@@ -24,7 +24,7 @@ struct HistoryV: View {
     @State private var showDeleteConfirm = false
     @State private var isBusy = false
     
-    // Theme
+    /// Theme hooks
     private let screen: ScreenName = .history
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
@@ -325,7 +325,7 @@ private struct CategoryCard: View {
     let isArchive: Bool
     var onRename: (UUID) -> Void
     
-    // Theme
+    /// Theme hooks
     private let screen: ScreenName = .history
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
@@ -362,7 +362,7 @@ private struct RenameCategoryV: View {
     var onCancel: () -> Void
     var onSave: () -> Void
     
-    // Theme
+    /// Theme hooks
     private let screen: ScreenName = .history
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }

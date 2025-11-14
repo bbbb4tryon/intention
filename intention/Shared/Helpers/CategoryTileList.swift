@@ -22,7 +22,7 @@ struct CategoryTileList: View {
     
     let isArchive: Bool
     
-    // Theme plumbing
+    /// Theme hooks
     private let screen: ScreenName = .history
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
@@ -319,7 +319,7 @@ private struct MoveChipRow: View {
     /// Called after a non-archive move completes (to collapse the bar)
     var onMovedNonArchive: () -> Void
     
-    // Theme
+    /// Theme hooks
     private let screen: ScreenName = .history
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }

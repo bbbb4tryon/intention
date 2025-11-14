@@ -82,54 +82,73 @@ struct FocusSessionActiveV: View {
                         if isInputActive {
                             // onSubmit and primaryCTA both call the same VM method handlePrimaryTap() -> "same funnel"
                             // lifted .placeholder / .caption contrast in ThemeManager and that boots this textfield
-//                            
-//                            IntentionField(
-//                                p: p,
-//                                text: $focusVM.tileText,
-//                                showValidation: $showValidation,
-//                                vState: vState,
-//                                isEnabled: isInputActive,
-//                                
-//                            ) { trimmed in
-//                                Task { try await focusVM.handlePrimaryTap(validatedInput: trimmed) }
-//                            }
-                            // << ---------------------------------------------------------------------------------------------------------------------------------------- >> //
-                                                        TextField("", text: $focusVM.tileText, prompt: T("Add Your Intended Task", .caption))
-                                                            .focused($intentionFocused)
-                                                            .submitLabel(.done)
-                                                            .validatingField(state: vState, palette: p) // charcoal until showValidation == true & invalid
-                                                            .disabled(!isInputActive)                   // lock after 2
-                                                            .autocorrectionDisabled()
-                                                            .textInputAutocapitalization(.sentences)
-                                                            .onSubmit {
-                                                                showValidation = true                   // turn validation on
-                                                                guard vState.isInvalid == false else { return } // stay focused and show message
-                                                                // Valid -> add
-                                                                let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-                                                                Task {
-                                                                    do {
-                                                                        _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed)
-                                                                    } catch {
-                                                                        FocusSessionError.unexpected
-                                                                    }
-                                                                }
-                                                                focusVM.tileText = ""                   // Clear text field
-                                                                intentionFocused = (focusVM.tiles.count < 2) // re-focus UNTIL two tiles
-                                                                showValidation = false                  // reset to neutral for next entry
-                                                            }
-                                                        // Display ValidationCaption BELOW Textfield
-                                                        //      Caption only after first submit AND invalid
-                                                        if showValidation, case .invalid = vState {
-                                                            // Use VState logic for the correct messages
-                                                            ValidationCaption( state: vState)
-                                                            //FIXME: USE THIS BELOW, OR KEEP state: vState, palette: p
-                                                            //                                    state: vState.isInvalid ? vState : .invalid(messages: ["Please enter a task, what you intend to do."]),
-                                                            //                                    palette: p
                             
-                                                        }
-                            
-                            // << ---------------------------------------------------------------------------------------------------------------------------------------- >> //
+                            IntentionField(
+                                p: p,
+                                text: $focusVM.tileText,
+                                showValidation: $showValidation,
+                                vState: vState,
+                                isEnabled: isInputActive
+                            ) { trimmed in
+                                Task {
+                                    do {
+                                        _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed)
+                                    } catch {
+                                        debugPrint(
+                                            "[FocusSessionActiveV] handlePrimaryTap(from IntentionField) failed: \(error)"
+                                        )
+                                    }
+                                }
+                            }
                         }
+                        ////
+                        ////                            IntentionField(
+                        ////                                p: p,
+                        ////                                text: $focusVM.tileText,
+                        ////                                showValidation: $showValidation,
+                        ////                                vState: vState,
+                        ////                                isEnabled: isInputActive,
+                        ////
+                        ////                            ) { trimmed in
+                        ////                                Task { try await focusVM.handlePrimaryTap(validatedInput: trimmed) }
+                        ////                            }
+                        //                            // << ---------------------------------------------------------------------------------------------------------------------------------------- >> //
+                        //                                                        TextField("", text: $focusVM.tileText, prompt: T("Add Your Intended Task", .caption))
+                        //                                                            .focused($intentionFocused)
+                        //                                                            .submitLabel(.done)
+                        //                                                            .validatingField(state: vState, palette: p) // charcoal until showValidation == true & invalid
+                        //                                                            .disabled(!isInputActive)                   // lock after 2
+                        //                                                            .autocorrectionDisabled()
+                        //                                                            .textInputAutocapitalization(.sentences)
+                        //                                                            .onSubmit {
+                        //                                                                showValidation = true                   // turn validation on
+                        //                                                                guard vState.isInvalid == false else { return } // stay focused and show message
+                        //                                                                // Valid -> add
+                        //                                                                let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        //                                                                Task {
+                        //                                                                    do {
+                        //                                                                        _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed)
+                        //                                                                    } catch {
+                        //                                                                        FocusSessionError.unexpected
+                        //                                                                    }
+                        //                                                                }
+                        //                                                                focusVM.tileText = ""                   // Clear text field
+                        //                                                                intentionFocused = (focusVM.tiles.count < 2) // re-focus UNTIL two tiles
+                        //                                                                showValidation = false                  // reset to neutral for next entry
+                        //                                                            }
+                        //                                                        // Display ValidationCaption BELOW Textfield
+                        //                                                        //      Caption only after first submit AND invalid
+                        //                                                        if showValidation, case .invalid = vState {
+                        //                                                            // Use VState logic for the correct messages
+                        //                                                            ValidationCaption( state: vState)
+                        //                                                            //FIXME: USE THIS BELOW, OR KEEP state: vState, palette: p
+                        //                                                            //                                    state: vState.isInvalid ? vState : .invalid(messages: ["Please enter a task, what you intend to do."]),
+                        //                                                            //                                    palette: p
+                        //
+                        //                                                        }
+                        //
+                        //                            // << ---------------------------------------------------------------------------------------------------------------------------------------- >> //
+                        //                        }
                         // Guidance  Messages (no Add/Begin here)
                         DynamicMessageAndActionArea(
                             onRecalibrateNow: { focusVM.showRecalibrate = true }
@@ -234,20 +253,28 @@ struct FocusSessionActiveV: View {
             }
             
             
-            Button {
-                showValidation = true
-                // For Add flow, enforce validation first; for Begin flow canPrimary already handles phase/tiles.
-                if focusVM.tiles.count < 2 && vState.isInvalid { return }
-                let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-                Task {
-                    do { _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed) }
-                    catch { /* show error overlay if desired */ }
-                }
-                focusVM.tileText = ""
-                intentionFocused = (focusVM.tiles.count < 2)
-                showValidation = false
-            } label: {
-                T(focusVM.primaryCTATile, .action).monospacedDigit()
+            Button(action: handlePrimaryCTATap) {
+                primaryCTALabel
+                //                showValidation = true
+                //                // For Add flow, enforce validation first; for Begin flow canPrimary already handles phase/tiles.
+                //                if focusVM.tiles.count < 2 && vState.isInvalid {
+                //                    return
+                //                }
+                //                let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
+                //
+                //                Task {
+                //                    do { _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed) }
+                //                    catch {
+                //                        debugPrint("[FocusSessionActiveV] handlePrimaryTap(from primary CTA) failed: \(error)")
+                //                        // If you later add focusVM.setError(_:) or similar, plug it in here.
+                //                        /* show error overlay? */
+                //                    }
+                //                }
+                //
+                //                focusVM.tileText = ""
+                //                intentionFocused = (focusVM.tiles.count < 2)
+                //                showValidation = false
+                
             }
             .primaryActionStyle(screen: screen)
             .pulseAura(color: p.accent, active: focusVM.ui_isReadyForBegin)   // VM-driven
@@ -300,6 +327,45 @@ struct FocusSessionActiveV: View {
         }
     }
     
+    // MARK: - Primary CTA helpers
+    /// Icon for the primary CTA button
+    ///     - Before two tiles: "add"
+    ///     - When ready to begin: "play"
+    private var primaryCTAIconName: String {
+        focusVM.ui_isReadyForBegin ? "play.fill" : "plus.circle"
+    }
+    
+    private var primaryCTALabel: some View {
+        HStack {
+            Image(systemName: primaryCTAIconName)
+            T(focusVM.primaryCTATile, .action)
+                .monospacedDigit()
+        }
+    }
+    
+    // MARK: Centralized primary-CTA tap handler
+    private func handlePrimaryCTATap() {
+        showValidation = true
+        // For Add flow, enforce validation first; for Begin flow canPrimary already handles phase/tiles.
+        if focusVM.tiles.count < 2 && vState.isInvalid {
+            return
+        }
+        let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        Task {
+            do { _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed) }
+            catch {
+                debugPrint("[FocusSessionActiveV] handlePrimaryTap(from primary CTA) failed: \(error)")
+                // If you later add focusVM.setError(_:) or similar, plug it in here.
+                /* show error overlay? */
+            }
+        }
+        
+        focusVM.tileText = ""
+        intentionFocused = (focusVM.tiles.count < 2)
+        showValidation = false
+    }
+    
     // MARK: keeps "show validation, submit, text" in one location
     private struct IntentionField: View {
         @EnvironmentObject var theme: ThemeManager
@@ -312,7 +378,7 @@ struct FocusSessionActiveV: View {
         let onValidatedSubmit: (String) -> Void
         
         @FocusState private var isFocused: Bool
-
+        
         
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
@@ -321,13 +387,13 @@ struct FocusSessionActiveV: View {
                     text: $text,
                     prompt: theme.styledText("Add Your Intended Task", as: .caption, in: .focus)
                 )
-                    .focused($isFocused)
-                    .submitLabel(.done)
-                    .validatingField(state: vState, palette: p)
-                    .disabled(!isEnabled)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.sentences)
-                    .onSubmit { handleSubmit() }
+                .focused($isFocused)
+                .submitLabel(.done)
+                .validatingField(state: vState, palette: p)
+                .disabled(!isEnabled)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.sentences)
+                .onSubmit { handleSubmit() }
                 
                 if showValidation, case .invalid = vState {
                     ValidationCaption(state: vState)
@@ -428,7 +494,7 @@ struct FocusSessionActiveV: View {
         }
     }
 }
-   
+
 #if DEBUG
 @MainActor private extension FocusSessionVM {
     static var preview: FocusSessionVM {
@@ -451,7 +517,7 @@ struct FocusSessionActiveV: View {
                                haptics: NoopHapticsClient(),
                                config: .current)
     let recal  = RecalibrationVM(haptics: NoopHapticsClient())
-
+    
     FocusSessionActiveV(
         focusVM: focus,
         recalibrationVM: recal
