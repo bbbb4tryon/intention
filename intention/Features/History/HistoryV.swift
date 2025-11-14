@@ -32,6 +32,7 @@ struct HistoryV: View {
     // --- Local Color Definitions for History ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
+    private let dividerRects = Color(red: 0.878, green: 0.847, blue: 0.796)
     
     // MARK: - Computed helpers
     
@@ -45,6 +46,11 @@ struct HistoryV: View {
     
     private var historyTitleText: Text {
         T("History", .header)
+    }
+    
+    private func finalizeHistoryIfNeededOnDisappear() {
+        viewModel.commitPendingUndoIfAny()
+        viewModel.flushPendingSaves()
     }
     
     // MARK: - Body
@@ -67,25 +73,19 @@ struct HistoryV: View {
                         .id(category.id)
                         
                         // -- category separator --
-                        Rectangle()
-                            .fill(colorBorder)
-                            .frame(height: 1)
-                            .padding(.vertical, 4)
+                        separator
+                        //                        Rectangle()
+                        //                            .fill(colorBorder)
+                        //                            .frame(height: 1)
+                        //                            .padding(.vertical, 4)
+                        
                     }
                 }
             }
             
             // Toasts
-            VStack(spacing: 8) {
-                if viewModel.pendingUndoMove != nil {
-                    undoToast
-                }
-                
-                if viewModel.tileLimitWarning {
-                    archiveCapToast
-                }
-            }
-            .padding(.bottom, 8)
+            HistoryToasts()
+                .padding(.bottom, 8)
         }
         .background(p.background)
         .tint(p.accent)
@@ -103,7 +103,7 @@ struct HistoryV: View {
             }
         }
         .onDisappear {
-            viewModel.finalizeHistoryIfNeededOnDisappear()
+            finalizeHistoryIfNeededOnDisappear()
         }
         .sheet(isPresented: $showRenameSheet) {
             renameCategorySheet
@@ -122,49 +122,19 @@ struct HistoryV: View {
             T("Tiles will be moved to Archive.", .tile)
         }
     }
-    
-    // MARK: - Toast views
-    
-    private var undoToast: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "arrow.uturn.backward")
-                .imageScale(.medium)
-                .foregroundStyle(p.text)
-            
-            T("Moved.", .secondary)
-            
-            Spacer()
-            
-            Button(action: {
-                viewModel.undoPendingMoveIfPossible()
-            }) {
-                HStack {
-                    Image(systemName: "arrow.uturn.backward.circle")
-                    T("Undo", .action)
-                }
-            }
-            .primaryActionStyle(screen: screen)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: Capsule())
-        .transition(.move(edge: .bottom).combined(with: .opacity))
+
+    // MARK: - Subviews
+    private var separator: some View {
+        Rectangle()
+            .fill(dividerRects)
+            .frame(height: 1)
+            .padding(.leading, 6)
+            .padding(.trailing, 6)
+            .padding(.top, 6)
     }
     
-    private var archiveCapToast: some View {
-        T("Archive capped at 200; oldest items were removed.", .tile)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(.ultraThinMaterial, in: Capsule())
-            .task {
-                try? await Task.sleep(for: .seconds(2))
-                await MainActor.run { viewModel.tileLimitWarning = false }
-            }
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-    }
     
     // MARK: - Rename Sheet
-    
     private var renameCategorySheet: some View {
         RenamingSheetChrome(onClose: {
             showRenameSheet = false
@@ -197,7 +167,6 @@ struct HistoryV: View {
     }
     
     // MARK: - Toolbar
-    
     @ToolbarContentBuilder
     private var historyToolbar: some ToolbarContent {
         ToolbarItem(placement: .principal) {
@@ -219,7 +188,6 @@ struct HistoryV: View {
     }
     
     // MARK: Toolbar button blocks (Image + T pattern)
-    
     private var addCategoryToolbarButton: some View {
         Button(action: {
             if let id = viewModel.addEmptyUserCategory() {
@@ -445,6 +413,77 @@ private struct RenameCategoryV: View {
     }
 }
 
+// MARK: - HistoryToasts
+/// Extracted toast stack so HistoryV reads as: list → toasts → overlays.
+private struct HistoryToasts: View {
+    @EnvironmentObject var theme: ThemeManager
+    @EnvironmentObject var viewModel: HistoryVM
+    
+    private let screen: ScreenName = .history
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var T: (String, TextRole) -> Text {
+        { key, role in theme.styledText(key, as: role, in: screen) }
+    }
+    
+    private var showsUndoToast: Bool {
+        viewModel.pendingUndoMove != nil
+    }
+    
+    private var showsArchiveCapToast: Bool {
+        viewModel.tileLimitWarning
+    }
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            if showsUndoToast {
+                undoToast
+            }
+            
+            if showsArchiveCapToast {
+                archiveCapToast
+            }
+        }
+    }
+    
+    // MARK: - Individual toasts
+    private var undoToast: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "arrow.uturn.backward")
+                .imageScale(.medium)
+                .foregroundStyle(p.text)
+            
+            T("Moved.", .secondary)
+            
+            Spacer()
+            
+            Button(action: {
+                viewModel.undoPendingMoveIfPossible()
+            }) {
+                HStack {
+                    Image(systemName: "arrow.uturn.backward.circle")
+                    T("Undo", .action)
+                }
+            }
+            .primaryActionStyle(screen: screen)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial, in: Capsule())
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+    
+    private var archiveCapToast: some View {
+        T("Archive capped at 200; oldest items were removed.", .tile)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(.ultraThinMaterial, in: Capsule())
+            .task {
+                try? await Task.sleep(for: .seconds(2))
+                await MainActor.run { viewModel.tileLimitWarning = false }
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+}
 
 // UUID helper
 private extension String {
