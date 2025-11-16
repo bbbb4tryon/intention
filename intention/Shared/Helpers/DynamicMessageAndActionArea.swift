@@ -18,29 +18,34 @@ struct DynamicMessageAndActionArea: View {
     private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     // MARK: Computed helpers
-
+    private var recalibrateNowLabel: some View {
+        HStack {
+            Image(systemName: "sparkles")
+            T("Recalibrate Now", .action)
+        }
+    }
+    
+    private var endEarlyLabel: some View {
+        HStack {
+            Image(systemName: "xmark.circle")
+            T("End Early", .action)
+        }
     }
     
     var body: some View {
         VStack(spacing: 16) {
+            // Session complete -> recalibration
             if focusVM.showRecalibrate {
-                T(
-                        """
-                        Session complete!
-                        Time to Rest and Recalibrate Your Mind.
-                        """,
-                        .title3
-                )
+                T("""
+                Session complete!
+                Time to Rest and Recalibrate Your Mind.
+                """,.title3)
                 .foregroundStyle(p.text)
                 .multilineTextAlignment(.center)
                 
                 VStack(spacing: 10) {
-                    
-                    Button(action: { onRecalibrateNow() }){
-                        HStack {
-                            Image(systemName: "sparkles")
-                            T("Recalibrate Now", .action)
-                        }
+                    Button(action: onRecalibrateNow ){
+                        recalibrateNowLabel
                     }
                     .primaryActionStyle(screen: screen)
                     
@@ -56,44 +61,23 @@ struct DynamicMessageAndActionArea: View {
                         role: .destructive,
                         action: {
                             focusVM.performAsyncAction { await focusVM.resetSessionStateForNewStart() } }) {
-                                HStack {
-                                    Image(systemName: "xmark.circle")
-                                    T("End Early", .action)
-                                }
+                                endEarlyLabel
                             }
-                    //                        .secondaryActionStyle(screen: screen)
-                    
+                            .secondaryActionStyle(screen: screen)
                 }
-            } else if focusVM.currentSessionChunk == 1 && focusVM.phase == .finished {
-                T("Done, Continue Your Streak to the Next One?", .title3)
-                    .foregroundStyle(p.text)
-                    .multilineTextAlignment(.center)
-                
-                Button(
-                    action: {
-                        focusVM.performAsyncAction { try await focusVM.beginOverallSession() } }) {
-                            HStack {
-                                Image(systemName: "forward.end.alt.fill")
-                                T("Start Next", .action)
-                            }
-                        }
-                    .primaryActionStyle(screen: screen)
-                
-                Button(
-                    role: .destructive,
-                    action: {
-                        focusVM.performAsyncAction { await focusVM.resetSessionStateForNewStart() } }) {
-                            HStack {
-                                Image(systemName: "xmark.circle")
-                                T("End Early", .action)
-                            }
-                        }
-                
-            } else if focusVM.tiles.count < 2, focusVM.phase == .running {  // if needed, intentionally quiet
-            } else if focusVM.phase == .idle {                           // if needed, quiet
-            } else if focusVM.phase == .paused {                        // no text needed - handled in DynamicCountdown()
             }
+        } else if focusVM.currentSessionChunk == 1 && focusVM.phase == .finished {
+            // text only here, relies on bottom CTA for "Next" button
+            T("Done, Continue Your Streak to the Next One?", .title3)
+                .foregroundStyle(p.text)
+                .multilineTextAlignment(.center)
+            
+        } else if focusVM.tiles.count < 2, focusVM.phase == .running {
+            T("Finish adding", .label)
+        } else if focusVM.phase == .idle {                           // if needed, hint like "Add next intention above"
+        } else if focusVM.phase == .paused {                        // no text needed - handled in DynamicCountdown()
         }
-        .padding(.vertical, 8)
     }
+        .padding(.vertical, 8)
 }
+

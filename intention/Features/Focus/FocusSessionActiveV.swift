@@ -199,6 +199,7 @@ struct FocusSessionActiveV: View {
         intentionFocused = (focusVM.tiles.count < 2)
         showValidation = false
     }
+
     
     // MARK: - Body
     var body: some View {
@@ -274,8 +275,18 @@ struct FocusSessionActiveV: View {
                     isFilled: (slots[slot]?.isEmpty == false),
                     isCompleted: completionForSlot(slot),
                     isActive: isActiveSlot(slot),
+                    isEditable: focusVM.canEditTile(at: slot),
                     p: p,
-                    diffNoColor: diffNoColor
+                    diffNoColor: diffNoColor,
+                    onTap: {
+                        // only try to edit if there's a tile
+                        guard slots[slot] != nil else { return }
+                        //vm owns mutation and rules
+                        focusVM.beginEditingTile(at: slot)
+                        //View owns focus and validation UX
+                        showValidation = false
+                        intentionFocused = true
+                    }
                 )
                 .environmentObject(theme)
             }
@@ -365,8 +376,10 @@ struct FocusSessionActiveV: View {
         let isFilled: Bool
         let isCompleted: Bool
         let isActive: Bool
+        let isEditable: Bool
         let p: ScreenStylePalette
         let diffNoColor: Bool
+        let onTap: (() -> Void)?
         
         // Layout constants
         private let hPad: CGFloat = 10
@@ -379,11 +392,24 @@ struct FocusSessionActiveV: View {
         private let colorDanger = Color.red
         private let colorSuccess = Color.green
         
+        // MARK: Computed Helpers
+        
+        /// Icon logic:
+        /// - Completed      → checkmark.circle.fill
+        /// - Editable       → pencil.circle
+        /// - Default filled → checkmark.circle
+        private var trailingIconName: String {
+            if isCompleted { return "checkmark.circle.fill" }
+            if isEditable { return "pencil.circle" }
+            return "checkmark.circle"
+        }
+        
+        // MARK: - Body
         var body: some View {
             let bg = isActive ? p.surface : p.surface.opacity(0.35)
             let stroke = colorBorder
             
-            // MARK: - tiles container
+            // MARK: Tiles container
             VStack {
                 if isFilled {
                     HStack(alignment: .top, spacing: 8) {
@@ -400,9 +426,9 @@ struct FocusSessionActiveV: View {
                         Spacer(minLength: 8)
                         
                         // Always show a checkmark for filled tiles
-                        Image(systemName: isCompleted ? "checkmark.circle.fill" : "checkmark.circle")
+                        Image(systemName: trailingIconName)
                             .font(.body)                        // slightly increases size
-                            .foregroundStyle(colorSuccess)   // more vivid than "accent"
+                            .foregroundStyle(isCompleted ? colorSuccess : p.accent)   // more vivid than "accent"
                             .accessibilityHidden(true)
                     }
                     .baselineOffset(1)
@@ -411,7 +437,9 @@ struct FocusSessionActiveV: View {
                 } else {
                     // Empty state - no checkmarks yet
                     HStack(alignment: .firstTextBaseline, spacing: 20) {
-                        Image(systemName: "text.alignleft").font(.body).accessibilityHidden(true)
+                        Image(systemName: "text.alignleft")
+                            .font(.body)
+                            .accessibilityHidden(true)
                         Text("").foregroundStyle(textSecondary)
                     }
                     .padding(.horizontal, hPad)
@@ -419,16 +447,28 @@ struct FocusSessionActiveV: View {
                 }
             }
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(bg)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(bg)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(stroke, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(stroke, lineWidth: 1)
             )
             // subtle lift to separate from page
             .shadow(radius: 0.5,y: 0.5)
+            .contentShape(Rectangle())
+            .onTapGesture { onTap?() }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel(isFilled ? (isCompleted ? "Intention completed" : "Intention") : "Empty slot")
-            .accessibilityHint(isFilled ? "" : "Add an intention above, then press Add.")
+            .accessibilityLabel(
+                isFilled
+                ? (isCompleted ? "Intention completed" : "Intention")
+                : "Empty slot"
+            )
+            .accessibilityHint(
+                isEditable
+                ? "Double tap to edit"
+                : (isFilled ? "" : "Add an intention above, then press Add.")
+                )
         }
     }
     

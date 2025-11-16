@@ -173,6 +173,46 @@ final class FocusSessionVM: ObservableObject {
         saveVMSnapshot()
     }
     
+    //VM owns rules (canEditTile) and mutations (beginEditingTile)
+    // MARK: *When* slot is editable
+    // pre-Begin only
+    // Tiles are only editable before the timer has started
+    func canEditTile(at index: Int) -> Bool {
+        // Must exist
+        guard tiles.indices.contains(index) else { return false }
+        
+        // Only allow edits before session starts
+        guard phase == .none || phase == .idle else { return false }
+        
+        // cannot edit completed tiles
+        let tile = tiles[index]
+        return !thisTileIsCompleted(tile)
+    }
+
+    // MARK: Editing/Fixing tile by tapping it
+    // Allows editing an existing tile *before* the session starts.
+   // Moves the tile’s text back into `tileText` and removes it from the list.
+       func beginEditingTile(at index: Int) {
+           // Don’t allow edits while running or finished.
+           guard phase != .running,
+                 phase != .finished,
+                 tiles.indices.contains(index) else {
+               return
+           }
+           
+           let tile = tiles.remove(at: index)
+           tileText = tile.text
+           canAdd = tiles.count < 2
+           
+           // Returning to an "input" state is reasonable here:
+           if phase == .none {
+               phase = .idle
+           }
+           
+           saveVMSnapshot()
+       }
+
+
     // MARK: Start a 20-min chunk
     private func startCurrent20MinCountdown(seconds: Int? = nil) async {
         //        guard hasTwoTiles, phase != .running else {
