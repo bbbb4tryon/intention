@@ -30,6 +30,33 @@ struct RecalibrationV: View {
     private let colorDanger = Color.red
     private let recColor = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
     
+    // MARK: Computed helpers
+    private var PresetPicker: some View {
+        HStack(spacing: 8) {
+            // theme drives contract, don't need .foregroundStyle
+            T("Length of Time", .caption)
+            Picker("", selection: $breathingChoice) {
+                Text("2m").tag(2); Text("3m").tag(3); Text("4m").tag(4)
+            }
+            .pickerStyle(.segmented)
+        }
+        .onChange(of: breathingChoice) { new in
+            do { try vm.setBreathingMinutes(new) } catch { vm.lastError = error }
+        }
+    }
+    
+    private var PresetPickerBal: some View {
+        HStack(spacing: 8) {
+            Toggle(isOn: $vm.eyesClosedMode) {
+                T("Expert Mode: Eyes-closed", .caption)
+            }
+            .toggleStyle(.automatic)
+        }
+        .onChange(of: balancingChoice) { new in
+            do { try vm.setBalancingMinutes(new) } catch { vm.lastError = error }
+        }
+    }
+    
     var body: some View {
         ZStack {
             // True gradient if available
@@ -141,33 +168,6 @@ struct RecalibrationV: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Close")
             }
-        }
-    }
-    
-    
-    // MARK: Helpers
-    private var PresetPicker: some View {
-        HStack(spacing: 8) {
-            // theme drives contract, don't need .foregroundStyle
-            T("Length of Time", .caption)
-            Picker("", selection: $breathingChoice) {
-                Text("2m").tag(2); Text("3m").tag(3); Text("4m").tag(4)
-            }
-            .pickerStyle(.segmented)
-        }
-        .onChange(of: breathingChoice) { new in
-            do { try vm.setBreathingMinutes(new) } catch { vm.lastError = error }
-        }
-    }
-    private var PresetPickerBal: some View {
-        HStack(spacing: 8) {
-            Toggle(isOn: $vm.eyesClosedMode) {
-                T("Expert Mode: Eyes-closed", .caption)
-            }
-            .toggleStyle(.automatic)
-        }
-        .onChange(of: balancingChoice) { new in
-            do { try vm.setBalancingMinutes(new) } catch { vm.lastError = error }
         }
     }
     

@@ -18,12 +18,8 @@ struct DynamicMessageAndActionArea: View {
     private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     // MARK: Computed helpers
-//    private func startSession() {
-//        focusVM.performAsyncAction {
-//            try await focusVM.beginOverallSession()
-//        }
-//    }
-    // and use Button(action: startSession) { ... }
+
+    }
     
     var body: some View {
         VStack(spacing: 16) {

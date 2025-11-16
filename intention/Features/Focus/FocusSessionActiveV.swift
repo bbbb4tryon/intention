@@ -46,15 +46,6 @@ struct FocusSessionActiveV: View {
     @State private var isShowingRecalibrationToDebug = false
     @State private var isShowingOrganizerOverlayToDebug = false
     
-    private var isInputActive: Bool { focusVM.phase != .running && focusVM.tiles.count < 2 }
-    
-    private var vState: ValidationState {
-        // Until first submit, stay neutral - charcoal border, no caption)
-        guard showValidation else { return .none }
-        let msgs = focusVM.tileText.taskValidationMessages
-        return msgs.isEmpty ? .valid : .invalid(messages: msgs)
-    }
-    
     /// Theme hooks
     private let screen: ScreenName = .focus
     private var p: ScreenStylePalette { theme.palette(for: screen) }
@@ -65,231 +56,73 @@ struct FocusSessionActiveV: View {
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
     
+    // MARK: - Computed helpers -
+    private var isInputActive: Bool { focusVM.phase != .running && focusVM.tiles.count < 2 }
     
-    var body: some View {
-        VStack(spacing: 0){             // Main VStack to control vertical layout
-            // All your content that should appear above the tiles
-            // The `ScrollView` should be constrained to the available space
-            ScrollView {
-                // Allows content to breath on small screens
-                Page(top: 6, alignment: .center) {
-                    StatsSummaryBar()
-                    // FIXME: Page {} may be controlling sizing, see if .frame( should be dropped
-                    
-                    
-                    // Text input  validation
-                    VStack(alignment: .leading, spacing: 8) {
-                        if isInputActive {
-                            // onSubmit and primaryCTA both call the same VM method handlePrimaryTap() -> "same funnel"
-                            // lifted .placeholder / .caption contrast in ThemeManager and that boots this textfield
-                            
-                            IntentionField(
-                                p: p,
-                                text: $focusVM.tileText,
-                                showValidation: $showValidation,
-                                vState: vState,
-                                isEnabled: isInputActive
-                            ) { trimmed in
-                                Task {
-                                    do {
-                                        _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed)
-                                    } catch {
-                                        debugPrint(
-                                            "[FocusSessionActiveV] handlePrimaryTap(from IntentionField) failed: \(error)"
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        ////
-                        ////                            IntentionField(
-                        ////                                p: p,
-                        ////                                text: $focusVM.tileText,
-                        ////                                showValidation: $showValidation,
-                        ////                                vState: vState,
-                        ////                                isEnabled: isInputActive,
-                        ////
-                        ////                            ) { trimmed in
-                        ////                                Task { try await focusVM.handlePrimaryTap(validatedInput: trimmed) }
-                        ////                            }
-                        //                            // << ---------------------------------------------------------------------------------------------------------------------------------------- >> //
-                        //                                                        TextField("", text: $focusVM.tileText, prompt: T("Add Your Intended Task", .caption))
-                        //                                                            .focused($intentionFocused)
-                        //                                                            .submitLabel(.done)
-                        //                                                            .validatingField(state: vState, palette: p) // charcoal until showValidation == true & invalid
-                        //                                                            .disabled(!isInputActive)                   // lock after 2
-                        //                                                            .autocorrectionDisabled()
-                        //                                                            .textInputAutocapitalization(.sentences)
-                        //                                                            .onSubmit {
-                        //                                                                showValidation = true                   // turn validation on
-                        //                                                                guard vState.isInvalid == false else { return } // stay focused and show message
-                        //                                                                // Valid -> add
-                        //                                                                let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-                        //                                                                Task {
-                        //                                                                    do {
-                        //                                                                        _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed)
-                        //                                                                    } catch {
-                        //                                                                        FocusSessionError.unexpected
-                        //                                                                    }
-                        //                                                                }
-                        //                                                                focusVM.tileText = ""                   // Clear text field
-                        //                                                                intentionFocused = (focusVM.tiles.count < 2) // re-focus UNTIL two tiles
-                        //                                                                showValidation = false                  // reset to neutral for next entry
-                        //                                                            }
-                        //                                                        // Display ValidationCaption BELOW Textfield
-                        //                                                        //      Caption only after first submit AND invalid
-                        //                                                        if showValidation, case .invalid = vState {
-                        //                                                            // Use VState logic for the correct messages
-                        //                                                            ValidationCaption( state: vState)
-                        //                                                            //FIXME: USE THIS BELOW, OR KEEP state: vState, palette: p
-                        //                                                            //                                    state: vState.isInvalid ? vState : .invalid(messages: ["Please enter a task, what you intend to do."]),
-                        //                                                            //                                    palette: p
-                        //
-                        //                                                        }
-                        //
-                        //                            // << ---------------------------------------------------------------------------------------------------------------------------------------- >> //
-                        //                        }
-                        // Guidance  Messages (no Add/Begin here)
-                        DynamicMessageAndActionArea(
-                            onRecalibrateNow: { focusVM.showRecalibrate = true }
-                        )
-                        .environmentObject(focusVM)
-                        .padding(.top, 8)
-                        .environmentObject(theme)
-                        //  Centered countdown (its internal own logic self-selects paused/running visuals
-                        //      inside it, `isActive` includes .running  .paused
-                        //      In .paused, it draws the clipped overlay  "Paused"; in .running, it draws the unwinding pie  time
-                        //      The tap target persists across both states, thanks to .onTapGesture { handleTap() }.
-                        
-                        DynamicCountdown(
-                            palette: p,
-                            progress: Double(focusVM.countdownRemaining) / Double( TimerConfig.current.chunkDuration )
-                        )
-                        .environmentObject(focusVM)
-                        .padding(.top, 28)  // separates from Stats and messages
-                        .frame(maxWidth: .infinity)  // centers fixed-size content
-                        .frame(minHeight: 320)          // reserves vertical space so it dominates the section
-                        .contentShape(Rectangle())      // keeps taps clean in the area
-                    }
-                    .padding(.top, 8)
-                    .onDisappear { intentionFocused = false }
-                    // doesn’t kick timers or I/O. Keep it
-                    .onAppear {
-                        // guard side-effects
-                        if !IS_PREVIEW {
-                            focusVM.enterIdleIfNeeded()
-                            // Auto-focus on first load, if we still can add text
-                            intentionFocused = (focusVM.phase != .running && focusVM.tiles.count < 2)
-                        }
-                    }
-                    // Drops focus when we start running or when we leave the screen
-                    .onChange(of: focusVM.phase) { phase in
-                        if phase == .running { intentionFocused = false }
-                    }
-                    
-                }
-            }
-            // This spacer pushes the scrollable content to the top,
-            // making space for the BottomComposer at the very bottom.
-            Spacer(minLength: 0)
-            BottomComposer
-            // inside the main VStack, ensuring it sits at the bottom
-            // and doesn't interfere with the ScrollView.
-            // It will be snug against the bottom of the screen.
-        }
-        //        .onChange(of: focusVM.phase) { _ in
-        //            print(focusVM.debugPhaseSummary("phase change"))
-        //        }
-        
-        .background(p.background.ignoresSafeArea())
-        .tint(p.accent)
-        // Single bottom chrome: do NOT add an overlay; this keeps it snug to the tab bar
-        //      if user taps Close or swipes down, this stops a running recalibration
-        .fullScreenCover(isPresented: $focusVM.showRecalibrate) {
-            RecalibrationSheetChrome(onClose: {
-                recalibrationVM.performAsyncAction {
-                    if recalibrationVM.phase == .running || recalibrationVM.phase == .pause {
-                        try await recalibrationVM.stop()
-                    }
-                }
-                focusVM.showRecalibrate = false
-            }) {
-                NavigationStack {
-                    RecalibrationV(vm: recalibrationVM) .navigationBarHidden(true)          // own chrome owns the close
-                }
-            }
-        }
-        .onDisappear {
-            if focusVM.showRecalibrate == false {
-                recalibrationVM.performAsyncAction {
-                    if recalibrationVM.phase == .running || recalibrationVM.phase == .pause {
-                        try await recalibrationVM.stop()
-                    }
-                }
-            }
-        }
-        //        .sheet(isPresented: $showMembership) {
-        //            // present your membership UI
-        //            MembershipV()
-        //        }
-        
+    private var vState: ValidationState {
+        // Until first submit, stay neutral - charcoal border, no caption)
+        guard showValidation else { return .none }
+        let msgs = focusVM.tileText.taskValidationMessages
+        return msgs.isEmpty ? .valid : .invalid(messages: msgs)
     }
     
-    // MARK: Bottom composer
-    @ViewBuilder
-    private var BottomComposer: some View {
-        //        // Two slots; we present [second, first] visual order by using slots[]
-        //        let completedSlotIndex: Int? = (focusVM.currentSessionChunk >= 1) ? 1 : nil
-        VStack(spacing: 10){
-            ForEach(0..<slots.count, id: \.self) { slot in
-                TileSlot(
-                    text: slots[slot] ?? "",
-                    isFilled: (slots[slot]?.isEmpty == false),
-                    isCompleted: completionForSlot(slot),
-                    isActive: isActiveSlot(slot),
-                    p: p,
-                    diffNoColor: diffNoColor
-                )
-            }
+    private var upperComposer: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StatsSummaryBar()
             
-            
-            Button(action: handlePrimaryCTATap) {
-                primaryCTALabel
-                //                showValidation = true
-                //                // For Add flow, enforce validation first; for Begin flow canPrimary already handles phase/tiles.
-                //                if focusVM.tiles.count < 2 && vState.isInvalid {
-                //                    return
-                //                }
-                //                let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
-                //
-                //                Task {
-                //                    do { _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed) }
-                //                    catch {
-                //                        debugPrint("[FocusSessionActiveV] handlePrimaryTap(from primary CTA) failed: \(error)")
-                //                        // If you later add focusVM.setError(_:) or similar, plug it in here.
-                //                        /* show error overlay? */
-                //                    }
-                //                }
-                //
-                //                focusVM.tileText = ""
-                //                intentionFocused = (focusVM.tiles.count < 2)
-                //                showValidation = false
+            if isInputActive {
+                // onSubmit and primaryCTA both call the same VM method handlePrimaryTap() -> "same funnel"
+                // lifted .placeholder / .caption contrast in ThemeManager and that boots this textfield
                 
+                IntentionField(
+                    p: p,
+                    text: $focusVM.tileText,
+                    showValidation: $showValidation,
+                    vState: vState,
+                    isEnabled: isInputActive
+                ) { trimmed in
+                    Task {
+                        do {
+                            _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed)
+                        } catch {
+                            debugPrint(
+                                "[FocusSessionActiveV] handlePrimaryTap(from IntentionField) failed: \(error)"
+                            )
+                        }
+                    }
+                }
             }
-            .primaryActionStyle(screen: screen)
-            .pulseAura(color: p.accent, active: focusVM.ui_isReadyForBegin)   // VM-driven
-            .frame(maxWidth: .infinity)
-            .disabled(!focusVM.canPrimary)
-            .accessibilityIdentifier("primaryCTA")
+            messageSection
+            countdownSection
         }
-        
-        .padding(.top, 12)
-        /// tile and begin/add container controls
-        .padding(.horizontal, 16)
-        .padding(.bottom, 12)
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .animation(.easeInOut(duration: 0.2), value: focusVM.tiles)
+    }
+    
+    // MARK: - Message Section
+    private var messageSection: some View {
+        // Guidance  Messages (no Add/Begin here)
+        DynamicMessageAndActionArea(
+            onRecalibrateNow: { focusVM.showRecalibrate = true }
+        )
+        .environmentObject(focusVM)
+        .padding(.top, 8)
+        .environmentObject(theme)
+    }
+    
+    // MARK: - DynamicCountdown
+    //  Centered countdown (its internal own logic self-selects paused/running visuals
+    //      inside it, `isActive` includes .running  .paused
+    //      In .paused, it draws the clipped overlay  "Paused"; in .running, it draws the unwinding pie  time
+    //      The tap target persists across both states, thanks to .onTapGesture { handleTap() }.
+    private var countdownSection: some View {
+        DynamicCountdown(
+            palette: p,
+            progress: Double(focusVM.countdownRemaining) / Double( TimerConfig.current.chunkDuration )
+        )
+        .environmentObject(focusVM)
+        .padding(.top, 28)  // separates from Stats and messages
+        .frame(maxWidth: .infinity)  // centers fixed-size content
+        .frame(minHeight: 320)          // reserves vertical space so it dominates the section
+        .contentShape(Rectangle())      // keeps taps clean in the area
     }
     
     // MARK: Slot helpers
@@ -350,6 +183,7 @@ struct FocusSessionActiveV: View {
         if focusVM.tiles.count < 2 && vState.isInvalid {
             return
         }
+        
         let trimmed = focusVM.tileText.trimmingCharacters(in: .whitespacesAndNewlines)
         
         Task {
@@ -365,6 +199,109 @@ struct FocusSessionActiveV: View {
         intentionFocused = (focusVM.tiles.count < 2)
         showValidation = false
     }
+    
+    // MARK: - Body
+    var body: some View {
+        VStack(spacing: 0){
+            ScrollView {
+                Page(top: 6, alignment: .center) {
+                    
+                    upperComposer
+                        .padding(.top, 8)
+                        .onDisappear { intentionFocused = false }
+                        .onAppear { guard !IS_PREVIEW else { return }
+                            focusVM.enterIdleIfNeeded()
+                            // Auto-focus on first load, if we still can add text
+                            intentionFocused = (focusVM.phase != .running && focusVM.tiles.count < 2)
+                        }
+                            // Drops focus when we start running or when we leave the screen
+                        .onChange(of: focusVM.phase) { phase in
+                            if phase == .running {
+                                intentionFocused = false
+                            }
+                        }
+                }
+            }
+            
+            // This spacer pushes the scrollable content to the top,
+            // making space for the BottomComposer at the very bottom.
+            Spacer(minLength: 0)
+            
+            BottomComposer
+            // inside the main VStack, ensuring it sits at the bottom
+            // and doesn't interfere with the ScrollView.
+            // It will be snug against the bottom of the screen.
+        }
+        
+        .background(p.background.ignoresSafeArea())
+        .tint(p.accent)
+        // Single bottom chrome: do NOT add an overlay; this keeps it snug to the tab bar
+        .fullScreenCover(isPresented: $focusVM.showRecalibrate) {
+            RecalibrationSheetChrome(onClose: {
+                recalibrationVM.performAsyncAction {
+                    if recalibrationVM.phase == .running || recalibrationVM.phase == .pause {
+                        try await recalibrationVM.stop()
+                    }
+                }
+                focusVM.showRecalibrate = false
+            }) {
+                NavigationStack {
+                    RecalibrationV(vm: recalibrationVM)
+                        .navigationBarHidden(true)          // own chrome owns the close
+                }
+            }
+        }
+        .onDisappear {
+            if focusVM.showRecalibrate == false {
+                recalibrationVM.performAsyncAction {
+                    if recalibrationVM.phase == .running || recalibrationVM.phase == .pause {
+                        try await recalibrationVM.stop()
+                    }
+                }
+            }
+        }
+        
+    }
+    
+    // MARK: Bottom composer
+    @ViewBuilder
+    private var BottomComposer: some View {
+        // Two slots; we present [first, second] visual order by using slots[]
+        VStack(spacing: 10){
+            ForEach(0..<slots.count, id: \.self) { slot in
+                TileSlot(
+                    text: slots[slot] ?? "",
+                    isFilled: (slots[slot]?.isEmpty == false),
+                    isCompleted: completionForSlot(slot),
+                    isActive: isActiveSlot(slot),
+                    p: p,
+                    diffNoColor: diffNoColor
+                )
+                .environmentObject(theme)
+            }
+            
+            
+            Button(
+                action: handlePrimaryCTATap
+            ) {
+                primaryCTALabel
+            }
+            .primaryActionStyle(screen: screen)
+            .pulseAura(color: p.accent, active: focusVM.ui_isReadyForBegin)   // VM-driven
+            .frame(maxWidth: .infinity)
+            .disabled(!focusVM.canPrimary)
+            .accessibilityIdentifier("primaryCTA")
+        }
+        
+        .padding(.top, 12)
+        /// tile and begin/add container controls
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
+        .background(.thinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .animation(.easeInOut(duration: 0.2), value: focusVM.tiles)
+    }
+    
     
     // MARK: keeps "show validation, submit, text" in one location
     private struct IntentionField: View {
@@ -423,6 +360,7 @@ struct FocusSessionActiveV: View {
     // MARK: TileSlot view (compact min height; segment-like look, multi-line text wraps fully,)
     private struct TileSlot: View {
         @EnvironmentObject var theme: ThemeManager
+        
         let text: String
         let isFilled: Bool
         let isCompleted: Bool
@@ -493,39 +431,38 @@ struct FocusSessionActiveV: View {
             .accessibilityHint(isFilled ? "" : "Add an intention above, then press Add.")
         }
     }
-}
-
-#if DEBUG
-@MainActor private extension FocusSessionVM {
-    static var preview: FocusSessionVM {
-        let vm = FocusSessionVM(previewMode: true, haptics: NoopHapticsClient())
-        // In preview, show two tiles and a plausible remaining time
-        vm.tiles = [TileM(text: "Write intro"), TileM(text: "Outline section 1")]
-        vm.phase = .running                   // UI shows active state
-        vm.currentSessionChunk = 0
-        vm.countdownRemaining = 17 * 60 + 42  // static value prevents constant updates
-        return vm
-    }
-}
-#endif
-
-
-#if DEBUG
-#Preview("Focus (dumb)") {
-    let theme = ThemeManager()
-    let focus = FocusSessionVM(previewMode: true,
-                               haptics: NoopHapticsClient(),
-                               config: .current)
-    let recal  = RecalibrationVM(haptics: NoopHapticsClient())
     
-    FocusSessionActiveV(
-        focusVM: focus,
-        recalibrationVM: recal
-    )
-    .environmentObject(theme)
-    /* readd ONLY if/when everything else is stable */
-    /// .canvasCheap()
-    .frame(maxWidth: 430)
-}
+#if DEBUG
+    @MainActor private extension FocusSessionVM {
+        static var preview: FocusSessionVM {
+            let vm = FocusSessionVM(previewMode: true, haptics: NoopHapticsClient())
+            // In preview, show two tiles and a plausible remaining time
+            vm.tiles = [TileM(text: "Write intro"), TileM(text: "Outline section 1")]
+            vm.phase = .running                   // UI shows active state
+            vm.currentSessionChunk = 0
+            vm.countdownRemaining = 17 * 60 + 42  // static value prevents constant updates
+            return vm
+        }
+    }
 #endif
-
+    
+    
+#if DEBUG
+    #Preview("Focus (dumb)") {
+        let theme = ThemeManager()
+        let focus = FocusSessionVM(previewMode: true,
+                                   haptics: NoopHapticsClient(),
+                                   config: .current)
+        let recal  = RecalibrationVM(haptics: NoopHapticsClient())
+        
+        FocusSessionActiveV(
+            focusVM: focus,
+            recalibrationVM: recal
+        )
+        .environmentObject(theme)
+        /* readd ONLY if/when everything else is stable */
+        /// .canvasCheap()
+        .frame(maxWidth: 430)
+    }
+#endif
+    
