@@ -10,7 +10,7 @@ import SwiftUI
 final class DebugRouter: ObservableObject {
     // Presentation toggles
     @Published var showRecalibration = false
-    @Published var showOrganizer = false
+//    @Published var showOrganizer = false
     @Published var showMembership = false
     
     // Optional payload for a global error overlay
@@ -20,7 +20,7 @@ final class DebugRouter: ObservableObject {
     
     // MARK: Entry points the Dev buttons will call
     func presentRecalibration() { showRecalibration = true }
-    func presentOrganizer()     { showOrganizer = true }
+//    func presentOrganizer()     { showOrganizer = true }
     func presentMembership()    { showMembership = true }
     
     func presentError(title: String, message: String) {

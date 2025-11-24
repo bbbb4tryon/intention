@@ -201,6 +201,8 @@ struct RootView: View {
             focusScreen
                 .navigationTitle("Focus")
                 .navigationBarTitleDisplayMode(.inline)
+                // Uses focus's default accent (Leaf)
+                .tint(palFocus.accent)
         }
             .tabItem { Image(systemName: "timer") }
         
@@ -211,6 +213,8 @@ struct RootView: View {
             historyScreen
                 .navigationTitle("History")
                 .navigationBarTitleDisplayMode(.inline)
+            // Uses focus's default accent (Leaf) - despite "History"
+            .tint(palFocus.accent)
         }
             .tabItem { Image(systemName: "clock") }
         
@@ -221,6 +225,9 @@ struct RootView: View {
             settingsScreen
                 .navigationTitle("Settings")
                 .navigationBarTitleDisplayMode(.inline)
+            // Uses focus's default accent (Leaf) - despite "Settings"
+            .tint(palFocus.accent)
+
         }
             .tabItem { Image(systemName: "gear") }
         
@@ -233,7 +240,7 @@ struct RootView: View {
         
         // Wrapped to apply shares (apply tab icon coloring, shared toolbars, backgrounds)
         let content = tabs
-            .tint(palFocus.primary)
+            .tint(palFocus.accent)
             .toolbarBackground(tabBG, for: .tabBar)
             .toolbarBackground(.visible, for: .tabBar)
         
@@ -315,18 +322,7 @@ struct RootView: View {
                     
                 }
             }
-        /* Keep scenePhase handler as-is; previews rarely bounce phases.
-         Any timeouts, wrap the inactive/background branch bodies with if !IS_PREVIEW { ... } */
-        
-        
-        // Membership prompt choreography
-        ///FIXME: remove one of the membership because they're "re"-presented?
-//            .onChange(of: memVM.shouldPrompt) { show in
-//                if show, activeSheet == nil { activeSheet = .membership }
-//            }
-//            .onChange(of: activeSheet) { sheet in
-//                if sheet == nil, memVM.shouldPrompt { activeSheet = .membership }
-//            }
+
         // MARK: Sheets
             .sheet(item: $activeSheet) { sheet in
                 switch sheet {
@@ -348,25 +344,31 @@ struct RootView: View {
                     NavigationStack {
                         LegalDocV(
                             title: "Terms of Use",
-                            markdown: MarkdownLoader.load(named: LegalConfig.termsFile)
+                            markdown: MarkdownLoader.load(named: LegalConfig.termsFile),
+                            palette: theme.palette(for: .settings)
                         )
                     }
+                    .environmentObject(theme)
                     
                 case .privacy:
                     NavigationStack {
                         LegalDocV(
                             title: "Privacy Policy",
-                            markdown: MarkdownLoader.load(named: LegalConfig.privacyFile)
+                            markdown: MarkdownLoader.load(named: LegalConfig.privacyFile),
+                            palette: theme.palette(for: .settings)
                         )
                     }
+                    .environmentObject(theme)
                     
                 case .medical:
                     NavigationStack {
                         LegalDocV(
                             title: "Wellness Disclaimer",
-                            markdown: MarkdownLoader.load(named: LegalConfig.medicalFile)
+                            markdown: MarkdownLoader.load(named: LegalConfig.medicalFile),
+                            palette: theme.palette(for: .settings)
                         )
                     }
+                    .environmentObject(theme)
                 }
             }
         // ========== DEBUG PRESENTATION WIRING ==========
@@ -379,29 +381,6 @@ struct RootView: View {
                 }
                 .environmentObject(theme)
             }
-
-            // Organizer overlay using LIVE history categories (no mocks).
-            // We pass a Binding into OrganizerOverlayScreen so reordering acts on your real data.
-//            .fullScreenCover(isPresented: $debug.showOrganizer) {
-//                OrganizerOverlayChrome(onClose: { debug.showOrganizer = false }) {
-//                    OrganizerOverlayScreen(
-//                        categories: Binding(
-//                            get: { historyVM.categories },
-//                            set: { historyVM.categories = $0 }
-//                        ),
-//                        onMoveTile: { tile, sourceID, destinationID in
-//                            historyVM.moveTileBetweenCategories(tile, fromCategory: sourceID, toCategory: destinationID)
-//                        },
-//                        onReorder: { newTiles, catID in
-//                            historyVM.reorderTiles(newTiles, in: catID)
-//                            
-//                        },
-//                        onDone: { debug.showOrganizer = false }
-//                    )
-//                }
-//                .environmentObject(theme)
-//            }
-        
         
             .fullScreenCover(isPresented: memVM.showSheetBinding) {
                 MembershipSheetChrome(onClose: {
@@ -418,13 +397,6 @@ struct RootView: View {
                 }
                 //        .onDisappear { memVM.shouldPrompt = false }
             }
-
-            // Membership debug simply reuses your root sheet choreography
-//            .onChange(of: debug.showMembership) { want in
-//                if want { activeSheet = .membership; debug.showMembership = false }
-//            }
-
-            // Route debug errors through the same global overlayManager
             .onChange(of: debug.showError) { show in
                 if show {
                     overlayManager.debugErrorTitle = debug.errorTitle
@@ -433,32 +405,6 @@ struct RootView: View {
                     debug.showError = false
                 }
             }
-        
-//            .onReceive(NotificationCenter.default.publisher(for: .devOpenMembership)) { _ in
-//                        isShowingMembershipDebug = true
-//                    }
-//        // The Global Presentation: Use .overlay to float over all content
-//                .overlay {
-//                    if overlayManager.isShowingDebugError {
-//                        ErrorOverlay(
-////                            title: overlayManager.debugErrorTitle,
-//                            displayMessage: overlayManager.debugErrorMessage,
-//                            dismissAction: { overlayManager.isShowingDebugError = false }
-//                        )
-//                        // Use a standard, quick animation for a polished feel
-//                        .transition(.opacity.animation(.easeInOut(duration: 0.2)))
-//                    }
-//                }
+
     }
 }
-
-//private extension View {
-//    var sceneHandlers: some View { modifier(SceneHandlers()) }
-//    var launchHandlers: some View { modifier(LaunchHandlers()) }
-//    func membershipHandlers(activeSheet: Binding<RootSheet?>, memVM: MembershipVM) -> some View {
-//            modifier(MembershipHandlers(activeSheet: activeSheet, memVM: memVM))
-//        }
-//        func rootSheets(activeSheet: Binding<RootSheet?>, memVM: MembershipVM) -> some View {
-//            modifier(RootSheets(activeSheet: activeSheet, memVM: memVM))
-//        }
-//}

@@ -16,7 +16,8 @@ typealias ThemePalette = ScreenStylePalette
 // It automatically ensures the text's background contrasts with the content behind it, boosting legibility without adding an explicit shadow
 // MARK: Screens
 enum ScreenName {
-    case focus, history, settings, organizer, recalibrate, membership
+    case focus, history, settings, recalibrate, membership
+//    case focus, history, settings, organizer, recalibrate, membership
 }
 // MARK: Text roles
 enum TextRole {
@@ -128,15 +129,15 @@ private enum SeaDefaultColors {
     static let text = Color(red: 0.851, green: 0.922, blue: 1.0)
 }
 
-
-
-// MARK: OrganizerOverlay
-private enum OrgBG {
-    // TopLight and BottomDark are now assigned based on the new backgroundMedium color if needed
-    static let topLight = DefaultColors.backgroundLight
-    static let middleLight = DefaultColors.backgroundMiddle
-    static let bottomDark = DefaultColors.backgroundMedium
-}
+//
+//
+//// MARK: OrganizerOverlay
+//private enum OrgBG {
+//    // TopLight and BottomDark are now assigned based on the new backgroundMedium color if needed
+//    static let topLight = DefaultColors.backgroundLight
+//    static let middleLight = DefaultColors.backgroundMiddle
+//    static let bottomDark = DefaultColors.backgroundMedium
+//}
 
 // MARK: Recalibrate Sheet
 private enum RecalibrateBG {
@@ -235,22 +236,22 @@ enum AppColorTheme: String, CaseIterable {
                     )
                     
                 )
-                
-            case .organizer:
-                // superior contrast (6.1:1) against the light gradient
-                /*#7b6428*/ let organizerText = Color(red: 0.4824, green: 0.3922, blue: 0.1569)
-                return .init(
-                    primary: DefaultColors.accent,               // CTA color (citron)
-                    background: .clear,                         // clear, to see gradient
-                    surface: .clear,                            // let gradient breath
-                    accent: organizerText,                      // toolbar tint (X button, etc)
-                    text: organizerText,          // primary text
-                    gradientBackground: .init(
-                        colors: [OrgBG.topLight, OrgBG.bottomDark],
-                        start: .topLeading,
-                        end: .bottomTrailing // ↖️ Diagonal flow
-                    )
-                )
+//                
+//            case .organizer:
+//                // superior contrast (6.1:1) against the light gradient
+//                /*#7b6428*/ let organizerText = Color(red: 0.4824, green: 0.3922, blue: 0.1569)
+//                return .init(
+//                    primary: DefaultColors.accent,               // CTA color (citron)
+//                    background: .clear,                         // clear, to see gradient
+//                    surface: .clear,                            // let gradient breath
+//                    accent: organizerText,                      // toolbar tint (X button, etc)
+//                    text: organizerText,          // primary text
+//                    gradientBackground: .init(
+//                        colors: [OrgBG.topLight, OrgBG.bottomDark],
+//                        start: .topLeading,
+//                        end: .bottomTrailing // ↖️ Diagonal flow
+//                    )
+//                )
             }
             
             // ---------- SEA ----------
@@ -300,21 +301,21 @@ enum AppColorTheme: String, CaseIterable {
                             end: .trailing // ➡️ Horizontal flow
                         )
                     )
-                
-            case .organizer:
-                // Unique Gradient Direction: Vertical
-                    return .init(
-                        primary: SeaDefaultColors.surface,
-                        background: .clear, // clear, to see gradient through FocusShell
-                        surface: SeaDefaultColors.surface.opacity(0.12),
-                        accent: SeaDefaultColors.accent,
-                        text: SeaDefaultColors.text,
-                        gradientBackground: .init(
-                            colors: seaGradientColors,
-                            start: .top,
-                            end: .bottom // ⬇️ Vertical flow
-                        )
-                        )
+//                
+//            case .organizer:
+//                // Unique Gradient Direction: Vertical
+//                    return .init(
+//                        primary: SeaDefaultColors.surface,
+//                        background: .clear, // clear, to see gradient through FocusShell
+//                        surface: SeaDefaultColors.surface.opacity(0.12),
+//                        accent: SeaDefaultColors.accent,
+//                        text: SeaDefaultColors.text,
+//                        gradientBackground: .init(
+//                            colors: seaGradientColors,
+//                            start: .top,
+//                            end: .bottom // ⬇️ Vertical flow
+//                        )
+//                        )
             }
         }
     }

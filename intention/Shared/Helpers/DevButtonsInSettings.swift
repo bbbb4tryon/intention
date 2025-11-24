@@ -9,7 +9,7 @@ import Foundation
 
 extension Notification.Name {
     static let devOpenRecalibration      = Notification.Name("ShowRecalibrationToDebug")
-    static let devOpenOrganizerOverlay   = Notification.Name("ShowOrganizerOverlayToDebug")
+//    static let devOpenOrganizerOverlay   = Notification.Name("ShowOrganizerOverlayToDebug")
     static let devOpenMembership         = Notification.Name("ShowMembershipToDebug")
     static let debugShowSampleError       = Notification.Name("ShowSampleErrorToDebug")
     

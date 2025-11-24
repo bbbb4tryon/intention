@@ -44,7 +44,7 @@ struct FocusSessionActiveV: View {
     @State private var showValidation: Bool = false
     @State private var isBusy = false
     @State private var isShowingRecalibrationToDebug = false
-    @State private var isShowingOrganizerOverlayToDebug = false
+//    @State private var isShowingOrganizerOverlayToDebug = false
     
     /// Theme hooks
     private let screen: ScreenName = .focus
@@ -57,7 +57,9 @@ struct FocusSessionActiveV: View {
     private let colorDanger = Color.red
     
     // MARK: - Computed helpers -
-    private var isInputActive: Bool { focusVM.phase != .running && focusVM.tiles.count < 2 }
+    private var isInputActive: Bool {
+        focusVM.phase != .running && focusVM.tiles.count < 2
+    }
     
     private var vState: ValidationState {
         // Until first submit, stay neutral - charcoal border, no caption)
@@ -199,7 +201,7 @@ struct FocusSessionActiveV: View {
         intentionFocused = (focusVM.tiles.count < 2)
         showValidation = false
     }
-
+    
     
     // MARK: - Body
     var body: some View {
@@ -215,7 +217,7 @@ struct FocusSessionActiveV: View {
                             // Auto-focus on first load, if we still can add text
                             intentionFocused = (focusVM.phase != .running && focusVM.tiles.count < 2)
                         }
-                            // Drops focus when we start running or when we leave the screen
+                    // Drops focus when we start running or when we leave the screen
                         .onChange(of: focusVM.phase) { phase in
                             if phase == .running {
                                 intentionFocused = false
@@ -275,16 +277,17 @@ struct FocusSessionActiveV: View {
                     isFilled: (slots[slot]?.isEmpty == false),
                     isCompleted: completionForSlot(slot),
                     isActive: isActiveSlot(slot),
+                    /// VM owns
                     isEditable: focusVM.canEditTile(at: slot),
                     p: p,
                     diffNoColor: diffNoColor,
                     onTap: {
                         // only try to edit if there's a tile
                         guard slots[slot] != nil else { return }
-                        //vm owns mutation and rules
+                        // vm owns mutation and rules
                         focusVM.beginEditingTile(at: slot)
                         //View owns focus and validation UX
-                        showValidation = false
+                        showValidation = true
                         intentionFocused = true
                     }
                 )
@@ -312,9 +315,10 @@ struct FocusSessionActiveV: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .animation(.easeInOut(duration: 0.2), value: focusVM.tiles)
     }
+}
     
-    
-    // MARK: keeps "show validation, submit, text" in one location
+    // MARK: - IntentionField struct
+    // keeps "show validation, submit, text" in one location
     private struct IntentionField: View {
         @EnvironmentObject var theme: ThemeManager
         
@@ -327,7 +331,7 @@ struct FocusSessionActiveV: View {
         
         @FocusState private var isFocused: Bool
         
-        
+        // MARK: - Body
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
                 TextField(
@@ -368,7 +372,8 @@ struct FocusSessionActiveV: View {
         }
     }
     
-    // MARK: TileSlot view (compact min height; segment-like look, multi-line text wraps fully,)
+    //  MARK: - TileSlot struct
+    // TileSlot view (compact min height; segment-like look, multi-line text wraps fully,)
     private struct TileSlot: View {
         @EnvironmentObject var theme: ThemeManager
         

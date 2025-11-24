@@ -10,6 +10,9 @@
 		7705D2682E80C32C0046B67E /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 7705D2672E80C32C0046B67E /* README.md */; };
 		7767BD432E79FD870045D430 /* Intention-All.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 7767BD422E79FD870045D430 /* Intention-All.xctestplan */; };
 		7787866E2DF236D4004EDBEF /* Docs.docc in Sources */ = {isa = PBXBuildFile; fileRef = 7787866D2DF236D4004EDBEF /* Docs.docc */; };
+		77BB220F2ED2647E009A053B /* medicalmarkdown.md in Resources */ = {isa = PBXBuildFile; fileRef = 77BB219A2ED2647E009A053B /* medicalmarkdown.md */; };
+		77BB22102ED2647E009A053B /* privacymarkdown.md in Resources */ = {isa = PBXBuildFile; fileRef = 77BB219B2ED2647E009A053B /* privacymarkdown.md */; };
+		77BB22112ED2647E009A053B /* termsmarkdown.md in Resources */ = {isa = PBXBuildFile; fileRef = 77BB219D2ED2647E009A053B /* termsmarkdown.md */; };
 		77DA310D2E44D7F100C6DC9E /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = 77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */; };
 		77DA31352E45872300C6DC9E /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77DA31342E45872300C6DC9E /* StoreKit.framework */; };
 /* End PBXBuildFile section */
@@ -31,6 +34,9 @@
 		7767BD4F2E7A07D90045D430 /* IntentionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IntentionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7787866D2DF236D4004EDBEF /* Docs.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = Docs.docc; sourceTree = "<group>"; };
 		77B8BFDD2E567C010060EFD5 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/iPhoneOS.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		77BB219A2ED2647E009A053B /* medicalmarkdown.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = medicalmarkdown.md; sourceTree = "<group>"; };
+		77BB219B2ED2647E009A053B /* privacymarkdown.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = privacymarkdown.md; sourceTree = "<group>"; };
+		77BB219D2ED2647E009A053B /* termsmarkdown.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = termsmarkdown.md; sourceTree = "<group>"; };
 		77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		77DA31342E45872300C6DC9E /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -94,6 +100,9 @@
 				7705D2672E80C32C0046B67E /* README.md */,
 				770F222E2E02EF2E00F9CEB3 /* intention.app */,
 				77DA310C2E44D7EA00C6DC9E /* .swiftlint.yml */,
+				77BB219A2ED2647E009A053B /* medicalmarkdown.md */,
+				77BB219B2ED2647E009A053B /* privacymarkdown.md */,
+				77BB219D2ED2647E009A053B /* termsmarkdown.md */,
 				7787866D2DF236D4004EDBEF /* Docs.docc */,
 				778786592DF220C5004EDBEF /* intention */,
 				7767BD502E7A07D90045D430 /* IntentionTests */,
@@ -215,6 +224,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				77BB220F2ED2647E009A053B /* medicalmarkdown.md in Resources */,
+				77BB22102ED2647E009A053B /* privacymarkdown.md in Resources */,
+				77BB22112ED2647E009A053B /* termsmarkdown.md in Resources */,
 				7705D2682E80C32C0046B67E /* README.md in Resources */,
 				7767BD432E79FD870045D430 /* Intention-All.xctestplan in Resources */,
 				77DA310D2E44D7F100C6DC9E /* .swiftlint.yml in Resources */,
@@ -447,7 +459,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = "";
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -461,8 +473,9 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -483,7 +496,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -497,8 +509,9 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

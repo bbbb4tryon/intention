@@ -210,30 +210,8 @@ struct RecalibrationV: View {
             EmptyView()
         }
     }
-    // Sticky chrome above the Home indicator (keep it simple; no refactor of actionArea)
-//    @ViewBuilder
-//    private var BottomInset: some View {
-//        VStack(spacing: 8) {
-//            // a subtle handle/status—tweak as you like
-//            HStack {
-////                Text(vm.phase == .running || vm.phase == .pause ? "Recalibration in progress" : "Ready")
-//                Text(vm.phase == .running || vm.phase == .pause ? "" : "")
-//                    .font(.footnote).foregroundStyle(.secondary)
-//                Spacer()
-//                if vm.phase == .running || vm.phase == .pause {
-//                    Text(vm.formattedTime)
-//                        .font(.title3.bold()).monospacedDigit()
-//                }
-//            }
-//            .padding(.horizontal, 16)
-//            .padding(.top, 10)
-//            
-//            // keep a comfortable tap zone above the home indicator
-//            Color.clear.frame(height: 16)
-//        }
-//    }
 }
-    // Tiny, reusable instruction list (keeps body tidy)
+    // MARK: - Computed Helpers
     private struct InstructionList: View {
         let items: [String]
         let p: ScreenStylePalette

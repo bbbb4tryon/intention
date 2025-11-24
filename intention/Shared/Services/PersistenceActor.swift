@@ -60,6 +60,6 @@ extension PersistenceActor: Persistence {
     
     // MARK: Clear stored value at a key (from UserDefaults)
     public func clear(_ key: String) async {
-        UserDefaults.standard.removeObject(forKey: key) // keeps in-memory state (like categories), is seralized and background-safe
+UserDefaults.standard.removeObject(forKey: key) // keeps in-memory state (like categories), is seralized and background-safe
     }
 }

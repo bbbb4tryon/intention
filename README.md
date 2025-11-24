@@ -1,3 +1,27 @@
+no-glow logo:
+Settings screen bottom logo
+
+Category icons
+
+In-app badges
+
+HistoryV
+
+Buttons / lists / headers
+
+Low-contrast UI environments
+
+soft logo:
+AppIcon.appiconset
+
+RuntimeAppIcon.imageset (if you keep it separate)
+
+Marketing images
+
+TestFlight icon previews
+
+Launchscreen-logo (with or without a little ground shadow)
+
 #  Style Guide
 
 **Rule 1 – *File layout*:**

@@ -18,7 +18,8 @@ struct Helper_AppIconV: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit) // maintain aspect ratio
         } else {
-            Image(systemName: "app.fill")   // Generic app icon SF Symbol
+            // Generic app icon SF Symbol
+            Image(systemName: "app.fill")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .foregroundStyle(Color.intGreen)

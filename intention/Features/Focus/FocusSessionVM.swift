@@ -161,11 +161,13 @@ final class FocusSessionVM: ObservableObject {
         guard tiles.count < 2 else {    throw FocusSessionError.tooManyTiles()    }
         
         let newTile = TileM(text: trimmed)
-        /// Cross-actor hop; no 'try' because the actor method doesn't throw
-        let accepted = await timeActor.addTile(newTile)
-        guard accepted else { throw FocusSessionError.tooManyTiles(limit: 2) }
-        
+        // Keeps VM the tile holder - don't send to anything actor
         tiles.append(newTile)
+//        /// Cross-actor hop; no 'try' because the actor method doesn't throw
+//        let accepted = await timeActor.addTile(newTile)
+//        guard accepted else { throw FocusSessionError.tooManyTiles(limit: 2) }
+//        tiles.append(newTile)
+        
         tileText = ""
         canAdd = tiles.count < 2       /// Keeps flag in sync
         // Wrap noisy debug prints in if debug

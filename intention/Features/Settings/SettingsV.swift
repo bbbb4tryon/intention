@@ -236,7 +236,8 @@ struct SettingsV: View {
                                 LegalDocV(
                                     title: "Terms of Use",
                                     markdown: MarkdownLoader
-                                        .load(named: LegalConfig.termsFile)
+                                        .load(named: LegalConfig.termsFile),
+                                    palette: theme.palette(for: .settings)
                                 )
                             }
                         }
@@ -245,7 +246,8 @@ struct SettingsV: View {
                                 LegalDocV(
                                     title: "Privacy Policy",
                                     markdown: MarkdownLoader
-                                        .load(named: LegalConfig.privacyFile)
+                                        .load(named: LegalConfig.privacyFile),
+                                    palette: theme.palette(for: .settings)
                                 )
                             }
                         }
@@ -254,7 +256,8 @@ struct SettingsV: View {
                                 LegalDocV(
                                     title: "Wellness Disclaimer",
                                     markdown: MarkdownLoader
-                                        .load(named: LegalConfig.medicalFile)
+                                        .load(named: LegalConfig.medicalFile),
+                                    palette: theme.palette(for: .settings)
                                 )
                             }
                         }

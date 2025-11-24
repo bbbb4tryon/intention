@@ -32,6 +32,11 @@ struct DynamicMessageAndActionArea: View {
         }
     }
     
+    private var isBetweenChunks: Bool {
+        focusVM.currentSessionChunk == 1 && focusVM.phase == .finished
+    }
+    
+    // MARK: - Body
     var body: some View {
         VStack(spacing: 16) {
             // Session complete -> recalibration
@@ -57,27 +62,26 @@ struct DynamicMessageAndActionArea: View {
                     }
                     .primaryActionStyle(screen: screen)
                     
-                    Button(
-                        role: .destructive,
-                        action: {
-                            focusVM.performAsyncAction { await focusVM.resetSessionStateForNewStart() } }) {
-                                endEarlyLabel
-                            }
-                            .secondaryActionStyle(screen: screen)
+                    Button(role: .destructive, action: {
+                        focusVM.performAsyncAction { await focusVM.resetSessionStateForNewStart() }
+                    }) {
+                        endEarlyLabel
+                    }
+                    .secondaryActionStyle(screen: screen)
                 }
+            } else if isBetweenChunks {
+                // text only here, relies on bottom CTA for "Next" button
+                T("Done, Continue Your Streak to the Next One?", .title3)
+                    .foregroundStyle(p.text)
+                    .multilineTextAlignment(.center)
+                
+            } else if focusVM.tiles.count < 2, focusVM.phase == .running {
+                T("Finish adding", .label)
+            } else if focusVM.phase == .idle {                           // if needed, hint like "Add next intention above"
+            } else if focusVM.phase == .paused {                        // no text needed - handled in DynamicCountdown()
             }
-        } else if focusVM.currentSessionChunk == 1 && focusVM.phase == .finished {
-            // text only here, relies on bottom CTA for "Next" button
-            T("Done, Continue Your Streak to the Next One?", .title3)
-                .foregroundStyle(p.text)
-                .multilineTextAlignment(.center)
-            
-        } else if focusVM.tiles.count < 2, focusVM.phase == .running {
-            T("Finish adding", .label)
-        } else if focusVM.phase == .idle {                           // if needed, hint like "Add next intention above"
-        } else if focusVM.phase == .paused {                        // no text needed - handled in DynamicCountdown()
         }
+            .padding(.vertical, 8)
     }
-        .padding(.vertical, 8)
 }
 
