@@ -85,6 +85,7 @@ struct FocusSessionActiveV: View {
                 ) { trimmed in
                     Task {
                         do {
+
                             _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed)
                         } catch {
                             debugPrint(
@@ -339,6 +340,8 @@ struct FocusSessionActiveV: View {
                     text: $text,
                     prompt: theme.styledText("Add Your Intended Task", as: .caption, in: .focus)
                 )
+                // set the text color to a dark, contrasting color
+                .foregroundStyle(p.text)
                 .focused($isFocused)
                 .submitLabel(.done)
                 .validatingField(state: vState, palette: p)
@@ -360,11 +363,15 @@ struct FocusSessionActiveV: View {
         }
         
         private func handleSubmit() {
+            // commented out was before revalidating off current text
             showValidation = true
-            guard !vState.isInvalid else { return }
-            
             let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard trimmed.taskValidationMessages.isEmpty else { return }
             onValidatedSubmit(trimmed)
+//            guard !vState.isInvalid else { return }
+            
+//            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+//            onValidatedSubmit(trimmed)
             
             text = ""
             isFocused = isEnabled // re-focus until two tiles
@@ -411,7 +418,7 @@ struct FocusSessionActiveV: View {
         
         // MARK: - Body
         var body: some View {
-            let bg = isActive ? p.surface : p.surface.opacity(0.35)
+            let bg = isActive ? p.surfaces : p.surfaces.opacity(0.35)
             let stroke = colorBorder
             
             // MARK: Tiles container

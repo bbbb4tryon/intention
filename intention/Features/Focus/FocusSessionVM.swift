@@ -45,6 +45,7 @@ final class FocusSessionVM: ObservableObject {
     private var chunkCountdown: Task<Void, Never>?        /// background live time keeper/ticker
     private var sessionCompletionTask: Task<Void, Never>? /// background timer for the entire session (2x 20-min chunks)
     private var runningDeadline: Date?                  /// property to mark a deadline when a chunk starts or resumes
+    private var editingIndex: Int? = nil                /// when editing, remember location, reinsert there
     
     var chunkDuration: Int { config.chunkDuration }     /// Default 20 min chunk duration constant
     
@@ -161,16 +162,20 @@ final class FocusSessionVM: ObservableObject {
         guard tiles.count < 2 else {    throw FocusSessionError.tooManyTiles()    }
         
         let newTile = TileM(text: trimmed)
-        // Keeps VM the tile holder - don't send to anything actor
-        tiles.append(newTile)
-//        /// Cross-actor hop; no 'try' because the actor method doesn't throw
-//        let accepted = await timeActor.addTile(newTile)
-//        guard accepted else { throw FocusSessionError.tooManyTiles(limit: 2) }
+        // VM enforces 2-tile limit, even editing - actor does no tiles, only timers
 //        tiles.append(newTile)
         
+        if let index = editingIndex, index <= tiles.count {
+            // put it back where it came from
+            tiles.insert(newTile, at: index)
+        } else {
+            tiles.append(newTile)
+        }
+        // clear 'edit' state
+        editingIndex = nil
+        
         tileText = ""
-        canAdd = tiles.count < 2       /// Keeps flag in sync
-        // Wrap noisy debug prints in if debug
+        canAdd = tiles.count < 2
         haptics.added()
         saveVMSnapshot()
     }
@@ -196,20 +201,14 @@ final class FocusSessionVM: ObservableObject {
    // Moves the tile’s text back into `tileText` and removes it from the list.
        func beginEditingTile(at index: Int) {
            // Don’t allow edits while running or finished.
-           guard phase != .running,
-                 phase != .finished,
-                 tiles.indices.contains(index) else {
-               return
-           }
+           guard phase != .running, phase != .finished, tiles.indices.contains(index) else { return }
            
            let tile = tiles.remove(at: index)
            tileText = tile.text
            canAdd = tiles.count < 2
-           
-           // Returning to an "input" state is reasonable here:
-           if phase == .none {
-               phase = .idle
-           }
+           // remember the slot we took the tile from
+           editingIndex = index
+           if phase == .none { phase = .idle }
            
            saveVMSnapshot()
        }

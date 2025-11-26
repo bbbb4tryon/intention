@@ -21,10 +21,11 @@ struct FocusShell<Content: View>: View {
     
     var body: some View {
         let pal = theme.palette(for: screen)
-        // card/surface under widgets
-        let backgrounded = content.background(pal.surface)
+        // content sits directly on the ZStack background
+        let contentWithNoBackground = content
         
         ZStack {
+            // Applies full-screen background
             if let g = pal.gradientBackground {
                 LinearGradient(
                     colors: g.colors, startPoint: g.start, endPoint: g.end
@@ -33,7 +34,8 @@ struct FocusShell<Content: View>: View {
             } else {
                 pal.background.ignoresSafeArea()
             }
-            backgrounded
+            // actual content view
+            contentWithNoBackground
         }
     }
 }
@@ -201,8 +203,10 @@ struct RootView: View {
             focusScreen
                 .navigationTitle("Focus")
                 .navigationBarTitleDisplayMode(.inline)
-                // Uses focus's default accent (Leaf)
+            // Sets Icon tint
                 .tint(palFocus.accent)
+                // Force title to p.text otherwise
+                .foregroundStyle(palFocus.text)
         }
             .tabItem { Image(systemName: "timer") }
         
@@ -215,6 +219,8 @@ struct RootView: View {
                 .navigationBarTitleDisplayMode(.inline)
             // Uses focus's default accent (Leaf) - despite "History"
             .tint(palFocus.accent)
+            // Force title to p.text otherwise
+            .foregroundStyle(palFocus.text)
         }
             .tabItem { Image(systemName: "clock") }
         
@@ -227,7 +233,8 @@ struct RootView: View {
                 .navigationBarTitleDisplayMode(.inline)
             // Uses focus's default accent (Leaf) - despite "Settings"
             .tint(palFocus.accent)
-
+            // Force title to p.text otherwise
+            .foregroundStyle(palFocus.text)
         }
             .tabItem { Image(systemName: "gear") }
         

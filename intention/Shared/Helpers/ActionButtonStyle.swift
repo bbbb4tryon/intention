@@ -36,7 +36,7 @@ struct SecondaryActionStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(maxWidth: .infinity)
-            .foregroundStyle(palette.surface)
+            .foregroundStyle(palette.surfaces)
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -45,7 +45,7 @@ struct SecondaryActionStyle: ButtonStyle {
             .clipShape( RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
     private func fillColor(isPressed: Bool) -> Color {
-        let base = palette.surface.opacity(0.80)
+        let base = palette.surfaces.opacity(0.80)
         if !isEnabled { return base.opacity(0.70) }     // slightly dim
         return isPressed ? base.opacity(0.85) : base
     }

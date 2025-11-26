@@ -17,7 +17,7 @@ typealias ThemePalette = ScreenStylePalette
 // MARK: Screens
 enum ScreenName {
     case focus, history, settings, recalibrate, membership
-//    case focus, history, settings, organizer, recalibrate, membership
+    //    case focus, history, settings, organizer, recalibrate, membership
 }
 // MARK: Text roles
 enum TextRole {
@@ -36,11 +36,12 @@ private let DefaultUtilityGray = Color(red: 0.333, green: 0.333, blue: 0.333)
 //}
 
 
-// MARK: - Per-screen color tokens
+// MARK: - ScreenStylePalette
+//Per-screen color tokens
 struct ScreenStylePalette {
     let primary: Color          // secondary button bg or highlighting
     let background: Color       // main pages
-    let surface: Color          // card color, tab bars, // RENAME
+    let surfaces: Color          // card color, tab bars, // RENAME
     let accent: Color          // CTA color - use for fill
     let text: Color
     
@@ -50,7 +51,6 @@ struct ScreenStylePalette {
         let end: UnitPoint
     }
     let gradientBackground: LinearGradientSpecial?      // nil == use `background` color
-    //    dynamic foreground color that automatically adjusts based on the background color.
     
     // specifically for ErrorOverlay
     struct RadialGradientSpecial {
@@ -59,17 +59,19 @@ struct ScreenStylePalette {
         let startRadius: CGFloat
         let endRadius: CGFloat
     }
+    // Uses Color.black for guaranteed darkness/contrast
     let radialBackground: RadialGradientSpecial = .init(
         colors: [
-                DefaultUtilityGray.opacity(0.8), // Inner (visible) gray
-                DefaultUtilityGray.opacity(0.6),
-                Color.clear // Outer (faded)
-            ],
-            center: .center,
-            startRadius: 0, // Starts at the center
-            endRadius: 500 // Adjust this value to control the fade distance
+            Color.black.opacity(0.8), // Inner (visible, near black)
+            Color.black.opacity(0.4), // Middle blend
+            Color.clear             // Outer (faded)
+        ],
+        center: .center,
+        startRadius: 0, // Starts at the center
+        endRadius: 500 // Adjust this value to control the fade distance
     )
 }
+
 // MARK: - App Font Theme
 enum AppFontTheme: String, CaseIterable {
     case serif, rounded, mono
@@ -84,49 +86,81 @@ enum AppFontTheme: String, CaseIterable {
     }
 }
 
-/* <----Normalized Color ----------------------->
- 
- Color(red: 0.##, green: 0.##, blue: 0.##)
- 
- <---------------------------> */
-// MARK: Color Constants (Moved from extension to local enums/structs for clarity)
-// Color Palette:
-// background_light: f6f6f6, background_medium: d9ddc7, surface: c1c1c1, accent: 8ea131, text: 555555, secondary_text_bg: 3e3e36
+// MARK: Color Constants
+// Theme Name,Background Feel,Primary Text,Vibrant Accent
+// Pale Apricot,"Warm, Soft, Encouraging",Deep Umber (#4A3B1C),Electric Blue (#007AFF)
+// Sea,"Cool, Crisp, Professional",Deep Teal (#1C3B4A),Vibrant Citron (#B5C808)
+// Dusk,"Subtle, Clean, Elegant",Very Dark Plum (#1A161E),Deep Rose (#C83264)
+// Primary Background: Pale Apricot (FBF6F3) - Soft & Encouraging
 
-
+// MARK: - DefaultColors
 private enum DefaultColors {
-    // R: 246, G: 246, B: 246 (#F6F6F6) - really light reddish tan
-    static let backgroundLight = Color(red: 0.965, green: 0.965, blue: 0.965)
+    // Apricot FBF6F3
+    static let backgroundLight = Color(red: 0.984, green: 0.965, blue: 0.953)
     
-    // R: 217, G: 221, B: 199 (#e9e9e0) - greenish yellow for blending
-    static let backgroundMiddle = Color(red: 0.914, green: 0.914, blue: 0.878)
+    // Surfaces/Card: Slightly darker Apricot (F4EDE9) - Subtle Warm Depth
+    static let surfaces = Color(red: 0.957, green: 0.929, blue: 0.914)
     
-    // R: 217, G: 221, B: 199 (#E0D8CB) - really light orangish tan
-    static let backgroundMedium = Color(red: 0.878, green: 0.847, blue: 0.796)
+    // Accent: Electric Blue (007AFF) - High-impact CTA
+    static let accent = Color(red: 0.000, green: 0.480, blue: 1.000)
     
-    // R: 193, G: 193, B: 193 (#C1C1C1) - Medium gray for cards/surfaces
-    static let surface = Color(red: 0.757, green: 0.757, blue: 0.757)
+    // Deep Umber (4A3B1C) - High contrast & Warm
+    static let text = Color(red: 0.290, green: 0.231, blue: 0.110)
     
-    // R: 142, G: 161, B: 49 (#8EA131) - Leaf (filling things like CTA)
-    static let accent = Color(red: 0.557, green: 0.631, blue: 0.192)
-    
-    // R: 85, G: 85, B: 85 (#555555) - Dark Gray (Primary Text)
-    static let text = DefaultUtilityGray
+    // Dark Text/Surface (Recalibrate): Same as text for consistency
+    static let topDark = text // #4A3B1C
+    // Recalibrate bottom light: Matches background for clean transition
+    static let bottomLight = backgroundLight // #FBF6F3
 }
 
+//// New Primary Background: Pale Dusk Gray (F8F6FA) - Subtle & Clean
+//private enum DuskColors { // Use a new enum name for the 'dusk' case
+//    static let backgroundLight = Color(red: 0.973, green: 0.965, blue: 0.980)
+//
+//    // New Surface/Card: Slightly darker Dusk Gray (EFEBF3) - Elegant Depth
+//    static let surface = Color(red: 0.937, green: 0.922, blue: 0.953)
+//
+//    // New Accent: Deep Rose (C83264) - Vibrant CTA
+//    static let accent = Color(red: 0.784, green: 0.196, blue: 0.392)
+//
+//    // Text: Very Dark Plum (1A161E) - Highest contrast
+//    static let text = Color(red: 0.102, green: 0.086, blue: 0.118)
+//
+//    // Dark Text/Surface (Recalibrate): Same as text for consistency
+//    static let topDark = text // #1A161E
+//    // Recalibrate bottom light: Matches new background for clean transition
+//    static let bottomLight = backgroundLight // #F8F6FA
+//}
+
+// Primary Background: Pale Blue-Gray (F3F6F9) - Crisp & Calm
 private enum SeaDefaultColors {
-    // #C4ECF5 - very light aquaremarine blue
-    static let backgroundLight = Color(red: 0.769, green: 0.925, blue: 0.961)
-    // #67A5BB
-    static let backgroundMiddle = Color(red: 0.404, green: 0.647, blue: 0.733)
-    // #0A424E - aquamarie navy
-    static let backgroundMedium = Color(red: 0.039, green: 0.259, blue: 0.306)
-    // #377989 - aqua
-    static let surface = Color(red: 0.216, green: 0.475, blue: 0.537)
-    // #FF8C00 - orangish
-    static let accent = Color(red: 1.0, green: 0.55, blue: 0.0)
-    // #D9EBFF - white/blue
-    static let text = Color(red: 0.851, green: 0.922, blue: 1.0)
+    static let backgroundLight = Color(red: 0.953, green: 0.965, blue: 0.976)
+    
+    // Surface/Card: Slightly darker Blue-Gray (E7ECF1) - Subtle Cool Depth
+    static let surfaces = Color(red: 0.906, green: 0.925, blue: 0.945)
+    
+    // Accent: Vibrant Citron (B5C808) - Engaging CTA
+    static let accent = Color(red: 0.710, green: 0.784, blue: 0.031)
+    
+    // Text: Deep Teal/Navy (1C3B4A) - High contrast & Professional
+    static let text = Color(red: 0.110, green: 0.231, blue: 0.290)
+    
+    // Dark Text/Surface (Recalibrate): Same as text for consistency
+    static let topDark = text // #1C3B4A
+    // Recalibrate bottom light: Matches new background for clean transition
+    static let bottomLight = backgroundLight // #F3F6F9
+    
+    // Define a gradient for the theme
+    static let gradient: ScreenStylePalette.LinearGradientSpecial = .init(
+        colors: [
+            // Darker blue for the top for depth
+            Color(red: 0.15, green: 0.35, blue: 0.45), // Dark Teal
+            Color(red: 0.3, green: 0.5, blue: 0.6),    // Middle Blue
+            backgroundLight                          // Light base
+        ],
+        start: .top,
+        end: .bottom
+    )
 }
 
 //
@@ -141,20 +175,23 @@ private enum SeaDefaultColors {
 
 // MARK: Recalibrate Sheet
 private enum RecalibrateBG {
-    // darker #335492
-        static let topDark = Color(red: 0.200, green: 0.329, blue: 0.573)
-//        static let topLight = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
-//    // #eef3f9
-//    static let topLight = Color(red: 0.933, green: 0.953, blue: 0.976)
-    // #f5f8ff
-//    static let topLight  = Color(red: 0.96, green: 0.97, blue: 1.00)
-//    // #476FAD
-//    static let middleBlend = Color(red: 0.278, green: 0.435, blue: 0.678)
-    // #b5c5de
-//    static let middleBlend = Color(red: 0.71, green: 0.77, blue: 087)
-    // darker #335492
-//    static let bottomDark = Color(red: 0.200, green: 0.329, blue: 0.573)
-            static let bottomLight = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
+    // Aquamarine Navy (0A424E) - Deep, High Contrast
+    static let topDark = Color(red: 0.039, green: 0.259, blue: 0.306)
+    
+    // Near White (F5F5F5) - Clean, High Contrast
+    static let bottomLight = Color(red: 0.960, green: 0.960, blue: 0.960) // #F5F5F5
+    
+    // Gradient: For use in LinearGradientSpecial.colors
+    static let gradient: ScreenStylePalette.LinearGradientSpecial = .init(
+        colors: [
+            topDark,
+            // A middle blend point helps prevent a sharp line
+            topDark.opacity(0.9),
+            bottomLight
+        ],
+        start: .top,
+        end: .bottom
+    )
 }
 
 // MARK: Membership Sheet
@@ -165,14 +202,6 @@ private enum MembershipBG {
     static let middleBlend = Color(red: 0.765, green: 0.788, blue: 0.686)
     // #8EA131
     static let bottomDark = Color(red: 0.557, green: 0.631, blue: 0.192)
-}
-
-// MARK: Sea theme
-private enum Sea {
-    // c4ecf5
-    static let topLight  = Color(red: 0.769, green: 0.925, blue: 0.961)
-    // #0a4243
-    static let bottomDark = Color(red: 0.039, green: 0.259, blue: 0.306)
 }
 
 
@@ -193,14 +222,13 @@ enum AppColorTheme: String, CaseIterable {
     
     func colors(for screen: ScreenName) -> ScreenStylePalette {
         switch self {
-            // ---------- DEFAULT ----------
         case .default:
             switch screen {
             case .focus, .history, .settings:
                 return .init(
-                    primary: DefaultColors.surface,             // secondary/quiet CTAs
-                    background: DefaultColors.backgroundLight,    // Page pg
-                    surface: DefaultColors.surface.opacity(0.85), // card/surface (slightly lighter)
+                    primary: DefaultColors.surfaces,             // secondary/quiet CTAs
+                    background: DefaultColors.backgroundLight,    // Page BG
+                    surfaces: DefaultColors.surfaces.opacity(0.85), // card/surface (slightly lighter)
                     accent: DefaultColors.accent,                  // CTA color (citron)
                     text: DefaultColors.text,                   // primary text color (dark gray)
                     gradientBackground: nil
@@ -210,25 +238,19 @@ enum AppColorTheme: String, CaseIterable {
                 return .init(
                     primary: RecalibrateBG.topDark,          // icon tints if needed
                     background: RecalibrateBG.bottomLight,         // fallback if gradient is nil
-                    surface: DefaultColors.surface.opacity(0.10),   // frosted cards
+                    surfaces: DefaultColors.surfaces.opacity(0.10),   // frosted cards
                     accent: DefaultColors.accent,               // CTA on sheet
                     text: DefaultColors.backgroundLight,       // light text over dark blue
-                    gradientBackground: .init(
-                        colors: [RecalibrateBG.bottomLight, RecalibrateBG.topDark],
-                         start: .topLeading,
-//                        start: UnitPoint(x: 1.5, y: -0.5),
-                         end: .bottomTrailing
-//                        end: UnitPoint(x: 0.5, y: 1.2)
+                    gradientBackground: RecalibrateBG.gradient
                     )
-                )
                 
             case .membership:
                 return .init(
-                    primary: DefaultColors.accent,               // CTA color (citron)
+                    primary: DefaultColors.accent,               // CTA color (electric blue)
                     background: DefaultColors.backgroundLight,    // fallback if gradient is nil
-                    surface: DefaultColors.surface.opacity(0.96), // card/surface (slightly lighter)
-                    accent: DefaultColors.accent,               // CTA color (citron)
-                    text: DefaultColors.text,                   // primary text color (dark gray)
+                    surfaces: DefaultColors.surfaces.opacity(0.96), // card/surface (slightly lighter)
+                    accent: DefaultColors.accent,               // CTA color (electric blue)
+                    text: DefaultColors.text,                   // primary text color (deep umber)
                     gradientBackground: .init(
                         colors: [MembershipBG.topLight, MembershipBG.bottomDark],
                         start: .topTrailing,
@@ -236,86 +258,79 @@ enum AppColorTheme: String, CaseIterable {
                     )
                     
                 )
-//                
-//            case .organizer:
-//                // superior contrast (6.1:1) against the light gradient
-//                /*#7b6428*/ let organizerText = Color(red: 0.4824, green: 0.3922, blue: 0.1569)
-//                return .init(
-//                    primary: DefaultColors.accent,               // CTA color (citron)
-//                    background: .clear,                         // clear, to see gradient
-//                    surface: .clear,                            // let gradient breath
-//                    accent: organizerText,                      // toolbar tint (X button, etc)
-//                    text: organizerText,          // primary text
-//                    gradientBackground: .init(
-//                        colors: [OrgBG.topLight, OrgBG.bottomDark],
-//                        start: .topLeading,
-//                        end: .bottomTrailing // ↖️ Diagonal flow
-//                    )
-//                )
+                //
+                //            case .organizer:
+                //                // superior contrast (6.1:1) against the light gradient
+                //                /*#7b6428*/ let organizerText = Color(red: 0.4824, green: 0.3922, blue: 0.1569)
+                //                return .init(
+                //                    primary: DefaultColors.accent,               // CTA color (citron)
+                //                    background: .clear,                         // clear, to see gradient
+                //                    surface: .clear,                            // let gradient breath
+                //                    accent: organizerText,                      // toolbar tint (X button, etc)
+                //                    text: organizerText,          // primary text
+                //                    gradientBackground: .init(
+                //                        colors: [OrgBG.topLight, OrgBG.bottomDark],
+                //                        start: .topLeading,
+                //                        end: .bottomTrailing // ↖️ Diagonal flow
+                //                    )
+                //                )
             }
             
-            // ---------- SEA ----------
+            // MARK: - Sea
         case .sea:
-            let seaGradientColors: [Color] = [
-                SeaDefaultColors.backgroundLight,  // #C4ECF5 (High-contrast top)
-                        SeaDefaultColors.backgroundMedium // #0A424E (Dark aquamarine navy bottom)
-                ]
-            
             switch screen {
             case .focus, .history, .settings:
                 return .init(
-                            primary: SeaDefaultColors.surface, // Using Surface as primary (e.g., secondary button)
-                            background: SeaDefaultColors.backgroundMedium, // Using the dark base color for solid BG
-                            surface: SeaDefaultColors.surface.opacity(0.85), // Frosted surface card
-                            accent: SeaDefaultColors.accent,
-                            text: SeaDefaultColors.text,
-                            gradientBackground: nil
-                        )
+                    primary: SeaDefaultColors.surfaces, // Using Surface as primary (e.g., secondary button)
+                    background: SeaDefaultColors.backgroundLight, // Using the dark base color for solid BG
+                    surfaces: SeaDefaultColors.surfaces.opacity(0.85), // Frosted surface card
+                    accent: SeaDefaultColors.accent,
+                    text: SeaDefaultColors.text,
+                    gradientBackground: nil
+                )
                 
             case .recalibrate:
-                    // Unique Gradient Direction: Diagonal
-                    return .init(
-                        primary: SeaDefaultColors.backgroundMedium, // Dark primary tint
-                        background: SeaDefaultColors.backgroundMedium, // Dark solid fallback
-                        surface: SeaDefaultColors.surface.opacity(0.15), // Frosted cards
-                        accent: SeaDefaultColors.accent,
-                        text: SeaDefaultColors.text,
-                        gradientBackground: .init(
-                            colors: seaGradientColors,
-                            start: .top,
-                            end: .bottom // ⬇️ Verticall flow
-                        )
-                    )
+                // Unique Gradient Direction: Diagonal
+                return .init(
+                    primary: SeaDefaultColors.topDark, // Dark primary tint (deep teal)
+                    background: SeaDefaultColors.bottomLight, // Light solid fallback
+                    surfaces: SeaDefaultColors.surfaces.opacity(0.15), // Frosted cards
+                    accent: SeaDefaultColors.accent,
+                    text: SeaDefaultColors.text,            // light text color (light background) for contrast over the dark top of gradient
+                    gradientBackground: SeaDefaultColors.gradient // Sea Theme Recalibrate Gradient (Defined in SeaDefaultColors)
+                )
                 
             case .membership:
-                    // Unique Gradient Direction: Horizontal
-                    return .init(
-                        primary: SeaDefaultColors.surface,
-                        background: SeaDefaultColors.backgroundMedium, // Dark solid fallback
-                        surface: SeaDefaultColors.surface.opacity(0.85),
-                        accent: SeaDefaultColors.accent,
-                        text: SeaDefaultColors.text,
-                        gradientBackground: .init(
-                            colors: seaGradientColors,
-                            start: .leading,
-                            end: .trailing // ➡️ Horizontal flow
-                        )
-                    )
-//                
-//            case .organizer:
-//                // Unique Gradient Direction: Vertical
-//                    return .init(
-//                        primary: SeaDefaultColors.surface,
-//                        background: .clear, // clear, to see gradient through FocusShell
-//                        surface: SeaDefaultColors.surface.opacity(0.12),
-//                        accent: SeaDefaultColors.accent,
-//                        text: SeaDefaultColors.text,
-//                        gradientBackground: .init(
-//                            colors: seaGradientColors,
-//                            start: .top,
-//                            end: .bottom // ⬇️ Vertical flow
-//                        )
-//                        )
+                // Unique Gradient Direction: Horizontal
+                // Uses the Sea theme's specific gradient and colors
+                return .init(
+                    primary: SeaDefaultColors.surfaces,
+                    background: SeaDefaultColors.backgroundLight, // Dark solid fallback
+                    surfaces: SeaDefaultColors.surfaces.opacity(0.85),
+                    accent: SeaDefaultColors.accent,
+                    text: SeaDefaultColors.text,
+                    // Reusing Sea's defined gradient but changing direction for variety
+                                        gradientBackground: .init(
+                                            colors: SeaDefaultColors.gradient.colors,
+                                            start: .leading,
+                                            end: .trailing // ➡️ Horizontal flow
+                                        )
+                )
+                //
+                //            case .organizer:
+                //                // Unique Gradient Direction: Vertical
+                //                    return .init(
+                //                        primary: SeaDefaultColors.surface,
+                //                        background: .clear, // clear, to see gradient through FocusShell
+                //                        surface: SeaDefaultColors.surfaces.opacity(0.12),
+                //                        accent: SeaDefaultColors.accent,
+                //                        text: SeaDefaultColors.text,
+                //                        gradientBackground: .init(
+                //                            colors: seaGradientColors,
+                //                            start: .top,
+                //                            end: .bottom // ⬇️ Vertical flow
+                //                        )
+                //                        )
             }
         }
     }
@@ -361,27 +376,7 @@ final class ThemeManager: ObservableObject {
         }
         return Text(content).font(font).fontWeight(weight).foregroundColor(color)
     }
-    
-    // MARK: Role map
-    /*
-        .header → top-of-screen titles only (screen or sheet titles).
 
-        .section → group headers inside a screen (Settings sections, “Projects”, etc).
-
-        .title3 → short emphatic lines in content (hero callouts, paused label, stat values).
-
-        .label → control/field labels and row titles.
-
-        .body → normal paragraph copy and long lines.
-
-        .tile → text inside chips/tiles/lists (history items, slots).
-
-        .secondary → supportive inline text (status, helper hints). -- avoid bolding, use *label* instead
-
-        .caption → small legal/help footers and placeholder prompts.
-
-        .action → anything on a tappable control.
-    */
     static func fontStyle(for role: TextRole) -> Font.TextStyle {
         switch role {
         case .largeTitle: .largeTitle
@@ -401,15 +396,12 @@ final class ThemeManager: ObservableObject {
     static func color(for role: TextRole, palette: ScreenStylePalette) -> Color {
         switch role {
         case .header, .section, .title3, .body, .tile, .largeTitle, .label:
-            // unchanged (primary text)
             return palette.text
-            
         case .secondary, .caption:
-            // was ~0.72 — better readability on light bg
             return palette.text.opacity(0.80)
             
         case .placeholder:
-            return palette.text.opacity(0.70)          // was ~0.55–0.60 in practice; lift for inputs
+            return palette.text.opacity(0.70)
         case .action:
             // Actions (buttons) often use white/light text for contrast against a filled background.
             return .white

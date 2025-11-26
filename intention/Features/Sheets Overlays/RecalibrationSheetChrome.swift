@@ -49,7 +49,7 @@ struct RecalibrationSheetChrome<Content: View>: View {
                 content
                 // keep inner content transparent
                     .background(.clear)
-                //.background(p.surface.opacity(0.0))
+                //.background(p.surfaces.opacity(0.0))
             }
             // lets ZStack gradient through because container has no fill/ is clear
             .background(.clear)

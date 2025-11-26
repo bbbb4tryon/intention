@@ -20,7 +20,8 @@ actor ContinuousClockActor {
     
     // MARK: session state Convenience
     private(set) var sessionStartDate: Date?
-    private(set) var currentTiles: [TileM] = []     // NOTE: adding = [] dismisses 'has no initializers'
+    // -- delete currenttiles if no error --
+//    private(set) var currentTiles: [TileM] = []     // NOTE: adding = [] dismisses 'has no initializers'
     
     // MARK: Ticking
     private let clock = ContinuousClock()
@@ -37,16 +38,18 @@ actor ContinuousClockActor {
     func startSessionTracking() {
         guard !IS_PREVIEW else { return }
         sessionStartDate = Date()
-        currentTiles = []           /// Clear tiles for new session
+        // -- delete currenttiles if no error --
+        // currentTiles = []           /// Clear tiles for new session
         pausedRemaining = nil
     }
     
-    /// Append a tile; returns false if limit (2) already reached.
-    func addTile(_ tile: TileM) -> Bool {
-        guard currentTiles.count < 2 else { return false }
-        currentTiles.append(tile)
-        return true
-    }
+    // -- delete this addTile and currenttiles if no error: VM controls --
+//    /// Append a tile; returns false if limit (2) already reached.
+//    func addTile(_ tile: TileM) -> Bool {
+//        guard currentTiles.count < 2 else { return false }
+//        currentTiles.append(tile)
+//        return true
+//    }
     
     func shouldCheckIn() -> Bool {
         guard let start = sessionStartDate else { return false }
@@ -55,7 +58,8 @@ actor ContinuousClockActor {
     
     func resetSessionTracking() {
         sessionStartDate = nil
-        currentTiles = []
+        // -- delete currenttiles if no error --
+//        currentTiles = []
         cancelTicking()
         endInstant = nil
         pausedRemaining = nil

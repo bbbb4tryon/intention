@@ -179,7 +179,7 @@ struct CategoryTileList: View {
             
         }
         .padding(10)
-        .background(p.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(p.surfaces, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .draggable(DragPayload(tile: tile, sourceCategoryID: category.id))
         // swipe right - opens Move bar
         .swipeActions(edge: .leading, allowsFullSwipe: false) {
@@ -336,7 +336,7 @@ private struct MoveChipRow: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
         }
-        .background(p.surface.opacity(0.8), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(p.surfaces.opacity(0.8), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .transition(.opacity.combined(with: .move(edge: .top)))
     }
     
@@ -381,7 +381,7 @@ private struct MoveChipRow: View {
             .background(
                 isArchiveDest
                 ? p.accent.opacity(0.20)
-                : p.surface.opacity(0.15),
+                : p.surfaces.opacity(0.15),
                 in: Capsule()
             )
         }
