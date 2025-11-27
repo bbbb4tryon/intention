@@ -14,64 +14,101 @@ struct PrimaryActionStyle: ButtonStyle {
     let palette: ScreenStylePalette
     
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .frame(maxWidth: .infinity)
-            .foregroundStyle(palette.text)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(fillColor(isPressed: configuration.isPressed))
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-    
-    private func fillColor(isPressed: Bool) -> Color {
         let base = palette.accent
-        if !isEnabled { return base.opacity(0.85) }         // slightly dim
-        return isPressed ? base.opacity(0.90) : base
+        let pressed = configuration.isPressed
+        
+        return configuration.label
+            .font(.headline)
+            // always, for contrast
+            .foregroundStyle(Color.white)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(base)
+                    // vertical gloss - light mode shows more; dark mode gently
+                    .overlay(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(pressed ? 0.08 : 0.16),
+                                Color.white.opacity(0.00)
+                            ],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                  )
+                        // 1pt highlight stroke - definition on dark
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                            )
+                        // a lift/shadow that reacts to press
+                            .shadow(color: Color.black.opacity(isEnabled ? (pressed ? 0.10 : 0.22) : 0.00 ),
+                                    radius: pressed ? 6 : 12, y: pressed ? 2 : 6)
+                    )
+                    .scaleEffect(pressed ? 0.985 : 1.0)                         // press feedback
+                    .opacity(isEnabled ? 1.0 : 0.85)                            // disabled dim
+                    .animation(.easeInOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 
+// MARK: Secondary (surface chip with tinted text)
 struct SecondaryActionStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.colorScheme) private var scheme
     let palette: ScreenStylePalette
+
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .frame(maxWidth: .infinity)
-            .foregroundStyle(palette.surfaces)
+        let pressed = configuration.isPressed
+        let fill = palette.surfaces.opacity(0.9)
+
+        return configuration.label
+            .font(.headline)
+            .foregroundStyle(palette.text.opacity(0.9))
             .padding(.vertical, 12)
+            .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(fillColor(isPressed: configuration.isPressed))
+                    .fill(fill)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(palette.text.opacity(0.10), lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(isEnabled ? (pressed ? 0.06 : 0.14) : 0.0),
+                            radius: pressed ? 3 : 8, y: pressed ? 1 : 3)
             )
-            .clipShape( RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-    private func fillColor(isPressed: Bool) -> Color {
-        let base = palette.surfaces.opacity(0.80)
-        if !isEnabled { return base.opacity(0.70) }     // slightly dim
-        return isPressed ? base.opacity(0.85) : base
+            .scaleEffect(pressed ? 0.992 : 1.0)
+            .opacity(isEnabled ? 1.0 : 0.75)
+            .animation(.easeInOut(duration: 0.12), value: configuration.isPressed)
     }
 }
+
+// MARK: Recalibration (outline / inverted accent)
 struct RecalibrationActionStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.colorScheme) private var scheme
     let palette: ScreenStylePalette
+
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .frame(maxWidth: .infinity)
+        let pressed = configuration.isPressed
+        let stroke = palette.accent
+
+        return configuration.label
+            .font(.headline)
             .foregroundStyle(palette.accent)
             .padding(.vertical, 12)
+            .frame(maxWidth: .infinity)
             .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(fillColor(isPressed: configuration.isPressed))
-        )
-        .clipShape( RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-    private func fillColor(isPressed: Bool) -> Color {
-        let base = palette.accent
-        if !isEnabled { return base.opacity(0.85) }         // slightly dim
-        return isPressed ? base.opacity(0.90) : base
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(stroke.opacity(pressed ? 0.9 : 1.0), lineWidth: 2)
+                    )
+                    .shadow(color: stroke.opacity(isEnabled ? (pressed ? 0.10 : 0.20) : 0.0),
+                            radius: pressed ? 3 : 6, y: pressed ? 1 : 3)
+            )
+            .scaleEffect(pressed ? 0.992 : 1.0)
+            .opacity(isEnabled ? 1.0 : 0.80)
+            .animation(.easeInOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 

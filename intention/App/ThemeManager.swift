@@ -5,6 +5,7 @@
 //  Created by Benjamin Tryon on 6/14/25.
 //
 import SwiftUI
+import UIKit
 // views will use local color constants for validation, border, and secondary text
 // Shim: keep code compiling that expects ThemePalette, if any still refer to it!
 
@@ -24,15 +25,21 @@ enum TextRole {
     case largeTitle, header, section, title3, label, body, tile, secondary, caption, action, placeholder
 }
 
-// MARK: - Loader with fallbacks
+// MARK: - Loader with fallbacks (safe)
 private extension Color {
-    static func app(_ name: String, fallback: Color) -> Color {
-        #if DEBUG
-        if UIImage(named: name) == nil && UIColor(named: name) == nil { return fallback }
-        #endif
-        return Color(name, bundle: .main)
+    static func app(_ name: String, fallback: Color, bundle: Bundle = .main) -> Color {
+        // Prefer the color asset if it exists
+        if let ui = UIColor(named: name, in: bundle, compatibleWith: nil) {
+            return Color(uiColor: ui)
+        } else {
+            #if DEBUG
+            print("[Theme] Missing color asset '\(name)'. Using fallback.")
+            #endif
+            return fallback
+        }
     }
 }
+
 
 // MARK: - ScreenStylePalette
 //Per-screen color tokens
@@ -117,7 +124,7 @@ private enum DefaultColors {
     static let backgroundLight = Color.app("AppBackground",
                                            fallback: Color(red: 0.973, green: 0.965, blue: 0.980)) // F8F6FA
         .opacity(1) // no-op; forces load
-   static let surfaces        = Color.app("AppSurface",
+   static let surfaces        = Color.app("AppSurfaces",
                                        fallback: Color(red: 0.937, green: 0.922, blue: 0.953)) // EFEBF3
     static let accent          = Color.app("AppAccent",
                                        fallback: Color(red: 0.784, green: 0.196, blue: 0.392)) // C83264)
