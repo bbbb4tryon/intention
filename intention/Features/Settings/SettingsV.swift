@@ -22,6 +22,7 @@ struct SettingsV: View {
     @State private var showPrivacy = false
     @State private var showMedical = false
     @State private var isBusy = false
+    @State private var showSwatches = false
     
     private let screen: ScreenName = .settings
     private var p: ScreenStylePalette { theme.palette(for: screen) }
@@ -277,6 +278,13 @@ struct SettingsV: View {
             userID = IS_PREVIEW
             ? "PREVIEW-DEVICE-ID"
             : await KeychainHelper.shared.getUserIdentifier()
+        }
+        Form {
+            // Presented as a table
+            Section("Swatches") {
+                Toggle("Show", isOn: $showSwatches)
+                if showSwatches { ThemeSwatches() }
+            }
         }
     }
     

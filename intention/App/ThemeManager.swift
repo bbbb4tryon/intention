@@ -24,17 +24,15 @@ enum TextRole {
     case largeTitle, header, section, title3, label, body, tile, secondary, caption, action, placeholder
 }
 
-// MARK: Utility Gray Constant for Overlays/Borders
-private let DefaultUtilityGray = Color(red: 0.333, green: 0.333, blue: 0.333)
-
-// Global app-wide background bridge for App entry / UIKit surfaces. IS AT THE BOTTOM
-//extension ThemeManager {
-//    static var appBackgroundColor: Color {
-//        // Use the default color theme and the Focus screen palette
-//        AppColorTheme.default.colors(for: .focus).background
-//    }
-//}
-
+// MARK: - Loader with fallbacks
+private extension Color {
+    static func app(_ name: String, fallback: Color) -> Color {
+        #if DEBUG
+        if UIImage(named: name) == nil && UIColor(named: name) == nil { return fallback }
+        #endif
+        return Color(name, bundle: .main)
+    }
+}
 
 // MARK: - ScreenStylePalette
 //Per-screen color tokens
@@ -93,28 +91,47 @@ enum AppFontTheme: String, CaseIterable {
 // Dusk,"Subtle, Clean, Elegant",Very Dark Plum (#1A161E),Deep Rose (#C83264)
 // Primary Background: Pale Apricot (FBF6F3) - Soft & Encouraging
 
-// MARK: - DefaultColors
-private enum DefaultColors {
-    // Apricot FBF6F3
-    static let backgroundLight = Color(red: 0.984, green: 0.965, blue: 0.953)
-    
-    // Surfaces/Card: Slightly darker Apricot (F4EDE9) - Subtle Warm Depth
-    static let surfaces = Color(red: 0.957, green: 0.929, blue: 0.914)
-    
-    // Accent: Electric Blue (007AFF) - High-impact CTA
-    static let accent = Color(red: 0.000, green: 0.480, blue: 1.000)
-    
-    // Deep Umber (4A3B1C) - High contrast & Warm
-    static let text = Color(red: 0.290, green: 0.231, blue: 0.110)
-    
-    // Dark Text/Surface (Recalibrate): Same as text for consistency
-    static let topDark = text // #4A3B1C
-    // Recalibrate bottom light: Matches background for clean transition
-    static let bottomLight = backgroundLight // #FBF6F3
-}
+// MARK: - DefaultColors (Assets are the truth)
+//private enum DefaultColors {
+//    // Apricot FBF6F3
+//    static let backgroundLight = Color(red: 0.984, green: 0.965, blue: 0.953)
+//    
+//    // Surfaces/Card: Slightly darker Apricot (F4EDE9) - Subtle Warm Depth
+//    static let surfaces = Color(red: 0.957, green: 0.929, blue: 0.914)
+//    
+//    // Accent: Electric Blue (007AFF) - High-impact CTA
+//    static let accent = Color(red: 0.000, green: 0.480, blue: 1.000)
+//    
+//    // Deep Umber (4A3B1C) - High contrast & Warm
+//    static let text = Color(red: 0.290, green: 0.231, blue: 0.110)
+//    
+//    // Dark Text/Surface (Recalibrate): Same as text for consistency
+//    static let topDark = text // #4A3B1C
+//    // Recalibrate bottom light: Matches background for clean transition
+//    static let bottomLight = backgroundLight // #FBF6F3
+//}
 
 //// New Primary Background: Pale Dusk Gray (F8F6FA) - Subtle & Clean
-//private enum DuskColors { // Use a new enum name for the 'dusk' case
+private enum DefaultColors {
+    
+    static let backgroundLight = Color.app("AppBackground",
+                                           fallback: Color(red: 0.973, green: 0.965, blue: 0.980)) // F8F6FA
+        .opacity(1) // no-op; forces load
+   static let surfaces        = Color.app("AppSurface",
+                                       fallback: Color(red: 0.937, green: 0.922, blue: 0.953)) // EFEBF3
+    static let accent          = Color.app("AppAccent",
+                                       fallback: Color(red: 0.784, green: 0.196, blue: 0.392)) // C83264)
+    static let text            = Color.app("AppText",
+                                       fallback: Color(red: 0.102, green: 0.086, blue: 0.118)) // 1A161E
+    
+    // Fallbacks for previews / missing assets
+    // (used only if the asset is absent in a preview-only context)
+//    static let _fallbackBackground = Color(red: 0.973, green: 0.965, blue: 0.980) // F8F6FA
+//    static let _fallbackSurfaces    = Color(red: 0.937, green: 0.922, blue: 0.953) // EFEBF3
+//    static let _fallbackAccent     = Color(red: 0.784, green: 0.196, blue: 0.392) // C83264
+//    static let _fallbackText       = Color(red: 0.102, green: 0.086, blue: 0.118) // 1A161E
+    static let _topDark = text // Dark Text/Surface (Recalibrate): Same as text for consistency
+    static let bottomLight = backgroundLight // Recalibrate bottom light: Matches new background for clean transition
 //    static let backgroundLight = Color(red: 0.973, green: 0.965, blue: 0.980)
 //
 //    // New Surface/Card: Slightly darker Dusk Gray (EFEBF3) - Elegant Depth
@@ -130,7 +147,7 @@ private enum DefaultColors {
 //    static let topDark = text // #1A161E
 //    // Recalibrate bottom light: Matches new background for clean transition
 //    static let bottomLight = backgroundLight // #F8F6FA
-//}
+}
 
 // Primary Background: Pale Blue-Gray (F3F6F9) - Crisp & Calm
 private enum SeaDefaultColors {
@@ -175,33 +192,26 @@ private enum SeaDefaultColors {
 
 // MARK: Recalibrate Sheet
 private enum RecalibrateBG {
-    // Aquamarine Navy (0A424E) - Deep, High Contrast
-    static let topDark = Color(red: 0.039, green: 0.259, blue: 0.306)
-    
-    // Near White (F5F5F5) - Clean, High Contrast
-    static let bottomLight = Color(red: 0.960, green: 0.960, blue: 0.960) // #F5F5F5
-    
-    // Gradient: For use in LinearGradientSpecial.colors
     static let gradient: ScreenStylePalette.LinearGradientSpecial = .init(
         colors: [
-            topDark,
-            // A middle blend point helps prevent a sharp line
-            topDark.opacity(0.9),
-            bottomLight
+            DefaultColors.text.opacity(0.96),   // top: very dark
+            DefaultColors.text.opacity(0.88),   // soften banding
+            DefaultColors.backgroundLight       // bottom: page bg
         ],
-        start: .top,
-        end: .bottom
+        start: .top, end: .bottom
     )
+    static let bottomLight = DefaultColors.backgroundLight
 }
-
 // MARK: Membership Sheet
 private enum MembershipBG {
-    // #dee7f4
-    static let topLight = Color(red: 0.871, green: 0.906, blue: 0.957)
-    // #C3C9AF
-    static let middleBlend = Color(red: 0.765, green: 0.788, blue: 0.686)
-    // #8EA131
-    static let bottomDark = Color(red: 0.557, green: 0.631, blue: 0.192)
+    static let gradient: ScreenStylePalette.LinearGradientSpecial = .init(
+        colors: [
+            DefaultColors.accent.opacity(0.92),
+            DefaultColors.accent.opacity(0.75),
+            DefaultColors.surfaces                 // calmer base for legibility
+        ],
+        start: .topLeading, end: .bottomTrailing
+    )
 }
 
 
@@ -236,27 +246,22 @@ enum AppColorTheme: String, CaseIterable {
                 
             case .recalibrate:
                 return .init(
-                    primary: RecalibrateBG.topDark,          // icon tints if needed
-                    background: RecalibrateBG.bottomLight,         // fallback if gradient is nil
-                    surfaces: DefaultColors.surfaces.opacity(0.10),   // frosted cards
-                    accent: DefaultColors.accent,               // CTA on sheet
-                    text: DefaultColors.backgroundLight,       // light text over dark blue
-                    gradientBackground: RecalibrateBG.gradient
+                    primary: DefaultColors.text,
+                            background: RecalibrateBG.bottomLight,
+                            surfaces: DefaultColors.surfaces.opacity(0.12),
+                            accent: DefaultColors.accent,
+                            text: Color.white,                        // over dark gradient top
+                            gradientBackground: RecalibrateBG.gradient
                     )
                 
             case .membership:
                 return .init(
-                    primary: DefaultColors.accent,               // CTA color (electric blue)
-                    background: DefaultColors.backgroundLight,    // fallback if gradient is nil
-                    surfaces: DefaultColors.surfaces.opacity(0.96), // card/surface (slightly lighter)
-                    accent: DefaultColors.accent,               // CTA color (electric blue)
-                    text: DefaultColors.text,                   // primary text color (deep umber)
-                    gradientBackground: .init(
-                        colors: [MembershipBG.topLight, MembershipBG.bottomDark],
-                        start: .topTrailing,
-                        end: .bottomLeading
-                    )
-                    
+                    primary: DefaultColors.accent,
+                       background: DefaultColors.backgroundLight,
+                       surfaces: DefaultColors.surfaces.opacity(0.96),
+                       accent: DefaultColors.accent,
+                       text: DefaultColors.text,                 // content mostly on light tones
+                       gradientBackground: MembershipBG.gradient
                 )
                 //
                 //            case .organizer:
@@ -406,6 +411,25 @@ final class ThemeManager: ObservableObject {
             // Actions (buttons) often use white/light text for contrast against a filled background.
             return .white
         }
+    }
+}
+
+// MARK: - ThemeSwatches
+struct ThemeSwatches: View {
+    var body: some View {
+        let bg = DefaultColors.backgroundLight
+        let sf = DefaultColors.surfaces
+        let ac = DefaultColors.accent
+        let tx = DefaultColors.text
+        HStack(spacing: 12) {
+            ForEach([("BG", bg), ("SF", sf), ("AC", ac), ("TX", tx)], id:\.0) { label, c in
+                VStack {
+                    Circle().fill(c).frame(width: 44, height: 44)
+                    Text(label).font(.caption)
+                }
+            }
+        }
+        .padding().background(bg).clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 

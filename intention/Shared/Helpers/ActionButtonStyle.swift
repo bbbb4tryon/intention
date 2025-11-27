@@ -6,10 +6,13 @@
 
 import SwiftUI
 
+// MARK: - PrimaryActionStyle
+// filled with Accent, white text
 struct PrimaryActionStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.colorScheme) private var scheme
     let palette: ScreenStylePalette
+    
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(maxWidth: .infinity)
