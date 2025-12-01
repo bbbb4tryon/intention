@@ -279,6 +279,8 @@ struct SettingsV: View {
             ? "PREVIEW-DEVICE-ID"
             : await KeychainHelper.shared.getUserIdentifier()
         }
+        
+        #if DEBUG
         Form {
             // Presented as a table
             Section("Swatches") {
@@ -286,6 +288,8 @@ struct SettingsV: View {
                 if showSwatches { ThemeSwatches() }
             }
         }
+        #endif
+        
     }
     
     func requestNotificationPermissions() {

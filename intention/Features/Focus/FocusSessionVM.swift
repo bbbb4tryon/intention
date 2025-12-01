@@ -13,8 +13,41 @@ import Foundation
 @MainActor
 final class FocusSessionVM: ObservableObject {
     
+    // MARK: - Chunk Phases
     /// UI state of the current 20-min chunk
-    enum Phase: String, Codable, Sendable { case none, idle, running, finished, paused }
+    enum Phase: String, Codable, Sendable {
+        case none, idle, running, finished, paused
+    }
+    
+    // MARK: - Session Logic Enum (VM-internal)
+    private enum SessionLogicalPhase {
+        case empty
+        case ready
+        case chunk1Active
+        case chunk1Done
+        case chunk2Active
+        case finished
+    }
+    
+    private var logicalPhase: SessionLogicalPhase {
+        switch (currentSessionChunk, phase, tiles.count) {
+        case (_, .none, 0):             return .empty
+        case (_, .idle, 2):             return .ready
+        case (0, .running, _):          return .chunk1Active
+        case (1, .finished, _):         return .chunk1Done
+        case (1, .running, _):          return .chunk2Active
+        case (2, .finished, _):         return .finished
+        default:
+            // Safe fallback when restoring unusual combinations
+            if tiles.count < 2 { return .empty }
+            if phase == .running && currentSessionChunk == 0 { return .chunk1Active }
+            if phase == .running && currentSessionChunk == 1 { return .chunk2Active }
+            if phase == .finished && currentSessionChunk == 1 { return .chunk1Done }
+            if phase == .finished && currentSessionChunk >= 2 { return .finished }
+            return .ready
+        }
+    }
+    
     
     // MARK: - Published UI State
     @Published var tileText: String = ""
@@ -67,7 +100,7 @@ final class FocusSessionVM: ObservableObject {
     }
     private let vmSnapshotKey = "focus.vm.snapshot.v2"
     
-    // MARK: Init
+    // MARK: - Init
     init(
         previewMode: Bool = false,
         haptics: HapticsClient,
@@ -92,7 +125,12 @@ final class FocusSessionVM: ObservableObject {
     }
     
     // MARK: Derived
-    private var hasTwoTiles: Bool { tiles.count == 2 }
+    // Computed, no storage involved
+    
+    private var hasTwoTiles: Bool {
+        tiles.count == 2
+    }
+    
     /// Guard for phases -> canPrimary for flipping to the "Add" button
     private var inputIsValid: Bool {
         let t = tileText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -100,54 +138,82 @@ final class FocusSessionVM: ObservableObject {
     }
     
     /// Tap handler here, the button widget lives in the Focus view -> Lets the View bind `.disabled(!viewModel.canPrimary)`
+    //    var primaryCTATile: String {
+    //        if !hasTwoTiles { return "Add" }
+    //        if phase == .finished && currentSessionChunk == 1 { return "Next" }
+    //        return "Begin"
+    //    }
+    
     var primaryCTATile: String {
-        if !hasTwoTiles { return "Add" }
-        if phase == .finished && currentSessionChunk == 1 { return "Next" }
-        return "Begin"
-    }
-    
-    
-    var canPrimary: Bool {
-        // Only allow "Add" when the current input is valid AND you’re not running
-        if !hasTwoTiles {
-            return inputIsValid && phase != .running
-        } else {
-        // Only allow "Begin" when not running (fresh or between chunks)
-        return phase == .idle
-            || phase == .none
-            || (phase == .finished && currentSessionChunk == 1)
+        switch logicalPhase {
+        case .empty, .ready:                return hasTwoTiles ? "Begin" : "Add"
+        case .chunk1Active, .chunk2Active:    return "Pause" // View may override
+        case .chunk1Done:                   return "Next"
+        case .finished:                     return "Done"
         }
     }
     
-    /// View hint: pulse the primary CTA when we're truly ready to "Begin". struct PulseAura
-    var ui_isReadyForBegin: Bool {
-        tiles.count == 2
-        && (phase == .idle || phase == .none)
-        && canPrimary
+    /// View binds `.disabled(!canPrimary)`
+    var canPrimary: Bool {
+        switch logicalPhase {
+        case .empty:                        return inputIsValid && phase != .running
+            // "ready" means two tiles, idle/none → allow Begin
+        case .ready:                      return phase == .idle || phase == .none || (phase == .finished && currentSessionChunk == 1)
+        case .chunk1Active, .chunk2Active:  return false
+            // Between chunks → allow Next
+        case .chunk1Done:                 return true
+        case .finished:                   return false
+        }
     }
     
-    /// Enter idle early and consistently; cases never returns an empty label
+    //See Quick Help: Option-click a symbol (⌥-click) to show docs/definition
+    /// True when user can edit tiles (pre-Begin; not running or paused).
+    var canEditTiles: Bool {                       // semantic, not visual
+        phase != .running && phase != .paused
+    }
+    
+    var showNextLabel: Bool {
+        phase == .finished && currentSessionChunk == 1
+    }
+
+    var showRecalibrationSoonHint: Bool {
+        currentSessionChunk == 2 && phase == .finished
+    }
+
+    var isFirstChunkRunning: Bool {
+        currentSessionChunk == 0 && phase == .running
+    }
+
+    // Keep, but don't reuse for editing decisions
+    var ui_isReadyForBegin: Bool {
+        hasTwoTiles && (phase == .idle || phase == .none) && canPrimary
+    }
+    
+    /// Enter idle early / consistently
     func enterIdleIfNeeded() {
         if phase == .none { phase = .idle }
     }
     
     // MARK: Control public funnel used by TextField and CTA
-    enum PrimaryCTAResult { case added, began }
+    enum PrimaryCTAResult {
+        case added, began
+    }
     
     /// The one funnel both TextField.onSubmit and the bottom CTA should use.
+    /// Gated with logical phase
     @discardableResult
     func handlePrimaryTap(validatedInput: String?) async throws -> PrimaryCTAResult {
         if !hasTwoTiles {
             // the ADDED path
             let text = (validatedInput ?? tileText).trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !text.isEmpty, text.taskValidationMessages.isEmpty else {
-                throw FocusSessionError.emptyInput
-            }
+                    guard !text.isEmpty, text.taskValidationMessages.isEmpty else {
+                        throw FocusSessionError.emptyInput
+                    }
             try await addTileAndPrepareForSession(text)
             return .added
         } else {
             // the BEGIN / NEXT path
-            guard phase == .idle || phase == .none || (phase == .finished && currentSessionChunk == 1) else {
+            guard canPrimary else {
                 throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
             }
             try await beginOverallSession()
@@ -163,7 +229,7 @@ final class FocusSessionVM: ObservableObject {
         
         let newTile = TileM(text: trimmed)
         // VM enforces 2-tile limit, even editing - actor does no tiles, only timers
-//        tiles.append(newTile)
+        //        tiles.append(newTile)
         
         if let index = editingIndex, index <= tiles.count {
             // put it back where it came from
@@ -189,36 +255,33 @@ final class FocusSessionVM: ObservableObject {
         guard tiles.indices.contains(index) else { return false }
         
         // Only allow edits before session starts
-        guard phase == .none || phase == .idle else { return false }
+        guard canEditTiles else { return false }      // <- use semantic flag
         
         // cannot edit completed tiles
         let tile = tiles[index]
         return !thisTileIsCompleted(tile)
     }
-
+    
     // MARK: Editing/Fixing tile by tapping it
     // Allows editing an existing tile *before* the session starts.
-   // Moves the tile’s text back into `tileText` and removes it from the list.
-       func beginEditingTile(at index: Int) {
-           // Don’t allow edits while running or finished.
-           guard phase != .running, phase != .finished, tiles.indices.contains(index) else { return }
-           
-           let tile = tiles.remove(at: index)
-           tileText = tile.text
-           canAdd = tiles.count < 2
-           // remember the slot we took the tile from
-           editingIndex = index
-           if phase == .none { phase = .idle }
-           
-           saveVMSnapshot()
-       }
-
-
+    // Moves the tile’s text back into `tileText` and removes it from the list.
+    func beginEditingTile(at index: Int) {
+        // Don’t allow edits while running or finished.
+        guard phase != .running, phase != .finished, tiles.indices.contains(index) else { return }
+        
+        let tile = tiles.remove(at: index)
+        tileText = tile.text
+        canAdd = tiles.count < 2
+        // remember the slot we took the tile from
+        editingIndex = index
+        if phase == .none { phase = .idle }
+        
+        saveVMSnapshot()
+    }
+    
+    
     // MARK: Start a 20-min chunk
     private func startCurrent20MinCountdown(seconds: Int? = nil) async {
-        //        guard hasTwoTiles, phase != .running else {
-        //            throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
-        //        }
         phase = .running
         sessionActive = true
         // cancels any existing timers
@@ -227,8 +290,6 @@ final class FocusSessionVM: ObservableObject {
         
         let total = seconds ?? config.chunkDuration
         countdownRemaining = total
-        // ContinuousClock avoids wall-clock jumps from time/date changes
-        //        runningDeadline = Date().addingTimeInterval(TimeInterval(seconds)) // seconds = chunkDuration
         saveVMSnapshot()
         
         // bail out in previews -- a hard stop for Canvas
@@ -240,17 +301,16 @@ final class FocusSessionVM: ObservableObject {
                 Task { @MainActor in self?.countdownRemaining = secs }
             },
             onFinish: { [ weak self] in
+                guard let self else { return }
                 Task { @MainActor in
-                    guard let self else { return }
                     self.countdownRemaining = 0
-                    if self.phase == .running {
-                        self.fireDoneHapticOnce()
-                        self.finishCurrentChunk()
-                    }
-                }
-            }
-        )
-    }
+                               self.fireDoneHapticOnce()
+                               self.finishCurrentChunkIfNeeded(source: "tick")   // <-- single guarded path
+                               self.clearVMSnapshot()
+                           }
+                       }
+                   )
+               }
     
     // MARK: Begin overall session (two chunks)
     func beginOverallSession() async throws {
@@ -318,10 +378,16 @@ final class FocusSessionVM: ObservableObject {
         if let remaining = await timeActor.remainingAfterForeground() {
             if remaining <= 0 {
                 // Finished while away
-                phase = .finished
-                countdownRemaining = 0
-                finishCurrentChunk()
-                clearVMSnapshot()
+                await MainActor.run {
+                    self.countdownRemaining = 0
+                                    self.fireDoneHapticOnce()
+                                    self.finishCurrentChunkIfNeeded(source: "foreground<=0")  // <-- no direct phase mutate
+                                    self.clearVMSnapshot()
+                }
+//                phase = .finished
+//                countdownRemaining = 0
+//                finishCurrentChunk()
+//                clearVMSnapshot()
                 return
             }
             // Re-arm ticking
@@ -336,7 +402,7 @@ final class FocusSessionVM: ObservableObject {
             // Restore into actor and VM scaffolding
             await timeActor.restoreFromSafetySnapshot(safety)
             await startCurrent20MinCountdown(seconds: safety.remainingSeconds)
-            try? await persistence.clear("focus.actor.safety")
+            try await persistence.clear("focus.actor.safety")
             return
         }
         
@@ -380,6 +446,20 @@ final class FocusSessionVM: ObservableObject {
         // Clear the running deadline; take a snapshot of the new state
         runningDeadline = nil
         saveVMSnapshot()
+    }
+    
+    // MARK: - Machine state helpers
+    private func finishCurrentChunkIfNeeded(source: String) {
+        // only advance when actually running a countdown
+        guard phase == .running else {
+#if DEBUG
+            print("[FocusVM] finishCurrentChunkIfNeeded(\(source)) ignored - phase=\(phase), chunk=\(currentSessionChunk)")
+#endif
+            return
+        }
+        
+        finishCurrentChunk()
+        
     }
     
     /// Resets the session state for a new start - non-throwing; async because we `await` the actor

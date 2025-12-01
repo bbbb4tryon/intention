@@ -79,6 +79,7 @@ struct DynamicCountdown: View {
             .shadow(color: .black.opacity(0.20), radius: 2, x: 0, y: 1)
     }
 
+    // MARK: - Body
     var body: some View {
         if isActive {
             ZStack {
