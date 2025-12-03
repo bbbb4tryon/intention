@@ -1,3 +1,9 @@
+//
+//  BuildInfo.swift
+//  intention
+//
+//  Created by Benjamin Tryon on 12/2/25.
+
 import Foundation
 
 enum BuildInfo {
@@ -14,3 +20,4 @@ enum BuildInfo {
     }
     static var isDebugOrTestFlight: Bool { isDebug || isTestFlight }
 }
+

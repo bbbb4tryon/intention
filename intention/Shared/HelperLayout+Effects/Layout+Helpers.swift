@@ -24,9 +24,7 @@ struct Page<Content: View>: View {
             .padding(.top, 8)                       /// Small top; adjust per screen
             .frame(maxWidth: .infinity, alignment: .leading)
     }
-}
-
-/// Card section with consistent look for Settings, History blocks
+}/// Card section with consistent look for Settings, History blocks
 struct Card<Content: View>: View {
     let content: () -> Content
     init(@ViewBuilder _ content: @escaping () -> Content) { self.content = content }

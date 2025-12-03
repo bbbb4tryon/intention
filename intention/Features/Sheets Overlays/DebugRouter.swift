@@ -10,17 +10,17 @@ import SwiftUI
 final class DebugRouter: ObservableObject {
     // Presentation toggles
     @Published var showRecalibration = false
-//    @Published var showOrganizer = false
     @Published var showMembership = false
+    @Published var showTab: Bool = false
     
     // Optional payload for a global error overlay
-    @Published var errorTitle: String = ""
-    @Published var errorMessage: String = ""
     @Published var showError = false
+    @Published var errorTitle: String = "Debug Error"
+    @Published var errorMessage: String = "This is a sample error"
     
     // MARK: Entry points the Dev buttons will call
+    func toggleTab() { showTab.toggle() }
     func presentRecalibration() { showRecalibration = true }
-//    func presentOrganizer()     { showOrganizer = true }
     func presentMembership()    { showMembership = true }
     
     func presentError(title: String, message: String) {

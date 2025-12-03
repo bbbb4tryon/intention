@@ -11,6 +11,9 @@ import SwiftUI
 @MainActor
 final class AppPreferencesVM: ObservableObject {
     @AppStorage("hapticsOnly") var hapticsOnly: Bool = true  /// default ON
+    @AppStorage("showSwatches") var showSwatches: Bool = false
+    @AppStorage("soundEnabled") var soundEnabled: Bool = false
+    @AppStorage("debugShortTimers") var debugShortTimers: Bool = false
     
-    /// optional: add more later (soundsEnabled, reduceAnimations, etc.)
+    /// optional: add more later ( reduceAnimations, etc.)
 }

@@ -62,6 +62,8 @@ final class RecalibrationVM: ObservableObject {
     private let inhale = 6, hold1 = 3, exhale = 6, hold2 = 3
 
     private let haptics: HapticsClient
+    private let actor = ContinuousClockActor(config: .current) // reuse same actor type
+     
     private var task: Task<Void, Never>?
     @Published private(set) var didHaptic: Set<Int> = []
     
@@ -80,10 +82,21 @@ final class RecalibrationVM: ObservableObject {
     
     // MARK: Core API (async throws; View calls these)
     // When starting (not resuming when re-activated after leaving, see `appDidBecomeActive()`):
-    func start(mode: RecalibrationMode) async throws {
+    func start(mode: RecalibrationMode, duration: Int = TimerConfig.current.recalibrationDuration) async throws {
         cancel()
         self.mode = mode
         self.phase = .running
+
+        await actor.startTicking(
+            totalSeconds: duration,
+            onTick: {_ in },
+            onFinish: { [weak self] in
+                Task { @MainActor in
+                    self?.phase = .finished
+                    self?.haptics.notifyDone()
+                }
+            }
+        )
         
         let mins = (mode == .breathing ? breathingMinutes : balancingMinutes)
         let seconds = mins * 60

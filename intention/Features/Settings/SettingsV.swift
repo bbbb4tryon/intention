@@ -127,7 +127,7 @@ struct SettingsV: View {
                         T("Membership", .section)
                         //                        .friendlyHelper()
                         HStack {
-                            T(memVM.isMember ? "Status: Active" : "Status: Not Active", .label)
+                            T(memVM.isMember ? "Status: Subscribed" : "Status: Not Subscribed", .label)
                         }
                             .foregroundStyle(memVM.isMember ? .green : .secondary)
                         HStack {
@@ -142,7 +142,7 @@ struct SettingsV: View {
                                     UIApplication.shared.open(url)
                                 }
                             }) {
-                                T("Manage Subscription", .action)
+                                T("Purchase", .action)
                             }
                             .primaryActionStyle(screen: .settings)
                             .frame(maxWidth: .infinity)
@@ -188,13 +188,14 @@ struct SettingsV: View {
                         T("Preferences", .section)
                         // NOTE: these are primary control labels; caption is too small/low-contrast
                         Toggle(isOn: .constant(true)) { T("Enable Notification", .label) }
-                        Toggle(isOn: $prefs.hapticsOnly) { T("Haptics Only: Vibration cues only", .label)
+                        Toggle(isOn: $prefs.hapticsOnly) { T("Only Vibrations", .label)
                             .foregroundStyle(textSecondary) }
-                        Toggle(isOn: .constant(false)) { T("Sound Off", .label) }
+                        Toggle(isOn: .constant(false)) { T("Sound Enabled", .label) }
                             .controlSize(.small)        /// Toggle size
                             .toggleStyle(SwitchToggleStyle(tint: p.accent))
                     }
                     .friendlyAnimatedHelper("hapticsOnly-\(prefs.hapticsOnly ? "on" : "off")")
+                    .friendlyAnimatedHelper("soundEnabled-\(prefs.soundEnabled ? "off" : "on")")
                 }
                 
                 // MARK: Customization
@@ -264,10 +265,18 @@ struct SettingsV: View {
                         }
                     }
                 }
+                if BuildInfo.isDebugOrTestFlight {
+                    SwatchesFormSection()
+                        .environmentObject(theme)
+                        .environmentObject(prefs)
+                        .padding(.top, 8)
+                }
+            
+            Helper_AppIconV()
+                .frame(width: 64, height: 64)
+                .padding(.top, 8)
                 
-                Helper_AppIconV()
-                    .frame(width: 64, height: 64)
-                    .padding(.top, 8)
+                
             }
         }
         .background(p.background.ignoresSafeArea())
@@ -280,16 +289,6 @@ struct SettingsV: View {
             : await KeychainHelper.shared.getUserIdentifier()
         }
         
-        #if DEBUG
-        Form {
-            // Presented as a table
-            Section("Swatches") {
-                Toggle("Show", isOn: $showSwatches)
-                if showSwatches { ThemeSwatches() }
-            }
-        }
-        #endif
-        
     }
     
     func requestNotificationPermissions() {
@@ -298,6 +297,41 @@ struct SettingsV: View {
                 print("Notification permission error: \(error.localizedDescription)")
             }
             print("Permission granted: \(granted)")
+        }
+    }
+}
+
+// MARK: Swatches
+struct SwatchesFormSection: View {
+    @EnvironmentObject var theme: ThemeManager
+    @EnvironmentObject var prefs: AppPreferencesVM
+    
+    private let screen: ScreenName = .settings
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+    
+    var body: some View {
+        
+        Card {
+            //    VStack(alignment: .leading, spacing: 8) {
+            Form {
+                // NOTE: these are primary control labels; caption is too small/low-contrast
+                //                Toggle(isOn: .constant(true) $showSwatches) { T("Show", .label) }
+                //        Form {
+                // Presented as a table
+                Section("Swatches In Use") {
+                    Toggle(isOn: $prefs.showSwatches) { T("Show", .label) }
+                    if prefs.showSwatches {
+                        ThemeSwatches()
+                        
+                    }
+                }
+                //        }
+                //    }
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(p.background)
         }
     }
 }

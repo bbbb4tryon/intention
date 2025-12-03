@@ -12,7 +12,8 @@ import Foundation
 /// In UI tests, pass a launch argument to flip to short timers
 struct TimerConfig: Sendable {
     // MARK: Focus/session
-    let chunkDuration: Int          /// 20-min chunks (1200)
+    let chunkDuration: Int          // 20-min chunks (1200) - focus chunks
+    let recalibrationDuration: Int  // breathing/balancing seconds
     
     // MARK: Haptics policy
     struct Haptics: Sendable {
@@ -23,22 +24,26 @@ struct TimerConfig: Sendable {
     let haptics: Haptics
     
     // sensible default haptics
-    init(chunkDuration: Int,
-         haptics: Haptics = .init(endCountdownStart: 3, halfwayTick: true, balanceSwapInterval: 60)) {
+    init(
+        chunkDuration: Int,
+        recalibrationDuration: Int,
+        haptics: Haptics = .init(endCountdownStart: 3, halfwayTick: true, balanceSwapInterval: 60)
+    ){
         self.chunkDuration = chunkDuration
+        self.recalibrationDuration = recalibrationDuration
         self.haptics = haptics
     }
 
-    static let prod = TimerConfig(chunkDuration: 20 * 60)
-    static let shortDebug = TimerConfig(chunkDuration: 10,
-                                        haptics: .init(endCountdownStart: 3, halfwayTick: true, balanceSwapInterval: 5))
-
+    static let prod = TimerConfig(chunkDuration: (20 * 60), recalibrationDuration: (2 * 60))
+    static let debug = TimerConfig(chunkDuration: 5, recalibrationDuration: 15)
+    
     static var current: TimerConfig {
-        #if DEBUG
-        let override = UserDefaults.standard.integer(forKey: "debug.chunkSeconds")
-        return TimerConfig(chunkDuration: override > 0 ? override : 20 * 60)
-        #else
-        return TimerConfig(chunkDuration: 20 * 60)
-        #endif
+        if BuildInfo.isDebugOrTestFlight && UserDefaults.standard.bool(forKey: "debugShortTimers") {
+            return .debug
+        } else {
+            return .prod
+        }
     }
+    
+
 }

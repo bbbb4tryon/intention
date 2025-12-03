@@ -533,6 +533,12 @@ final class FocusSessionVM: ObservableObject {
         TimeString.mmss(countdownRemaining)
     }
     
+    // Calls countdowns when testflight/debug tab
+    func applyCurrentTimerConfig() {
+        let now = TimerConfig.current
+        countdownRemaining = now.chunkDuration
+    }
+    
     /// Sets flag to trigger recalibration modal
     func checkRecalibrationNeeded() {
         if tiles.count == 2 {
