@@ -10,7 +10,7 @@ import Foundation
 
 /// Single source of truth for all durations
 /// In UI tests, pass a launch argument to flip to short timers
-struct TimerConfig: Sendable {
+struct TimerConfig: Sendable {  // <--- needs Equatable, too?
     // MARK: Focus/session
     let chunkDuration: Int          // 20-min chunks (1200) - focus chunks
     let recalibrationDuration: Int  // breathing/balancing seconds

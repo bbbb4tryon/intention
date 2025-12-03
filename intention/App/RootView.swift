@@ -238,11 +238,23 @@ struct RootView: View {
         }
             .tabItem { Image(systemName: "gear") }
         
+        // Debug/TestFlight tab - conditionally injected
+        let debugNav = Group {
+            if BuildInfo.isDebugOrTestFlight && debug.showTab {
+                NavigationStack {
+                    DebugAndPathsV()
+                        .navigationBarTitleDisplayMode(.inline)
+                }
+                .tabItem { Image(systemName: "ladybug") }
+            }
+        }
+        
         // Tabs built as a *local* keeps long chains out of top-level expression
         let tabs    = TabView {
             focusNav
             historyNav
             settingsNav
+            debugNav
         }
         
         // Wrapped to apply shares (apply tab icon coloring, shared toolbars, backgrounds)
@@ -250,6 +262,24 @@ struct RootView: View {
             .tint(palFocus.accent)
             .toolbarBackground(tabBG, for: .tabBar)
             .toolbarBackground(.visible, for: .tabBar)
+        
+        // === Triple-tap on tab bar to toggle debug tab ===
+        .overlay(alignment: .bottom) {
+            GeometryReader { geo in
+                Color.clear
+                    .frame(height: max(geo.safeAreaInsets.bottom 60, 60)) // approx tab bar safe area
+                    .contentShape(Rectangle())
+                    .simultaneousGesture(
+                        TapGesture(count: 3).onEnded { debug.toggleTab() }
+                    )
+                    .allowsHitTesting(true)
+                    .ignoresSafeArea(edges: .bottom)
+            }
+            .frame(height: 0) // we only care about overlay area
+        }
+        // === Draw a 'Z' anywhere to show debug tab ===
+        .modifier(ZGestureOpener { debug.showTab = true })
+        
         
         content
         // the shared environment
