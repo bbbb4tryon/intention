@@ -9,10 +9,12 @@ import SwiftUI
 
 struct StatsSummaryBar: View {
     @EnvironmentObject var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
     @EnvironmentObject var vm: StatsVM
+    
     private let screen: ScreenName = .settings
-        private var p: ScreenStylePalette { theme.palette(for: screen) }
-        private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
+        private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
 
     var body: some View {
         HStack(spacing: 12) {

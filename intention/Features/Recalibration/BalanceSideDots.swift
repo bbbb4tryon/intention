@@ -69,7 +69,7 @@ struct BalanceSideDots: View {
 #if DEBUG
 #Preview("Balance Dots") {
     let theme = ThemeManager()
-    let pal = theme.palette(for: .recalibrate)
+    let pal = theme.palette(for: .recalibrate, scheme: .light)
     
     BalanceSideDots(
         activeIndex: 0, p: pal

@@ -15,12 +15,13 @@ import SwiftUI
 /// Keep it under 15 lines: Swift won't yell and this avoids deep view chains
 struct FocusShell<Content: View>: View {
     @EnvironmentObject var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
     let screen: ScreenName
     
     @ViewBuilder var content: Content
     
     var body: some View {
-        let pal = theme.palette(for: screen)
+        let pal = theme.palette(for: screen, scheme: systemScheme)
         // content sits directly on the ZStack background
         let contentWithNoBackground = content
         
@@ -34,6 +35,21 @@ struct FocusShell<Content: View>: View {
             } else {
                 pal.background.ignoresSafeArea()
             }
+            
+            // subtle backdrop for better text contrast -- on recalibrate
+            if screen == .recalibrate {
+                RadialGradient(
+                    gradient: Gradient(colors: [
+                        Color.black.opacity(0.55),
+                        Color.black.opacity(0.18),
+                        Color.clear
+                    ]),
+                    center: .center, startRadius: 0, endRadius: 520
+                )
+                .blendMode(.multiply)
+                .ignoresSafeArea()
+            }
+            
             // actual content view
             contentWithNoBackground
         }
@@ -116,6 +132,9 @@ struct RootView: View {
     /// Scene phase guardrail: pause timers, flush history, warms haptics.
     @Environment(\.scenePhase) private var scenePhase
     
+    // MARK: Light/Dark mode
+    @Environment(\.colorScheme) private var systemScheme
+    
     // MARK: Single sources of truth (owned here, injected downward)
     @StateObject private var theme: ThemeManager
     @StateObject private var memVM: MembershipVM
@@ -132,6 +151,7 @@ struct RootView: View {
         // Infra actors/services
         let persistence     = PersistenceActor()
         let config          = TimerConfig.current
+        let notifications   = LiveNotificationClient()
         
         // Plain instances (no self) of Services / VMs
         let theme           = ThemeManager()
@@ -141,7 +161,9 @@ struct RootView: View {
         let engine          = HapticsService()
         let liveHaptics     = LiveHapticsClient(prefs: prefs, engine: engine)
         let history         = HistoryVM(persistence: persistence)
-        let focus           = FocusSessionVM(previewMode: false, haptics: liveHaptics, config: config)
+        let focus           = FocusSessionVM(
+            previewMode: false, haptics: liveHaptics, config: config, persistence: persistence, notifications: notifications
+        )
         let recal           = RecalibrationVM(haptics: liveHaptics)
         let stats           = StatsVM(persistence: persistence)
         
@@ -180,11 +202,11 @@ struct RootView: View {
     // MARK: Body
     var body: some View {
         // shared palette locals help calm the swift type-checker
-        let palFocus        = theme.palette(for: .focus)
-        let _               = theme.palette(for: .history)
-        let _               = theme.palette(for: .settings)
-        let _               = theme.palette(for: .recalibrate)
-        let _               = theme.palette(for: .membership)
+        let palFocus        = theme.palette(for: .focus, scheme: systemScheme)
+        let _               = theme.palette(for: .history, scheme: systemScheme)
+        let _               = theme.palette(for: .settings, scheme: systemScheme)
+        let _               = theme.palette(for: .recalibrate, scheme: systemScheme)
+        let _               = theme.palette(for: .membership, scheme: systemScheme)
         let tabBG           = palFocus.background.opacity(0.88) // Makes tab bar match app theme (iOS 16+)
         
         
@@ -239,11 +261,17 @@ struct RootView: View {
             .tabItem { Image(systemName: "gear") }
         
         // Debug/TestFlight tab - conditionally injected
-        let debugNav = Group {
+        let debugandpathsContent    = DebugAndPathsV()
+        let debugNav                = Group {
             if BuildInfo.isDebugOrTestFlight && debug.showTab {
                 NavigationStack {
-                    DebugAndPathsV()
+                    debugandpathsContent
+                        .navigationTitle("BugTest")
                         .navigationBarTitleDisplayMode(.inline)
+                    // Uses focus's default accent (Leaf) - despite "History"
+                    .tint(palFocus.accent)
+                    // Force title to p.text otherwise
+                    .foregroundStyle(palFocus.text)
                 }
                 .tabItem { Image(systemName: "ladybug") }
             }
@@ -257,28 +285,41 @@ struct RootView: View {
             debugNav
         }
         
+        // MARK: - Wrapped content for shares
         // Wrapped to apply shares (apply tab icon coloring, shared toolbars, backgrounds)
         let content = tabs
             .tint(palFocus.accent)
             .toolbarBackground(tabBG, for: .tabBar)
             .toolbarBackground(.visible, for: .tabBar)
         
-        // === Triple-tap on tab bar to toggle debug tab ===
-        .overlay(alignment: .bottom) {
-            GeometryReader { geo in
-                Color.clear
-                    .frame(height: max(geo.safeAreaInsets.bottom 60, 60)) // approx tab bar safe area
-                    .contentShape(Rectangle())
-                    .simultaneousGesture(
-                        TapGesture(count: 3).onEnded { debug.toggleTab() }
-                    )
-                    .allowsHitTesting(true)
-                    .ignoresSafeArea(edges: .bottom)
+        // //MARK: - Debug Tab
+        // Triple-tap on tab bar to toggle debug tab ===
+            .overlay(alignment: .bottom) {
+                TripleTapOverlay(height: 90) { _ in
+                    requirePINThen(expected: "1521") {
+                        debug.toggleTab()
+                    }
+                }
             }
-            .frame(height: 0) // we only care about overlay area
-        }
-        // === Draw a 'Z' anywhere to show debug tab ===
-        .modifier(ZGestureOpener { debug.showTab = true })
+//            .overlay(alignment: .bottom) {
+//                GeometryReader { geo in
+//                    Color.clear
+//                        .frame(height: max(geo.safeAreaInsets.bottom, 60, 60))
+//                        .contentShape(Rectangle())
+//                        .allowsHitTesting(true)
+//                        .ignoresSafeArea(edges: .bottom)
+//                        .simultaneousGesture(
+//                            TapGesture(count: 3).onEnded {
+//                                requirePINThen(expected: "1521") {
+//                                    debug.toggleTab()
+//                                }
+//                            }
+//                        )
+//                }
+//                .frame(height: 0) // we only care about overlay area
+//            }
+        // MARK: draw Z gesture
+        .modifier(ZGestureOpener { debug.toggleTab() })
         
         
         content
@@ -290,9 +331,10 @@ struct RootView: View {
             .environmentObject(prefs)
             .environmentObject(hapticsEngine)
             .environmentObject(focusVM)
+            .environmentObject(recalVM)
             .environmentObject(debug)
             .progressOverlay($isBusy, text: "Loading...")
-        // Applies current screen theme to background
+        // MARK: - Applies current screen theme to background
             .toolbarBackground(tabBG, for: .navigationBar)
             .environmentObject(overlayManager)
 //            .sceneHandlers
@@ -300,7 +342,8 @@ struct RootView: View {
 //            .membershipHandlers
 //            .rootSheets(activeSheet: $activeSheet, memVM: memVM)
         
-        // MARK: App lifecycle (guardrail: scene handling lives at root)
+        // MARK: App lifecycle
+        // -- guardrail: scene handling lives at root --
             .onChange(of: scenePhase, perform: { phase in
                 // Only set busy for background/inactive phases where a long-running Task might fire
                 switch phase {
@@ -308,9 +351,11 @@ struct RootView: View {
                     isBusy = true
                     Task {
                         defer { isBusy = false }      // Ensure reset after Task completes
-                        // 1) coalesce + persist any pending History saves now
+                        // -- If there is a pending undo window in History, commit it first so moves persist. --
+                        historyVM.commitPendingUndoIfAny()
+                        // -- coalesce + persist any pending History saves now --
                         historyVM.flushPendingSaves()
-                        // 2) snapshot focus session state (not a pause)
+                        // -- snapshot focus session state (not a pause) --
                         await focusVM.suspendTickingForBackground()
                         isBusy = false
                     }
@@ -382,7 +427,7 @@ struct RootView: View {
                         LegalDocV(
                             title: "Terms of Use",
                             markdown: MarkdownLoader.load(named: LegalConfig.termsFile),
-                            palette: theme.palette(for: .settings)
+                            palette: theme.palette(for: .settings, scheme: systemScheme)
                         )
                     }
                     .environmentObject(theme)
@@ -392,7 +437,7 @@ struct RootView: View {
                         LegalDocV(
                             title: "Privacy Policy",
                             markdown: MarkdownLoader.load(named: LegalConfig.privacyFile),
-                            palette: theme.palette(for: .settings)
+                            palette: theme.palette(for: .settings, scheme: systemScheme)
                         )
                     }
                     .environmentObject(theme)
@@ -402,7 +447,7 @@ struct RootView: View {
                         LegalDocV(
                             title: "Wellness Disclaimer",
                             markdown: MarkdownLoader.load(named: LegalConfig.medicalFile),
-                            palette: theme.palette(for: .settings)
+                            palette: theme.palette(for: .settings, scheme: systemScheme)
                         )
                     }
                     .environmentObject(theme)
@@ -443,5 +488,11 @@ struct RootView: View {
                 }
             }
 
+        // MARK: - PIN sheet
+            .sheet(isPresented: $debug.askForPin) {
+                PinUnlockSheet { entered in
+                    debug.submit(pin: entered)
+                }
+            }
     }
 }

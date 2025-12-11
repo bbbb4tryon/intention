@@ -8,11 +8,13 @@
 import SwiftUI
 
 struct CategoryHeaderRow: View {
+    @Environment(\.colorScheme) private var systemScheme
+    
     @EnvironmentObject var theme: ThemeManager
     
     private let screen: ScreenName = .history
-    private var p: ScreenStylePalette { theme.palette(for: screen) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
     
     let title: String
     let count: Int

@@ -21,6 +21,7 @@ private extension View {
 
 struct FeedbackV: View {
     @EnvironmentObject var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
     @EnvironmentObject var prefs: AppPreferencesVM
     
     @Environment(\.openURL) private var openURL
@@ -44,8 +45,8 @@ struct FeedbackV: View {
     private let maxMessageChars = 2000
     
     private let screen: ScreenName = .settings
-    private var p: ScreenStylePalette { theme.palette(for: screen) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
     
     // --- Local Color Definitions for FeedbackV ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)

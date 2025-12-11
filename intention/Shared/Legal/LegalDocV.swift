@@ -10,6 +10,7 @@ import SwiftUI
 // MARK: Reusable Markdown screen
 struct LegalDocV: View {
 //    @EnvironmentObject var theme: ThemeManager
+//    @Environment(\.colorScheme) private var systemScheme
     
     let title: String
     let markdown: String
@@ -18,8 +19,8 @@ struct LegalDocV: View {
     
     /// Theme hooks
 //    private let screen: ScreenName = .focus
-//    private var p: ScreenStylePalette { theme.palette(for: screen) }
-//    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+//    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
+//    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
     
     var body: some View {
         ScrollView {

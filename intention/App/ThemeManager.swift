@@ -237,7 +237,7 @@ enum AppColorTheme: String, CaseIterable {
     // Change this list whenever you want to expose more/less.
     static var publicCases : [AppColorTheme] { [.default, .sea] }
     
-    func colors(for screen: ScreenName) -> ScreenStylePalette {
+    func colors(for screen: ScreenName, scheme: ColorScheme) -> ScreenStylePalette {
         switch self {
         case .default:
             switch screen {
@@ -351,6 +351,9 @@ enum AppColorTheme: String, CaseIterable {
 // MARK: - Theme Manager
 @MainActor
 final class ThemeManager: ObservableObject {
+//    /// Makes palettes dynamically choose light or dark, depending on system
+//    @Environment(\.colorScheme) private var systemScheme
+    
     @AppStorage("selectedColorTheme") private var colorRaw: String = AppColorTheme.default.rawValue
     @AppStorage("selectedFontTheme")  private var fontRaw: String = AppFontTheme.serif.rawValue
     
@@ -368,13 +371,14 @@ final class ThemeManager: ObservableObject {
         self.fontTheme  = AppFontTheme(rawValue: storedFont)  ?? .serif
     }
     
-    func palette(for screen: ScreenName) -> ScreenStylePalette {
-        colorTheme.colors(for: screen)
+    func palette(for screen: ScreenName, scheme: ColorScheme) -> ScreenStylePalette {
+//        colorTheme.colors(for: screen, scheme: systemScheme)
+        colorTheme.colors(for: screen, scheme: scheme)
     }
     
-    func styledText(_ content: String, as role: TextRole, in screen: ScreenName) -> Text {
+    func styledText(_ content: String, as role: TextRole, in screen: ScreenName, scheme: ColorScheme) -> Text {
         let font  = fontTheme.toFont(Self.fontStyle(for: role))
-        let color = Self.color(for: role, palette: palette(for: screen))
+        let color = Self.color(for: role, palette: palette(for: screen, scheme: scheme))
         
         let weight: Font.Weight = switch role {
         case .largeTitle:   .bold
@@ -444,8 +448,8 @@ struct ThemeSwatches: View {
 // Global app-wide background bridge for App entry / UIKit surfaces.
 extension ThemeManager {
     static var appBackgroundColor: Color {
-        // Use the default color theme and the Focus screen palette
-        AppColorTheme.default.colors(for: .focus).background
+        // Use the asset; it auto-adapts to Light/Dark
+        Color("AppBackground")
     }
 }
 

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct DynamicCountdown: View {
     @EnvironmentObject var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
     @EnvironmentObject var fVM: FocusSessionVM
     let palette: ScreenStylePalette
     
@@ -19,7 +20,7 @@ struct DynamicCountdown: View {
     let digitSize: CGFloat = 44                 // small so circle/pause feel larger
     
     private var T: (String, TextRole) -> Text {
-        { key, role in theme.styledText(key, as: role, in: .focus) }
+        { key, role in theme.styledText(key, as: role, in: .focus, scheme: systemScheme) }
     }
     
     private var isActive: Bool {

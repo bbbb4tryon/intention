@@ -9,6 +9,8 @@ import SwiftUI
 import UserNotifications
 
 struct SettingsV: View {
+    @Environment(\.colorScheme) private var systemScheme
+    
     @EnvironmentObject var theme: ThemeManager
     @EnvironmentObject var prefs: AppPreferencesVM
     @EnvironmentObject var memVM: MembershipVM
@@ -25,8 +27,8 @@ struct SettingsV: View {
     @State private var showSwatches = false
     
     private let screen: ScreenName = .settings
-    private var p: ScreenStylePalette { theme.palette(for: screen) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
     
     // --- Local Color Definitions Settings ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
@@ -239,7 +241,7 @@ struct SettingsV: View {
                                     title: "Terms of Use",
                                     markdown: MarkdownLoader
                                         .load(named: LegalConfig.termsFile),
-                                    palette: theme.palette(for: .settings)
+                                    palette: theme.palette(for: .settings, scheme: systemScheme)
                                 )
                             }
                         }
@@ -249,7 +251,7 @@ struct SettingsV: View {
                                     title: "Privacy Policy",
                                     markdown: MarkdownLoader
                                         .load(named: LegalConfig.privacyFile),
-                                    palette: theme.palette(for: .settings)
+                                    palette: theme.palette(for: .settings, scheme: systemScheme)
                                 )
                             }
                         }
@@ -259,7 +261,7 @@ struct SettingsV: View {
                                     title: "Wellness Disclaimer",
                                     markdown: MarkdownLoader
                                         .load(named: LegalConfig.medicalFile),
-                                    palette: theme.palette(for: .settings)
+                                    palette: theme.palette(for: .settings, scheme: systemScheme)
                                 )
                             }
                         }
@@ -304,11 +306,12 @@ struct SettingsV: View {
 // MARK: Swatches
 struct SwatchesFormSection: View {
     @EnvironmentObject var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
     @EnvironmentObject var prefs: AppPreferencesVM
     
     private let screen: ScreenName = .settings
-    private var p: ScreenStylePalette { theme.palette(for: screen) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
     
     var body: some View {
         

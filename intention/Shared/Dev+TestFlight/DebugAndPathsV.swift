@@ -18,6 +18,9 @@ struct DebugAndPathsV: View {
         NavigationStack {
             List {
                 Section("Visibility") {
+                    TripleTapOverlay(height: 80) { _ in
+                        requirePINThen(expected: "1521") { debug.toggleTab() }
+                    }
                     Toggle("Show Debug Tab", isOn: $debug.showTab)
                     Toggle("Short Timers (5s/15s)", isOn: $prefs.debugShortTimers)
                         .onChange(of: prefs.debugShortTimers) { _ in
@@ -44,7 +47,9 @@ struct DebugAndPathsV: View {
                 }
 
                 Section("Recalibration 15s") {
-                    Button("Show Recalibration Sheet") { focusVM.showRecalibrate = true }
+                    Button("Show Recalibration Sheet") {
+                        focusVM.showRecalibrate = true
+                    }
                     Button("Start Breathing (15s)") {
                         recalVM.performAsyncAction {
                             try await recalVM.start(mode: .breathing, duration: TimerConfig.current.recalibrationDuration)
@@ -85,7 +90,7 @@ struct DebugAndPathsV: View {
 
                 Section("History") {
                     Button("New Category") {
-//                        historyVM.createCategory(named: "Debug \(Int.random(in: 100...999))")
+                        historyVM.addCategory(persistedInput: "Debug \(Int.random(in: 100...999))")
                     }
                     Button("Move First Tile → Next Category") {
                         guard let src = historyVM.categories.first,

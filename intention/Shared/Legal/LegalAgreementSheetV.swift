@@ -9,7 +9,8 @@ import SwiftUI
 
 struct LegalAgreementSheetV: View {
     @EnvironmentObject private var theme: ThemeManager
-
+    @Environment(\.colorScheme) private var systemScheme
+    
     let onAccept: () -> Void
     let onShowTerms: () -> Void
     let onShowPrivacy: () -> Void
@@ -22,63 +23,55 @@ struct LegalAgreementSheetV: View {
     
     /// Theme hooks
     private let screen: ScreenName = .focus
-    private var p: ScreenStylePalette { theme.palette(for: screen) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
     
     var body: some View {
         NavigationStack {
             ZStack {
-            p.background.ignoresSafeArea()
+                p.background.ignoresSafeArea()
                 
-            VStack(spacing: 14){
-                T("Please review the policies below. By tapping **Agree & Continue**, you accept them.", .body)
-                //                .lineLimit()
-                
-                // Links row
-                HStack(alignment: .center, spacing: 10) {
-                    Button { onShowTerms()
-                    } label: { T("Terms", .label).underline() }
-                        .buttonStyle(.plain).underline()
+                VStack(spacing: 14){
+                    T("Made By And For Humans", .body)
+                        .padding()
+                        .padding(.top, 8)
                     
-                    T("•", .secondary).foregroundStyle(.tertiary)
+                    T("Please review the policies below. By tapping *Agree & Continue*, you accept them.", .body)
                     
-                    Button{ onShowPrivacy()
-                    } label: { T("Privacy Policy", .label).underline() }
-                        .buttonStyle(.plain)
+                    // Links row
+                    HStack(alignment: .center, spacing: 10) {
+                        Button { onShowTerms()
+                        } label: { T("Policies & Agreements", .label).underline() }
+                            .buttonStyle(.plain).underline()
+                    }
+                    .padding(.top, 8)
+                    Spacer(minLength: 0)
+                        .frame(maxWidth: 520)
                 }
-                //                .font(.subheadline)
-                
-                if let onShowMedical {
-                    Button { onShowMedical()
-                    } label: {T("Wellness Disclaimer", .label).underline() }
-                        .buttonStyle(.plain)
-                }
-            }
-                Spacer(minLength: 0)
                 .frame(maxWidth: 520)
-            }
-            .frame(maxWidth: 520)
-            .navigationTitle("Legal")
-            .navigationBarTitleDisplayMode(.inline)
-            .interactiveDismissDisabled(true)
-            // Full-screen style
-            .presentationDetents([.large])
-            .safeAreaInset(edge: .bottom){
-                // Sticky, always-visible CTA area
-                VStack(spacing: 8){
-                    Button("Agree & Continue", action: onAccept)
-                        .buttonStyle(.borderedProminent)
-                        .tint(p.accent)
-                        .controlSize(.large)
-
-                    T("You can review these anytime in **Settings › Legal**.", .caption)
+                .navigationTitle("Legal")
+                .navigationBarTitleDisplayMode(.inline)
+                .interactiveDismissDisabled(true)
+                // Full-screen style
+                .presentationDetents([.large])
+                .safeAreaInset(edge: .bottom){
+                    // Sticky, always-visible CTA area
+                    VStack(spacing: 8){
+                        Button("Agree & Continue", action: onAccept)
+                            .buttonStyle(.borderedProminent)
+                            .tint(p.accent)
+                            .controlSize(.large)
+                        
+                        T("You can review these anytime in **Settings › Legal**.", .caption)
+                    }
+                    .padding(.top, 24)
+//                    Spacer(minLength: 0)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+                    .background(.ultraThinMaterial)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
-                .padding(.bottom, 16)
-                .background(.ultraThinMaterial)
+                
             }
-            
         }
     }
 }

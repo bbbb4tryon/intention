@@ -9,9 +9,11 @@ import SwiftUI
 
 struct SettingsLegalSection: View {
     @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
+    
     private let screen: ScreenName = .settings
-        private var p: ScreenStylePalette { theme.palette(for: screen) }
-        private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+        private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
+        private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
 
     var onShowTerms: () -> Void
     var onShowPrivacy: () -> Void

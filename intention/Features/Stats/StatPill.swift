@@ -9,13 +9,14 @@ import SwiftUI
 
 struct StatPill: View {
     @EnvironmentObject var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
     let icon: String
     let value: String
     let caption: String
     let screen: ScreenName
     
-    private var p: ScreenStylePalette { theme.palette(for: screen) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
     
     var body: some View {
         VStack(spacing: 4) {

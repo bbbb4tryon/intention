@@ -121,27 +121,30 @@ extension View {
 // env-aware wrapper (replaces the current one that calls ThemeManager())
 private struct _PrimaryActionStyleMod: ViewModifier {
     @EnvironmentObject var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
     let screen: ScreenName
     func body(content: Content) -> some View {
-        let p = theme.palette(for: screen)
+        let p = theme.palette(for: screen, scheme: systemScheme)
         content.buttonStyle(PrimaryActionStyle(palette: p))
     }
 }
 // env-aware wrapper (replaces the current one that calls ThemeManager())
 private struct _SecondaryActionStyleMod: ViewModifier {
     @EnvironmentObject var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
     let screen: ScreenName
     func body(content: Content) -> some View {
-        let p = theme.palette(for: screen)
+        let p = theme.palette(for: screen, scheme: systemScheme)
         content.buttonStyle(SecondaryActionStyle(palette: p))
     }
 }
 
 private struct _RecalibrationActionStyleMod: ViewModifier {
     @EnvironmentObject var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
     let screen: ScreenName
     func body(content: Content) -> some View {
-        let p = theme.palette(for: screen)
+        let p = theme.palette(for: screen, scheme: systemScheme)
         content.buttonStyle(RecalibrationActionStyle(palette: p))
     }
 }

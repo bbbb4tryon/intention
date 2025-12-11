@@ -10,13 +10,14 @@ import SwiftUI
 /// A full-screen wrapper that *looks* like a sheet: rounded top, grabber, swipe down to dismiss.
 struct RecalibrationSheetChrome<Content: View>: View {
     @EnvironmentObject var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
     var onClose: () -> Void
     @ViewBuilder var content: Content
     
     @State private var offsetY: CGFloat = 0
     private let dismissThreshold: CGFloat = 120
     
-    private var p: ScreenStylePalette { theme.palette(for: .recalibrate) }
+    private var p: ScreenStylePalette { theme.palette(for: .recalibrate, scheme: systemScheme) }
     // --- Local Color Definitions ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)

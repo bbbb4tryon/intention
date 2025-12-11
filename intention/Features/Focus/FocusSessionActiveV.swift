@@ -27,6 +27,7 @@ struct FocusSessionActiveV: View {
     
     // MARK: Environment
     @EnvironmentObject var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
     @EnvironmentObject var statsVM: StatsVM
     @EnvironmentObject var memVM: MembershipVM
     @Environment(\.dismiss) var dismiss
@@ -48,8 +49,8 @@ struct FocusSessionActiveV: View {
     
     /// Theme hooks
     private let screen: ScreenName = .focus
-    private var p: ScreenStylePalette { theme.palette(for: screen) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
     
     // --- Local Color Definitions for Focus ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
@@ -250,7 +251,12 @@ struct FocusSessionActiveV: View {
                 focusVM.showRecalibrate = false
             }) {
                 NavigationStack {
-                    RecalibrationV(vm: recalibrationVM)
+                    RecalibrationV(vm: recalibrationVM, onSkip: {
+                        Task { @MainActor in
+                            await focusVM.resetSessionStateForNewStart()
+                            focusVM.showRecalibrate = false
+                        }
+                    })
                         .navigationBarHidden(true)          // own chrome owns the close
                 }
             }
@@ -322,6 +328,7 @@ struct FocusSessionActiveV: View {
     // keeps "show validation, submit, text" in one location
     private struct IntentionField: View {
         @EnvironmentObject var theme: ThemeManager
+        @Environment(\.colorScheme) private var systemScheme
         
         let p: ScreenStylePalette
         @Binding var text: String
@@ -338,7 +345,7 @@ struct FocusSessionActiveV: View {
                 TextField(
                     "",
                     text: $text,
-                    prompt: theme.styledText("Add Your Intended Task", as: .caption, in: .focus)
+                    prompt: theme.styledText("Add Your Intended Task", as: .caption, in: .focus, scheme: systemScheme)
                 )
                 // set the text color to a dark, contrasting color
                 .foregroundStyle(p.text)
@@ -383,6 +390,7 @@ struct FocusSessionActiveV: View {
     // TileSlot view (compact min height; segment-like look, multi-line text wraps fully,)
     private struct TileSlot: View {
         @EnvironmentObject var theme: ThemeManager
+        @Environment(\.colorScheme) private var systemScheme
         
         let text: String
         let isFilled: Bool
@@ -425,7 +433,7 @@ struct FocusSessionActiveV: View {
             VStack {
                 if isFilled {
                     HStack(alignment: .top, spacing: 8) {
-                        theme.styledText(text, as: .tile, in: .focus)
+                        theme.styledText(text, as: .tile, in: .focus, scheme: systemScheme)
                             .foregroundStyle(p.text)
                         // Tiny leading for multi-line readability
                             .lineSpacing(2)

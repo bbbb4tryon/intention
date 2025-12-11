@@ -10,7 +10,8 @@
 //// SwiftUI -> UIKit Bridge
 //struct TileOrganizerWrapper: UIViewControllerRepresentable {
 //    @EnvironmentObject var theme: ThemeManager
-//    
+//@Environment(\.colorScheme) private var systemScheme
+//
 //    // --- Local Color Definitions for Overlay ---
 //    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
 //    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
@@ -33,7 +34,7 @@
 //        vc.textColor = UIColor(p.accent)            //FIXME: is .accent correct?
 //        vc.tileSeparatorColor = UIColor(p.accent)   //FIXME: is .intTan correct?
 //        vc.sectionSeparatorColor = UIColor(colorBorder)
-//        vc.headerTextColor = UIColor(theme.palette(for: .history).text)
+//        vc.headerTextColor = UIColor(theme.palette(for: .history, scheme: systemScheme).text)
 //        vc.view.backgroundColor = .clear
 //        return vc
 //    }

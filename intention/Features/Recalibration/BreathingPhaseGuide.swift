@@ -9,6 +9,7 @@ import SwiftUI
 
 struct BreathingPhaseGuide: View {
     @EnvironmentObject var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
     
     let phases: [String]
     let activeIndex: Int
@@ -59,8 +60,9 @@ struct BreathingPhaseGuide: View {
 
 #if DEBUG
 #Preview("Breathing Guide") {
+    
     let theme = ThemeManager()
-    let pal = theme.palette(for: .recalibrate)
+    let pal = theme.palette(for: .recalibrate, scheme: .light)
     
     BreathingPhaseGuide(
         phases: ["Inhale", "Hold", "Exhale", "Hold"],

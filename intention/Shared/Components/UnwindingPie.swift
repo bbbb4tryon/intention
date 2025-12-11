@@ -38,13 +38,13 @@ struct UnwindingPieShape: Shape {
 }
 
 //struct Pie: View {
-//    @EnvironmentObject var theme: ThemeManager
+//    @EnvironmentObject var theme: ThemeManager \r@Environment(\.colorScheme) private var systemScheme
 //    @State private var remainingTime = 60.0
 //    let totalTime: TimeInterval = 60.0
 //    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 //    
 //    var body: some View {
-//        let palette = theme.palette(for: .focus)
+//        let palette = theme.palette(for: .focus, scheme: systemScheme)
 //        ZStack {
 //            Circle()
 //                .fill(palette.background.opacity(0.2))

@@ -35,6 +35,7 @@ final class RecalibrationVM: ObservableObject {
     @Published private(set) var mode: RecalibrationMode?
 //    @Published private(set) var startedAt: Date?    // part of "snapshotting" the wall-clock to recompute remaining time on re-activation
     @Published private(set) var timeRemaining: Int = 0
+    @Published private(set) var totalDuration: Int = 0  // of time bar
     @Published var lastError: Error?
     @Published var breathingPhaseIndex: Int = 0     // 0:Inhale, 1:Hold, 2:Exhale, 3:Hold
     @Published var promptText: String = ""          // “Switch feet” pulses EMOM
@@ -69,8 +70,7 @@ final class RecalibrationVM: ObservableObject {
     
     // Related to time the user backgrounded/spent time outside the app
     private var recalDeadline: Date?
-//    private var intendedDuration: Int = 0       // seconds (for .current mode)
-
+    private var intendedDuration: Int = 0       // duration - related to time bar
 
     init(haptics: HapticsClient, breathingMinutes: Int = 2, balancingMinutes: Int = 4) {
         self.haptics = haptics
@@ -101,6 +101,8 @@ final class RecalibrationVM: ObservableObject {
         let mins = (mode == .breathing ? breathingMinutes : balancingMinutes)
         let seconds = mins * 60
         
+        self.intendedDuration = seconds
+        self.totalDuration = seconds
         self.timeRemaining = seconds
         self.recalDeadline = Date().addingTimeInterval(TimeInterval(seconds))
         
@@ -168,10 +170,12 @@ final class RecalibrationVM: ObservableObject {
 //        didHapticForChunk.insert(currentSessionChunk)
 //        haptics.notifyDone()
 //    }
-    private func fireHapticsNotifyDone() { haptics.notifyDone() }
+    private func fireHapticsNotifyDone() {
+        haptics.notifyDone()
+        haptics.notifyDone()
+    }
     
-    
-    // MARK: Balancing - short-short every min; long-long-short on done
+
     // MARK: Balancing - short cues every minute; long–long–short on done
     private func runBalancing() {
         // Capture the starting time so we can compute elapsed minutes.
@@ -379,6 +383,7 @@ extension RecalibrationVM {
         )
         vm._debugSetMode(.breathing)
           ._debugSetPhase(.running)
+        vm.totalDuration = 90
         vm.timeRemaining = 17 // 1:30 gives a nice visual
         return vm
     }

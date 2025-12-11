@@ -10,7 +10,11 @@ import SwiftUI
 struct RecalibrationV: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var theme: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
     @ObservedObject var vm: RecalibrationVM
+    
+    // Optional callback to skip recalibration entirely
+    let onSkip: (() -> Void)?
     @State private var insetHeight: CGFloat = 72        // height of sticky bar
     @State private var breathingChoice: Int = 2
     @State private var balancingChoice: Int = 2
@@ -21,8 +25,8 @@ struct RecalibrationV: View {
     private let balancePreset = 60   // 1 min
     
     private let screen: ScreenName = .recalibrate
-    private var p: ScreenStylePalette { theme.palette(for: screen) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
     
     // --- Local Color Definitions ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
@@ -55,6 +59,11 @@ struct RecalibrationV: View {
         .onChange(of: balancingChoice) { new in
             do { try vm.setBalancingMinutes(new) } catch { vm.lastError = error }
         }
+    }
+    
+    init(vm: RecalibrationVM, onSkip: (() -> Void)? = nil) {
+        self.vm = vm
+        self.onSkip = onSkip
     }
     
     var body: some View {
@@ -94,7 +103,7 @@ struct RecalibrationV: View {
                         // a bit below the separator
 //                        .padding(.top, 1)
                     
-                    // -- separator --
+                    // MARK: \--\ separator \--\
                     Rectangle()
                         .fill(p.accent)
                         .frame(height: 2)
@@ -103,13 +112,13 @@ struct RecalibrationV: View {
                         .shadow(radius: 2, y: 1)
                     
                     Spacer()
-                    // MARK: Action block
+                    
                     T("Choose one below:", .title3)
                         .foregroundStyle(textSecondary)
                         // a bit below the separator
                         .padding(.top, 28)
                     
-                    // the ONLY CTA/timer block
+                    // MARK: - ONLY CTA/timer block
                     actionArea
                         .padding(.top, 16)
                     
@@ -120,12 +129,16 @@ struct RecalibrationV: View {
                     }
                     
                     // MARK: Live indicators
-                    // Balancing - “Switch feet” flashes briefly each minute
-                    // Breathing - modes and expanding dot
                     if vm.mode == .balancing {
+                        RecalProgressBar(progress: progressFraction, p: p)
+                            .padding(.top, 8)
+                        // Balancing - “Switch feet” flashes briefly each minute
                         BalanceSideDots(activeIndex: vm.balancingPhaseIndex, p: p)
                                 .padding(.top, 12)
                     } else if vm.mode == .breathing, vm.phase != .none, vm.phase != .idle {
+                        RecalProgressBar(progress: progressFraction, p: p)
+                            .padding(.top, 8)
+                        // Breathing - modes and expanding dot
                         BreathingPhaseGuide(
                             phases: vm.breathingPhases,
                             activeIndex: vm.breathingPhaseIndex,
@@ -134,13 +147,13 @@ struct RecalibrationV: View {
                         .padding(.top, 10)
                     }
                 }
-                // Room for sticky inset + it never covers buttons/picker
+                // Sticky: never covers buttons/picker
                 .padding(.bottom, insetHeight + 16)
                 .padding(.horizontal, 16)
             }
         }
     }
-        //.background(p.background.ignoresSafeArea())
+
         .tint(p.accent)
         // instant task, OK for previews
         .task { breathingChoice = vm.currentBreathingMinutes }
@@ -171,6 +184,7 @@ struct RecalibrationV: View {
         }
     }
     
+    // MARK: - ViewBuilder: actionArea
     @ViewBuilder
     private var actionArea: some View {
         switch vm.phase {
@@ -188,6 +202,21 @@ struct RecalibrationV: View {
                     vm.performAsyncAction { try await vm.start(mode: .balancing) }
                 } label: { T("Balancing", .action) }
                     .recalibrationActionStyle(screen: screen)
+                
+                // MARK: skip path -> routes back to Focus without running --
+                Button {
+                    // Allows reset focusVM and closing the sheet
+                    onSkip?()
+                    // Fallback: dismiss locally
+                    if onSkip == nil { dismiss() }
+                } label: {
+                    T("Skip", .action)
+                        .recalibrationActionStyle(screen: screen)
+                        .tint(p.accent)
+                        .shadow(color: Color.blue.opacity(0.09), radius: 8, x: 0, y: 3)
+                        .opacity(0.9)
+                        .accessibilityIdentifier(("Skip recalibration screen"))
+                }
             }
             
         case .running, .pause:
@@ -200,6 +229,9 @@ struct RecalibrationV: View {
                     .monospacedDigit()
                     .frame(maxWidth: .infinity, alignment: .center)
                 
+                RecalProgressBar(progress: progressFraction, p: p)
+                    .padding(.top, 4)
+                
                 Button(role: .destructive) {
                     vm.performAsyncAction { try await vm.stop() }
                 } label: { T("Cancel", .action)
@@ -209,6 +241,39 @@ struct RecalibrationV: View {
         case .finished:
             EmptyView()
         }
+    }
+}
+
+// MARK: Progress bar for Recalibration
+private struct RecalProgressBar: View {
+    let progress: CGFloat   // 0.0 ... 1.0
+    let p: ScreenStylePalette
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h: CGFloat = 10
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: h/2)
+                    .fill(p.surfaces.opacity(0.35))
+                    .frame(height: h)
+                RoundedRectangle(cornerRadius: h/2)
+                    .fill(p.accent)
+                    .frame(width: max(0, min(1, progress)) * w, height: h)
+            }
+        }
+        .frame(height: 10)
+        .accessibilityLabel("Progress")
+        .accessibilityValue("\(Int(progress * 100)) percent")
+    }
+}
+
+// MARK: Progress calculation helper
+private extension RecalibrationV {
+    var progressFraction: CGFloat {
+        let total = max(1, vm.totalDuration)
+        let remaining = max(0, vm.timeRemaining)
+        let done = total - remaining
+        return CGFloat(Double(done) / Double(total))
     }
 }
     // MARK: - Computed Helpers
@@ -245,12 +310,14 @@ struct RecalibrationV: View {
         }
     }
 
+
+
 #if DEBUG
 #Preview("Recalibrate (dumb)") {
     let theme = ThemeManager()
     let vm    = RecalibrationVM(haptics: NoopHapticsClient())
 
-    RecalibrationV(vm: vm)
+    RecalibrationV(vm: vm, onSkip: {})
         .environmentObject(theme)
     /* read ONLY if/when everything else is stable */
     /// .canvasCheap()

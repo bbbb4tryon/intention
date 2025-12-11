@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct RenamingSheetChrome<Content: View>: View {
+    @Environment(\.colorScheme) private var systemScheme
+    
     @EnvironmentObject var theme: ThemeManager
     var onClose: () -> Void
     @ViewBuilder var content: Content
@@ -15,7 +17,7 @@ struct RenamingSheetChrome<Content: View>: View {
     @State private var offsetY: CGFloat = 0
     private let dismissThreshold: CGFloat = 120
     // You can route this to .organizer or .settings; choose the one that gives best contrast there
-    private var p: ScreenStylePalette { theme.palette(for: .history) }
+    private var p: ScreenStylePalette { theme.palette(for: .history, scheme: systemScheme) }
 
     var body: some View {
         ZStack {

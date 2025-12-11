@@ -74,6 +74,7 @@ final class FocusSessionVM: ObservableObject {
     private let haptics: HapticsClient
     private let config: TimerConfig
     private let persistence: any Persistence            /// handles activeSessionSnapshot via Persistence
+    private let notifications: NotificationClient
     private let timeActor: ContinuousClockActor
     private var chunkCountdown: Task<Void, Never>?        /// background live time keeper/ticker
     private var sessionCompletionTask: Task<Void, Never>? /// background timer for the entire session (2x 20-min chunks)
@@ -105,11 +106,13 @@ final class FocusSessionVM: ObservableObject {
         previewMode: Bool = false,
         haptics: HapticsClient,
         config: TimerConfig = .current,
-        persistence: any Persistence = PersistenceActor()
+        persistence: any Persistence = PersistenceActor(),
+        notifications: NotificationClient = NoopNotificationClient()
     ){
         self.haptics = haptics
         self.config = config
         self.persistence = persistence
+        self.notifications = notifications
         self.countdownRemaining = config.chunkDuration
         self.timeActor = ContinuousClockActor(config: config)
         
@@ -122,6 +125,22 @@ final class FocusSessionVM: ObservableObject {
             phase = .running
             countdownRemaining = config.chunkDuration / 20
         }
+    }
+    
+    // MARK: Notification helpers
+    private var notifIDForCurrentChunk: String { "focus.chunk.\(currentSessionChunk)" }
+    private func scheduleEndNotification(after seconds: Int) {
+        let fire = Date().addingTimeInterval(TimeInterval(seconds))
+        Task { await notifications.schedule(
+            id: notifIDForCurrentChunk,
+            title: "Chunk Complete",
+            body: "Time to Rest and Recalibrate Your Mind.",
+            fireDate: fire
+        )}
+    }
+
+    private func cancelEndNotification() {
+        Task { await notifications.cancel(id: notifIDForCurrentChunk) }
     }
     
     // MARK: Derived
@@ -291,6 +310,8 @@ final class FocusSessionVM: ObservableObject {
         let total = seconds ?? config.chunkDuration
         countdownRemaining = total
         saveVMSnapshot()
+        // schedule background alert
+        scheduleEndNotification(after: total)
         
         // bail out in previews -- a hard stop for Canvas
         guard !IS_PREVIEW else { return }
@@ -306,7 +327,8 @@ final class FocusSessionVM: ObservableObject {
                     self.countdownRemaining = 0
                                self.fireDoneHapticOnce()
                                self.finishCurrentChunkIfNeeded(source: "tick")   // <-- single guarded path
-                               self.clearVMSnapshot()
+                    self.cancelEndNotification()
+//                               self.clearVMSnapshot()
                            }
                        }
                    )
@@ -335,6 +357,7 @@ final class FocusSessionVM: ObservableObject {
         await timeActor.pauseTicking(currentRemaining: countdownRemaining)
         phase = .paused
         saveVMSnapshot()
+        cancelEndNotification()
     }
     
     func resumeCurrent20MinCountdown() async throws {
@@ -356,7 +379,8 @@ final class FocusSessionVM: ObservableObject {
         )
         phase = .running
         saveVMSnapshot()
-        
+        // reschedule at the new remaining seconds
+        scheduleEndNotification(after: countdownRemaining)
     }
     
     // MARK: App lifecycle (RootView calls these)
@@ -382,7 +406,8 @@ final class FocusSessionVM: ObservableObject {
                     self.countdownRemaining = 0
                                     self.fireDoneHapticOnce()
                                     self.finishCurrentChunkIfNeeded(source: "foreground<=0")  // <-- no direct phase mutate
-                                    self.clearVMSnapshot()
+//                                    self.clearVMSnapshot()
+                    self.cancelEndNotification()
                 }
 //                phase = .finished
 //                countdownRemaining = 0
@@ -409,7 +434,8 @@ final class FocusSessionVM: ObservableObject {
         // Finally, VM snapshot as canonical (e.g., after kill/launch)
         if let vmSnap: VMSnapshot = try? await persistence.readIfExists(VMSnapshot.self, from: vmSnapshotKey) {
             applyVMSnapshot(vmSnap)
-            clearVMSnapshot()
+//            clearVMSnapshot()
+                // keep snapshot - next save will overwrite it
             if phase == .running {
                 // Recreate ticking respecting paused/running
                 if phase == .running {
@@ -434,6 +460,7 @@ final class FocusSessionVM: ObservableObject {
             sessionActive = false
             phase = .finished
             showRecalibrate = true
+            cancelEndNotification()
             
             if let targetCategoryID = historyVM?.generalCategoryID {
                 for tile in tiles.prefix(2) {
@@ -442,6 +469,7 @@ final class FocusSessionVM: ObservableObject {
             }
         } else {
             phase = .finished   // between chunks; UI will show Next
+            cancelEndNotification()
         }
         // Clear the running deadline; take a snapshot of the new state
         runningDeadline = nil
@@ -476,6 +504,7 @@ final class FocusSessionVM: ObservableObject {
         countdownRemaining = config.chunkDuration
         didHapticForChunk.removeAll()
         await timeActor.resetSessionTracking()
+        cancelEndNotification()
         clearVMSnapshot()
         //        debugPrint("[FocusVM.resetSessionStateForNewStart] state NOT reset for a new session.")
     }
@@ -494,6 +523,8 @@ final class FocusSessionVM: ObservableObject {
         guard !didHapticForChunk.contains(currentSessionChunk) else { return }
         didHapticForChunk.insert(currentSessionChunk)
         haptics.notifyDone()            // don't call itself with fireDoneHapticOnce()
+        haptics.notifyDone()
+        haptics.notifyDone()
     }
     
     // MARK: VM snapshot helpers (canonical)
