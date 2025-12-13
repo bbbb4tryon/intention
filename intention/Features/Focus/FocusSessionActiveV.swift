@@ -27,7 +27,7 @@ struct FocusSessionActiveV: View {
     
     // MARK: Environment
     @EnvironmentObject var theme: ThemeManager
-    @Environment(\.colorScheme) private var systemScheme
+
     @EnvironmentObject var statsVM: StatsVM
     @EnvironmentObject var memVM: MembershipVM
     @Environment(\.dismiss) var dismiss
@@ -49,8 +49,8 @@ struct FocusSessionActiveV: View {
     
     /// Theme hooks
     private let screen: ScreenName = .focus
-    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     // --- Local Color Definitions for Focus ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
@@ -328,7 +328,7 @@ struct FocusSessionActiveV: View {
     // keeps "show validation, submit, text" in one location
     private struct IntentionField: View {
         @EnvironmentObject var theme: ThemeManager
-        @Environment(\.colorScheme) private var systemScheme
+    
         
         let p: ScreenStylePalette
         @Binding var text: String
@@ -339,16 +339,19 @@ struct FocusSessionActiveV: View {
         
         @FocusState private var isFocused: Bool
         
+        // Local Color Definitions
+        private let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
+        
         // MARK: - Body
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
                 TextField(
                     "",
                     text: $text,
-                    prompt: theme.styledText("Add Your Intended Task", as: .caption, in: .focus, scheme: systemScheme)
-                )
+                    prompt: theme.styledText("Add Your Intended Task", as: .caption, in: .focus
+                ))
                 // set the text color to a dark, contrasting color
-                .foregroundStyle(p.text)
+                .foregroundStyle(companyGreen)
                 .focused($isFocused)
                 .submitLabel(.done)
                 .validatingField(state: vState, palette: p)
@@ -390,7 +393,7 @@ struct FocusSessionActiveV: View {
     // TileSlot view (compact min height; segment-like look, multi-line text wraps fully,)
     private struct TileSlot: View {
         @EnvironmentObject var theme: ThemeManager
-        @Environment(\.colorScheme) private var systemScheme
+    
         
         let text: String
         let isFilled: Bool
@@ -407,6 +410,7 @@ struct FocusSessionActiveV: View {
         private let minDesiredHeight: CGFloat = 1
         
         // --- Local Color Definitions for Focus ---
+        private let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
         private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
         private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
         private let colorDanger = Color.red
@@ -433,7 +437,7 @@ struct FocusSessionActiveV: View {
             VStack {
                 if isFilled {
                     HStack(alignment: .top, spacing: 8) {
-                        theme.styledText(text, as: .tile, in: .focus, scheme: systemScheme)
+                        theme.styledText(text, as: .tile, in: .focus)
                             .foregroundStyle(p.text)
                         // Tiny leading for multi-line readability
                             .lineSpacing(2)
@@ -448,7 +452,7 @@ struct FocusSessionActiveV: View {
                         // Always show a checkmark for filled tiles
                         Image(systemName: trailingIconName)
                             .font(.body)                        // slightly increases size
-                            .foregroundStyle(isCompleted ? colorSuccess : p.accent)   // more vivid than "accent"
+                            .foregroundStyle(isCompleted ? companyGreen : p.accent)   // more vivid than "accent"
                             .accessibilityHidden(true)
                     }
                     .baselineOffset(1)

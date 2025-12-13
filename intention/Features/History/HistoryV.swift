@@ -15,7 +15,7 @@ struct HistoryV: View {
     @ObservedObject var viewModel: HistoryVM
     
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var systemScheme
+
     
     // UI State
     @State private var createdCategoryID: UUID?
@@ -29,8 +29,8 @@ struct HistoryV: View {
     
     /// Theme hooks
     private let screen: ScreenName = .history
-    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     // --- Local Color Definitions for History ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
@@ -324,15 +324,15 @@ private struct CategoryCard: View {
     @EnvironmentObject private var viewModel: HistoryVM
     @EnvironmentObject private var theme: ThemeManager
     
-    @Environment(\.colorScheme) private var systemScheme
+
     @Binding var category: CategoriesModel
     let isArchive: Bool
     var onRename: (UUID) -> Void
     
     /// Theme hooks
     private let screen: ScreenName = .history
-    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -361,8 +361,6 @@ private struct CategoryCard: View {
 private struct RenameCategoryV: View {
     @EnvironmentObject var theme: ThemeManager
     
-    @Environment(\.colorScheme) private var systemScheme
-    
     var originalName: String
     @Binding var text: String
     var onCancel: () -> Void
@@ -370,8 +368,8 @@ private struct RenameCategoryV: View {
     
     /// Theme hooks
     private let screen: ScreenName = .history
-    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     var body: some View {
         VStack(spacing: 16) {
@@ -425,12 +423,11 @@ private struct HistoryToasts: View {
     @EnvironmentObject var theme: ThemeManager
     @EnvironmentObject var viewModel: HistoryVM
     
-    @Environment(\.colorScheme) private var systemScheme
-    
+    /// Theme Hooks
     private let screen: ScreenName = .history
-    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text {
-        { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) }
+        { key, role in theme.styledText(key, as: role, in: screen) }
     }
     
     private var showsUndoToast: Bool {

@@ -29,7 +29,8 @@ enum TextRole {
 private extension Color {
     static func app(_ name: String, fallback: Color, bundle: Bundle = .main) -> Color {
         // Prefer the color asset if it exists
-        if let ui = UIColor(named: name, in: bundle, compatibleWith: nil) {
+        let trait = UITraitCollection.current
+        if let ui = UIColor(named: name, in: bundle, compatibleWith: trait) {
             return Color(uiColor: ui)
         } else {
             #if DEBUG
@@ -122,14 +123,14 @@ enum AppFontTheme: String, CaseIterable {
 private enum DefaultColors {
     
     static let backgroundLight = Color.app("AppBackground",
-                                           fallback: Color(red: 0.973, green: 0.965, blue: 0.980)) // F8F6FA
+                                           fallback: Color(red: 0.973, green: 0.965, blue: 0.980)) // F8F6FA -> dark would be 3B2F4E
         .opacity(1) // no-op; forces load
    static let surfaces        = Color.app("AppSurfaces",
-                                       fallback: Color(red: 0.937, green: 0.922, blue: 0.953)) // EFEBF3
+                                       fallback: Color(red: 0.937, green: 0.922, blue: 0.953)) // EFEBF3 
     static let accent          = Color.app("AppAccent",
                                        fallback: Color(red: 0.784, green: 0.196, blue: 0.392)) // C83264)
     static let text            = Color.app("AppText",
-                                       fallback: Color(red: 0.102, green: 0.086, blue: 0.118)) // 1A161E
+                                       fallback: Color(red: 0.102, green: 0.086, blue: 0.118)) // 1A161E 48284D
     
     // Fallbacks for previews / missing assets
     // (used only if the asset is absent in a preview-only context)
@@ -201,8 +202,8 @@ private enum SeaDefaultColors {
 private enum RecalibrateBG {
     static let gradient: ScreenStylePalette.LinearGradientSpecial = .init(
         colors: [
-            DefaultColors.text.opacity(0.96),   // top: very dark
-            DefaultColors.text.opacity(0.88),   // soften banding
+            DefaultColors.text.opacity(0.92),   // top: very dark, better contrast
+            DefaultColors.text.opacity(0.66),   // soften banding
             DefaultColors.backgroundLight       // bottom: page bg
         ],
         start: .top, end: .bottom
@@ -237,7 +238,7 @@ enum AppColorTheme: String, CaseIterable {
     // Change this list whenever you want to expose more/less.
     static var publicCases : [AppColorTheme] { [.default, .sea] }
     
-    func colors(for screen: ScreenName, scheme: ColorScheme) -> ScreenStylePalette {
+    func colors(for screen: ScreenName) -> ScreenStylePalette {
         switch self {
         case .default:
             switch screen {
@@ -352,7 +353,7 @@ enum AppColorTheme: String, CaseIterable {
 @MainActor
 final class ThemeManager: ObservableObject {
 //    /// Makes palettes dynamically choose light or dark, depending on system
-//    @Environment(\.colorScheme) private var systemScheme
+//
     
     @AppStorage("selectedColorTheme") private var colorRaw: String = AppColorTheme.default.rawValue
     @AppStorage("selectedFontTheme")  private var fontRaw: String = AppFontTheme.serif.rawValue
@@ -371,14 +372,14 @@ final class ThemeManager: ObservableObject {
         self.fontTheme  = AppFontTheme(rawValue: storedFont)  ?? .serif
     }
     
-    func palette(for screen: ScreenName, scheme: ColorScheme) -> ScreenStylePalette {
-//        colorTheme.colors(for: screen, scheme: systemScheme)
-        colorTheme.colors(for: screen, scheme: scheme)
+    func palette(for screen: ScreenName) -> ScreenStylePalette {
+//        colorTheme.colors(for: screen
+        colorTheme.colors(for: screen)
     }
     
-    func styledText(_ content: String, as role: TextRole, in screen: ScreenName, scheme: ColorScheme) -> Text {
+    func styledText(_ content: String, as role: TextRole, in screen: ScreenName) -> Text {
         let font  = fontTheme.toFont(Self.fontStyle(for: role))
-        let color = Self.color(for: role, palette: palette(for: screen, scheme: scheme))
+        let color = Self.color(for: role, palette: palette(for: screen))
         
         let weight: Font.Weight = switch role {
         case .largeTitle:   .bold
@@ -459,5 +460,7 @@ extension Color {
     static let intText = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
     
     static let intGreen = Color(red: 0.231, green: 0.733, blue: 0.639) // #3BBBA3
+    
+    static let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
     
 }

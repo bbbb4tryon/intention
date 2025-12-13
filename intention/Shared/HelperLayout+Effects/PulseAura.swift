@@ -48,11 +48,11 @@ extension View {
 
 private struct PulseButtonDemo: View {
     @EnvironmentObject var theme: ThemeManager
-    @Environment(\.colorScheme) private var systemScheme
+
     @State private var isActive = true
     
     var body: some View {
-        let p = theme.palette(for: .focus, scheme: systemScheme)
+        let p = theme.palette(for: .focus)
         
         VStack(spacing: 16) {
             Button("Pulse Aura") { /* no-op */ }
@@ -74,9 +74,9 @@ private struct PulseButtonDemo: View {
     
     Button("Pulse Aura") { }
         .frame(maxWidth: .infinity, minHeight: 48)
-        .pulseAura(color: theme.palette(for: .focus, scheme: .light).accent, active: true)
+        .pulseAura(color: theme.palette(for: .focus).accent, active: true)
         .padding(20)
-        .background(theme.palette(for: .focus, scheme: .light).background)
+        .background(theme.palette(for: .focus).background)
         .environmentObject(theme)
 }
 

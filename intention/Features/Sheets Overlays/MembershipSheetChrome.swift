@@ -11,13 +11,13 @@ import SwiftUI
 /// Reuses your per-screen palette for .membership.
 struct MembershipSheetChrome<Content: View>: View {
     @EnvironmentObject var theme: ThemeManager
-    @Environment(\.colorScheme) private var systemScheme
+
     var onClose: () -> Void
     @ViewBuilder var content: Content
 
     @State private var offsetY: CGFloat = 0
     private let dismissThreshold: CGFloat = 120
-    private var p: ScreenStylePalette { theme.palette(for: .membership, scheme: systemScheme) }
+    private var p: ScreenStylePalette { theme.palette(for: .membership) }
 
     var body: some View {
         ZStack {

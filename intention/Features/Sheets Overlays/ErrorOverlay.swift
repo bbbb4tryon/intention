@@ -10,12 +10,12 @@ import SwiftUI
 // `self.lastError = error` to trigger the ErrorOverlay
 struct ErrorOverlay: View {
     @EnvironmentObject var theme: ThemeManager
-    @Environment(\.colorScheme) private var systemScheme
+
     let error: Error
     let dismissAction: () -> Void
     
     private let screen: ScreenName = .focus // or whichever main screen hosts this overlay
-    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
     
     // --- Local Color Definitions by way of Recalibration ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)

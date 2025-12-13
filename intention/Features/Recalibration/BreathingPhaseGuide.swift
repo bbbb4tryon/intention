@@ -9,13 +9,13 @@ import SwiftUI
 
 struct BreathingPhaseGuide: View {
     @EnvironmentObject var theme: ThemeManager
-    @Environment(\.colorScheme) private var systemScheme
     
     let phases: [String]
     let activeIndex: Int
     let p: ScreenStylePalette
     
     // --- Local Color Definitions by way of Recalibration ---
+    private let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     
@@ -27,7 +27,7 @@ struct BreathingPhaseGuide: View {
                     .font(.footnote.weight(i == activeIndex ? .semibold : .regular))
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(
-                        Capsule().fill(i == activeIndex ? p.accent.opacity(0.90) : .clear)
+                        Capsule().fill(i == activeIndex ? companyGreen.opacity(0.90) : .clear)
                     )
                     .overlay(
                         Capsule().stroke(i == activeIndex ? colorBorder : .clear, lineWidth: 1)
@@ -38,7 +38,7 @@ struct BreathingPhaseGuide: View {
                 
                 // MARK: Active phase dot
                 Circle()
-                    .fill(i == activeIndex ? p.accent : .clear)
+                    .fill(i == activeIndex ? companyGreen : .clear)
                     .frame(width: 6, height: 6)
                     .opacity(i == activeIndex ? 1 : 0)
                     .animation(.easeInOut(duration: 0.2), value: activeIndex)
@@ -53,7 +53,7 @@ struct BreathingPhaseGuide: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(p.accent.opacity(0.85), lineWidth: 1.5)
         )
-        .padding(.horizontal, 2)
+        .padding(.horizontal, 4)
     }
 }
 
@@ -62,7 +62,7 @@ struct BreathingPhaseGuide: View {
 #Preview("Breathing Guide") {
     
     let theme = ThemeManager()
-    let pal = theme.palette(for: .recalibrate, scheme: .light)
+    let pal = theme.palette(for: .recalibrate)
     
     BreathingPhaseGuide(
         phases: ["Inhale", "Hold", "Exhale", "Hold"],

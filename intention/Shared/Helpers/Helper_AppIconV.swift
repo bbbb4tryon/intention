@@ -22,7 +22,7 @@ struct Helper_AppIconV: View {
             Image(systemName: "app.fill")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .foregroundStyle(Color.intGreen)
+                .foregroundStyle(Color.companyGreen)
                 .progressOverlay($isBusy, text: "Loading...")
         }
     }

@@ -18,7 +18,8 @@ struct intentionApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .background(Color("AppBackground").ignoresSafeArea())
+                .background(ThemeManager.appBackgroundColor.ignoresSafeArea())
+//                .background(Color("AppBackground").ignoresSafeArea())
         }
     }
 }

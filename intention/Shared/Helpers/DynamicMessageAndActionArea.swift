@@ -9,14 +9,14 @@ import SwiftUI
 
 struct DynamicMessageAndActionArea: View {
     @EnvironmentObject var theme: ThemeManager
-    @Environment(\.colorScheme) private var systemScheme
     @EnvironmentObject var focusVM: FocusSessionVM
     
     let onRecalibrateNow: () -> Void
     
+    /// Theme Hooks
     private let screen: ScreenName = .focus
-    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     // MARK: Computed helpers
     private var recalibrateNowLabel: some View {

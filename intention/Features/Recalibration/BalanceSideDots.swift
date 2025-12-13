@@ -12,6 +12,7 @@ struct BalanceSideDots: View {
     let p: ScreenStylePalette
 
     // --- Local Color Definitions by way of Recalibration ---
+    private let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
@@ -69,7 +70,7 @@ struct BalanceSideDots: View {
 #if DEBUG
 #Preview("Balance Dots") {
     let theme = ThemeManager()
-    let pal = theme.palette(for: .recalibrate, scheme: .light)
+    let pal = theme.palette(for: .recalibrate)
     
     BalanceSideDots(
         activeIndex: 0, p: pal

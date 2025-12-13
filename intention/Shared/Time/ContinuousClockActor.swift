@@ -7,14 +7,28 @@
 
 import Foundation
 
-// VM = “when” (state machine + orchestration + UI/session snapshot), Actor = “how” (monotonic time with ContinuousClock, tick loop, background math, tiny safety snapshot
-// session's start time and the tiles that have been added within that session context
-// Owns ContinuousClock, tick loop, background/foreground math.
-// Supports user pause/resume vs. app background suspend/resume.
-// Provides an auxiliary safety snapshot.
+/**
+- Monotonic Clock (time always moves forward; does not skip/jump)
+- Strict Concurrency (Isolates timing, clock, and background math)
+- VM Link (`ViewModel` decides *when* (state changes), `Actor` decides *how* (time tracking)
+- Suspend/Resume (Supports user-initiated pause and system backround suspend)
+ */
 actor ContinuousClockActor {
-    /// Short debug/UI tests without touching production logic
+    
     // MARK: init
+    /// This defines that actor and is called by whatever code creates the actor (whichever viewModel is using it then)
+    ///
+    /// @type: `ContinuousClockActor (this object)`
+    /// @purpose: Creates the actor
+    /// @calledBy: The `ViewModel` that uses it, when the app starts
+    /// @input: Accepts `TimerConfig` for a countdown's duration
+    ///
+
+    // MARK: init
+    /// Creates the actor with the specific configuration
+    /// **Purpose:** Creates the actor
+    /// - Parameter config: Accepts `TimerConfig` for countdown duration.
+
     private let config: TimerConfig
     init(config: TimerConfig) { self.config = config }
     
@@ -33,8 +47,12 @@ actor ContinuousClockActor {
     private var pausedRemaining: Int?
     
     
-    /// Starts a new session window; clears actor's tile buffer.
     // MARK: Session lifecycle (called by VM)
+    /// Method is called by the viewModel then using it and is a setup step
+    ///
+    /// @purpose: Starts a new session window; clears actor's tile buffer & resets internal state.
+    /// @calledBy: The `ViewModel`
+    /// @nextStep: After this, the `ViewModel` will call `startTicking(...)`
     func startSessionTracking() {
         guard !IS_PREVIEW else { return }
         sessionStartDate = Date()
@@ -66,6 +84,12 @@ actor ContinuousClockActor {
     }
     
     // MARK: - Ticking control
+    /// Defines ticking
+    ///
+    /// @type: `ContinuousClockActor (this object)`
+    /// @purpose: Creates
+    /// @calledBy: The `ViewModel` that uses it, when the app starts
+    /// @input: Accepts `TimerConfig` for a countdown's duration
     func startTicking(
         totalSeconds: Int? = nil,
         onTick: @Sendable @escaping (Int) -> Void,

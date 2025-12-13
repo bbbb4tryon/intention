@@ -10,7 +10,7 @@ import SwiftUI
 struct RecalibrationV: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var theme: ThemeManager
-    @Environment(\.colorScheme) private var systemScheme
+
     @ObservedObject var vm: RecalibrationVM
     
     // Optional callback to skip recalibration entirely
@@ -25,8 +25,8 @@ struct RecalibrationV: View {
     private let balancePreset = 60   // 1 min
     
     private let screen: ScreenName = .recalibrate
-    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     // --- Local Color Definitions ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
@@ -248,6 +248,10 @@ struct RecalibrationV: View {
 private struct RecalProgressBar: View {
     let progress: CGFloat   // 0.0 ... 1.0
     let p: ScreenStylePalette
+    
+    // Local Color Definitions
+    private let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
+    
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
@@ -256,8 +260,19 @@ private struct RecalProgressBar: View {
                 RoundedRectangle(cornerRadius: h/2)
                     .fill(p.surfaces.opacity(0.35))
                     .frame(height: h)
+                
+                // Progress fill - company green gradient
                 RoundedRectangle(cornerRadius: h/2)
-                    .fill(p.accent)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                companyGreen,
+                                companyGreen.opacity(0.8)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                     .frame(width: max(0, min(1, progress)) * w, height: h)
             }
         }

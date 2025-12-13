@@ -10,7 +10,6 @@ import SwiftUI
 
 struct MembershipSheetV: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var systemScheme
     
     @EnvironmentObject var viewModel: MembershipVM
     @EnvironmentObject var theme: ThemeManager
@@ -19,8 +18,8 @@ struct MembershipSheetV: View {
     
     var useDogEmoji: Bool = true
     private let screen: ScreenName = .membership
-    private var p: ScreenStylePalette { theme.palette(for: screen, scheme: systemScheme) }
-    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen, scheme: systemScheme) } }
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+    private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     // tailText to remain INSIDE the struct, but OUTSIDE `body`
     private var tailText: String { "All while helping us keep the lights on, the mortgage paid, and the \(useDogEmoji ? "🐕" : "dog") fed & happy!" }
     

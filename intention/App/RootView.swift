@@ -15,13 +15,13 @@ import SwiftUI
 /// Keep it under 15 lines: Swift won't yell and this avoids deep view chains
 struct FocusShell<Content: View>: View {
     @EnvironmentObject var theme: ThemeManager
-    @Environment(\.colorScheme) private var systemScheme
+
     let screen: ScreenName
     
     @ViewBuilder var content: Content
     
     var body: some View {
-        let pal = theme.palette(for: screen, scheme: systemScheme)
+        let pal = theme.palette(for: screen)
         // content sits directly on the ZStack background
         let contentWithNoBackground = content
         
@@ -38,6 +38,7 @@ struct FocusShell<Content: View>: View {
             
             // subtle backdrop for better text contrast -- on recalibrate
             if screen == .recalibrate {
+                // Vignette for reliable text contrast
                 RadialGradient(
                     gradient: Gradient(colors: [
                         Color.black.opacity(0.55),
@@ -48,6 +49,15 @@ struct FocusShell<Content: View>: View {
                 )
                 .blendMode(.multiply)
                 .ignoresSafeArea()
+                
+                // paper-noise texture (tiled)
+                Image("Noise64")
+                    .resizable(resizingMode: .tile)   // ⬅️ important: tile, don’t stretch
+                    .ignoresSafeArea()
+                    .opacity(0.035)                   // 3.5% is usually enough
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                
             }
             
             // actual content view
@@ -133,7 +143,7 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     
     // MARK: Light/Dark mode
-    @Environment(\.colorScheme) private var systemScheme
+
     
     // MARK: Single sources of truth (owned here, injected downward)
     @StateObject private var theme: ThemeManager
@@ -202,11 +212,11 @@ struct RootView: View {
     // MARK: Body
     var body: some View {
         // shared palette locals help calm the swift type-checker
-        let palFocus        = theme.palette(for: .focus, scheme: systemScheme)
-        let _               = theme.palette(for: .history, scheme: systemScheme)
-        let _               = theme.palette(for: .settings, scheme: systemScheme)
-        let _               = theme.palette(for: .recalibrate, scheme: systemScheme)
-        let _               = theme.palette(for: .membership, scheme: systemScheme)
+        let palFocus        = theme.palette(for: .focus)
+        let _               = theme.palette(for: .history)
+        let _               = theme.palette(for: .settings)
+        let _               = theme.palette(for: .recalibrate)
+        let _               = theme.palette(for: .membership)
         let tabBG           = palFocus.background.opacity(0.88) // Makes tab bar match app theme (iOS 16+)
         
         
@@ -427,7 +437,7 @@ struct RootView: View {
                         LegalDocV(
                             title: "Terms of Use",
                             markdown: MarkdownLoader.load(named: LegalConfig.termsFile),
-                            palette: theme.palette(for: .settings, scheme: systemScheme)
+                            palette: theme.palette(for: .settings)
                         )
                     }
                     .environmentObject(theme)
@@ -437,7 +447,7 @@ struct RootView: View {
                         LegalDocV(
                             title: "Privacy Policy",
                             markdown: MarkdownLoader.load(named: LegalConfig.privacyFile),
-                            palette: theme.palette(for: .settings, scheme: systemScheme)
+                            palette: theme.palette(for: .settings)
                         )
                     }
                     .environmentObject(theme)
@@ -447,7 +457,7 @@ struct RootView: View {
                         LegalDocV(
                             title: "Wellness Disclaimer",
                             markdown: MarkdownLoader.load(named: LegalConfig.medicalFile),
-                            palette: theme.palette(for: .settings, scheme: systemScheme)
+                            palette: theme.palette(for: .settings)
                         )
                     }
                     .environmentObject(theme)
