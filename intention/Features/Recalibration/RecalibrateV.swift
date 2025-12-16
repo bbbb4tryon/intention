@@ -76,7 +76,7 @@ struct RecalibrationV: View {
         VStack {
             ScrollView {
                 Page {
-                    // MARK: H1 centered; prose
+                    // MARK: - Recal
                     /*left-aligned = calmer eye path*/
                     T("Reset & Recalibrate", .largeTitle)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -100,7 +100,7 @@ struct RecalibrationV: View {
                     
                     // MARK: Supporting copy
                     /* left-aligned, subdued */
-                    T("These short physical resets relax and reinvigorate your focus.", .title3)
+                    T("Even though these short activities are only a few minutes in duration, because they're physical movements, they energize and invigorate your ability to focus.", .title3)
                         .foregroundStyle(textSecondary)
                         // a bit below the separator
 //                        .padding(.top, 1)
@@ -174,6 +174,8 @@ struct RecalibrationV: View {
                 ErrorOverlay(error: err) { vm.lastError = nil }
             }
         }
+        .allowsHitTesting(false)
+        
         // MARK: Let people leave
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -297,7 +299,7 @@ private extension RecalibrationV {
         let theme: ThemeManager
         var body: some View {
             VStack(alignment: .leading, spacing: 4) {
-                ForEach(items, id: \.self) { Text("• \($0)") }
+                ForEach(items, id: \.self) { Text("Now, Lift \($0)") }
             }
             .padding()
             .font(theme.fontTheme.toFont(.footnote))

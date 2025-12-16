@@ -101,7 +101,7 @@ struct MembershipSheetV: View {
                                 Divider().padding(.vertical, 4)
                                 Label("Build momentum", systemImage: "bolt")
                                 Label("Track progress", systemImage: "chart.line.uptrend.xyaxis")
-                                Label("\(tailText)", systemImage: "house")
+                                Label("\(tailText)", systemImage: "house").lineLimit(nil)
                                 Label("Thank you.", systemImage: "heart")
                             }
                             .font(theme.fontTheme.toFont(.footnote))
@@ -109,6 +109,7 @@ struct MembershipSheetV: View {
                             .symbolRenderingMode(.hierarchical)
                             
                             T("Apple securely handles your purchase. Cancel anytime in **Settings › Manage Subscription.**", .caption)
+                                .lineLimit(nil)
                                 .foregroundStyle(.secondary)
                                 .padding(.top, 6)
                         }

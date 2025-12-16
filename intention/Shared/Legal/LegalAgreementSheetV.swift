@@ -28,7 +28,7 @@ struct LegalAgreementSheetV: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                p.background.ignoresSafeArea()
+                p.background.ignoresSafeArea().allowsHitTesting(false)
                 
                 VStack(spacing: 14){
                     T("Made By And For Humans", .body)
@@ -36,7 +36,7 @@ struct LegalAgreementSheetV: View {
                         .padding(.top, 8)
                     
                     T("Please review the policies below. By tapping *Agree & Continue*, you accept them.", .body)
-                    
+                        .lineLimit(nil)
                     // Links row
                     HStack(alignment: .center, spacing: 10) {
                         Button {
@@ -71,8 +71,9 @@ struct LegalAgreementSheetV: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
                     .background(.ultraThinMaterial)
+//                    .zIndex(0)
                 }
-                
+                .zIndex(0)
             }
         }
     }

@@ -24,17 +24,16 @@ struct PulseAura: ViewModifier {
                     let t = ctx.date.timeIntervalSinceReferenceDate
                     let phase = sin((2 * .pi / period) * t)  // -1...+1
                     Circle()
-                        .fill(color.opacity(0.18))
-                        .scaleEffect(1.0 + 0.03 * CGFloat(1 + phase)) // ~3% “breath”
-                        .blur(radius: 12)
-                        .frame(height: 54)
-                    //                                       .animation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true), value: thisPulses)
-                    //                                       .onAppear { t = .pi / 2 }
-                        .transition(.opacity)
+                        .fill(color.opacity(0.22))
+                        .scaleEffect(1.08 + 0.04 * CGFloat(1 + phase))
+                        .blur(radius: 16)
+                        .frame(height: 64)
+                        .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
             }
             content
+                .compositingGroup()         // <-- supposed to keep blurs crisp
         }
     }
 }

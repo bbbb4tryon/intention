@@ -5,7 +5,6 @@
 //  Created by Benjamin Tryon on 6/14/25.
 //
 import SwiftUI
-import UIKit
 // views will use local color constants for validation, border, and secondary text
 // Shim: keep code compiling that expects ThemePalette, if any still refer to it!
 
@@ -41,13 +40,9 @@ private extension Color {
 //    }
     
     static func app(_ name: String, fallback: Color, bundle: Bundle = .main) -> Color {
-#if DEBUG
-        if bundle.path(forResource: name, ofType: nil) == nil {
-            print("[Theme] Missing color assed '\(name)'. Using ballback.")
-            return fallback
-        }
-        #endif
-        return Color(name, bundle: bundle)
+        // Compiled color assets aren’t files; just resolve directly.
+        // If the asset truly doesn’t exist, this will still gracefully resolve at runtime.
+        Color(name, bundle: bundle)
     }
 }
 

@@ -37,10 +37,10 @@ struct RecalibrationSheetChrome<Content: View>: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .overlay(alignment: .trailing) {
                             Button(action: onClose) {
-                                Image(systemName: "xmark")
+                                Image(systemName: "xmark.app.fill")
                                     .font(.headline)
-                                    .padding(12)
-                            }
+                                    .contentShape(Rectangle())
+                                                            }
                             .tint(p.accent)
                         }
                 }

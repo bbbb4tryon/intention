@@ -23,7 +23,7 @@ struct RenamingSheetChrome<Content: View>: View {
             if let g = p.gradientBackground {
                 LinearGradient(colors: g.colors, startPoint: g.start, endPoint: g.end).ignoresSafeArea()
             } else {
-                p.background.ignoresSafeArea()
+                p.background.ignoresSafeArea().allowsHitTesting(false)
             }
             VStack(spacing: 0) {
                 HStack {

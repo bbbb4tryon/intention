@@ -191,13 +191,14 @@ struct FeedbackV: View {
             .frame(maxWidth: 700, alignment: .leading)
         }
         .background(p.background.ignoresSafeArea())
+        .allowsHitTesting(false)
         .tint(p.accent)
         .navigationTitle("Feedback")
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
         //TODO: Or use .shadow(radius: 3, y: 1)
         .navigationBarTitleDisplayMode(.inline)
         .scrollDismissesKeyboard(.interactively) // swipe down to dismiss
-        .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 8) } // keeps content visible above the keyboard on small screens
+        .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 8).zIndex(0) } // keeps content visible above the keyboard on small screens
         .onAppear {
             // Keychain won't get involved in previews, only in real runs
             if IS_PREVIEW {

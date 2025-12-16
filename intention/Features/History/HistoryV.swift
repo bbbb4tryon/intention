@@ -201,6 +201,7 @@ struct HistoryV: View {
         }) {
             HStack {
                 Image(systemName: "plus")
+                    .contentShape(Rectangle())
                 T("Add Category", .action)
             }
         }
@@ -391,6 +392,7 @@ private struct RenameCategoryV: View {
                         }
                     }
                     .secondaryActionStyle(screen: screen)
+                    .contentShape(Rectangle())
                     .frame(maxWidth: .infinity, minHeight: 44)
                     
                     Button(action: onSave) {
@@ -400,6 +402,7 @@ private struct RenameCategoryV: View {
                         }
                     }
                     .primaryActionStyle(screen: screen)
+                    .contentShape(Rectangle())
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .disabled(
                         text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
@@ -448,6 +451,7 @@ private struct HistoryToasts: View {
                 archiveCapToast
             }
         }
+        .allowsHitTesting(false)
     }
     
     // MARK: - Individual toasts
@@ -470,6 +474,7 @@ private struct HistoryToasts: View {
                 }
             }
             .primaryActionStyle(screen: screen)
+            .allowsHitTesting(false)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -478,7 +483,8 @@ private struct HistoryToasts: View {
     }
     
     private var archiveCapToast: some View {
-        T("Archive capped at 200; oldest items were removed.", .tile)
+        T("Archive capped at 200, oldest items were removed.", .tile)
+            .lineLimit(nil)
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background(.ultraThinMaterial, in: Capsule())

@@ -17,9 +17,9 @@ struct BalanceSideDots: View {
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
     
-    private let fWOn:  CGFloat = 50
+    private let fWOn:  CGFloat = 80
     private let fWOff: CGFloat = 10
-    private let fHOn:  CGFloat = 50
+    private let fHOn:  CGFloat = 80
     private let fHOff: CGFloat = 10
     
     private let screen: ScreenName = .recalibrate
@@ -27,7 +27,7 @@ struct BalanceSideDots: View {
     private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     var body: some View {
-        T("On Cue, Lift Your Leg and Balance on the Requisit Leg", .label)
+        T("On Cue, Lift and Balance On Your: ", .label)
             .padding()
         
         HStack(spacing: 16) {
@@ -37,7 +37,7 @@ struct BalanceSideDots: View {
         .padding()
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(activeIndex == 0 ? "Left foot" : "Right foot")
+        .accessibilityLabel(activeIndex == 0 ? "Left Leg" : "Right Leg")
     }
 
     private func dot(label: String, isActive: Bool) -> some View {

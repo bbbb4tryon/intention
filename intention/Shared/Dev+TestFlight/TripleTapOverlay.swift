@@ -37,5 +37,4 @@ struct TripleTapOverlay: UIViewRepresentable {
             onTripleTap(pt)
         }
     }
-
 }

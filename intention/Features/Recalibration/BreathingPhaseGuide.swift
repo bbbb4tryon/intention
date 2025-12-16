@@ -38,7 +38,7 @@ struct BreathingPhaseGuide: View {
                 // MARK: Active phase dot
                 Circle()
                         .fill(i == activeIndex ? .clear : Color.intGreen)
-                    .frame(width: 6, height: 6)
+                    .frame(width: 8, height: 8)
                     .opacity(i == activeIndex ? 1 : 0)
                     .animation(.easeInOut(duration: 0.2), value: activeIndex)
             }
@@ -50,9 +50,10 @@ struct BreathingPhaseGuide: View {
         // thin accent border around the whole guide
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(p.accent.opacity(0.85), lineWidth: 1.5)
+                .stroke(p.accent.opacity(0.85), lineWidth: 2)
         )
         .padding(.horizontal, 4)
+        .padding(.vertical, 4)
     }
 }
 

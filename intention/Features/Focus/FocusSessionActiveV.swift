@@ -45,6 +45,7 @@ struct FocusSessionActiveV: View {
     @State private var showValidation: Bool = false
     @State private var isBusy = false
     @State private var isShowingRecalibrationToDebug = false
+    private let minDesiredHeight: CGFloat = 40
 //    @State private var isShowingOrganizerOverlayToDebug = false
     
     /// Theme hooks
@@ -308,8 +309,11 @@ struct FocusSessionActiveV: View {
                 primaryCTALabel
             }
             .primaryActionStyle(screen: screen)
-            .pulseAura(color: p.accent, active: focusVM.ui_isReadyForBegin)   // VM-driven
-            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+            .pulseAura(color: p.accent, active: focusVM.ui_isReadyForBegin || focusVM.phase == .idle)
+            .frame(maxWidth: .infinity, minHeight: minDesiredHeight, maxHeight: 48)
+            .lineLimit(1)
+            .minimumScaleFactor(0.95)
             .disabled(!focusVM.canPrimary)
             .accessibilityIdentifier("primaryCTA")
         }
@@ -328,7 +332,6 @@ struct FocusSessionActiveV: View {
     // keeps "show validation, submit, text" in one location
     private struct IntentionField: View {
         @EnvironmentObject var theme: ThemeManager
-    
         
         let p: ScreenStylePalette
         @Binding var text: String
@@ -359,6 +362,7 @@ struct FocusSessionActiveV: View {
                 
                 if showValidation, case .invalid = vState {
                     ValidationCaption(state: vState)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .onAppear {
@@ -391,7 +395,6 @@ struct FocusSessionActiveV: View {
     private struct TileSlot: View {
         @EnvironmentObject var theme: ThemeManager
     
-        
         let text: String
         let isFilled: Bool
         let isCompleted: Bool
@@ -404,7 +407,7 @@ struct FocusSessionActiveV: View {
         // Layout constants
         private let hPad: CGFloat = 10
         private let vPad: CGFloat = 8
-        private let minDesiredHeight: CGFloat = 1
+        private let minDesiredHeight: CGFloat = 40
         
         // --- Local Color Definitions for Focus ---
         private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
@@ -475,9 +478,16 @@ struct FocusSessionActiveV: View {
                     .stroke(stroke, lineWidth: 1)
             )
             // subtle lift to separate from page
-            .shadow(radius: 0.5,y: 0.5)
-            .contentShape(Rectangle())
+            .shadow(radius: 0.9,y: 0.9)
+            // container handles "local hit area" of edit
+            .frame(minHeight: minDesiredHeight)
+            // makes the entire rounded tile the hit-test region, not just the icon
+            .contentShape(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
+            .allowsHitTesting(isEditable || BuildInfo.isDebugOrTestFlight)
             .onTapGesture { onTap?() }
+            .accessibilityAddTraits(isEditable ? .isButton : [])
             .accessibilityElement(children: .combine)
             .accessibilityLabel(
                 isFilled
@@ -486,7 +496,7 @@ struct FocusSessionActiveV: View {
             )
             .accessibilityHint(
                 isEditable
-                ? "Double tap to edit"
+                ? "Tap to edit"
                 : (isFilled ? "" : "Add an intention above, then press Add.")
                 )
         }

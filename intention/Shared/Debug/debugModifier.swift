@@ -5,6 +5,8 @@
 //  Created by Benjamin Tryon on 6/13/25.
 //
 import SwiftUI
+//    .border(.red)           // on the Button
+//    .overlay(Rectangle().stroke(.blue, lineWidth: 1)) // on the container
 
 extension View {
     @ViewBuilder

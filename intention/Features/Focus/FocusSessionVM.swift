@@ -172,6 +172,7 @@ final class FocusSessionVM: ObservableObject {
         }
     }
     
+    
     /// View binds `.disabled(!canPrimary)`
     var canPrimary: Bool {
         switch logicalPhase {

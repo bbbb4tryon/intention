@@ -54,13 +54,13 @@ final class RecalibrationVM: ObservableObject {
     var currentBalancingMinutes: Int { balancingMinutes }
     
     // Prompts
-    let breathingPhases = ["Inhale", "Hold", "Exhale", "Hold"]
-    var breathingPhaseLine: String { breathingPhases.joined(separator: " . ") }
+    let breathingPhases = ["Inhale for 4 seconds", "Hold for 4 seconds", "Exhale for 4 seconds", "Hold for 4 seconds"]
+    var breathingPhaseLine: String { breathingPhases.joined(separator: " `\n` ") }
     
     // Policy knobs (VM decides "when")
     private var breathingMinutes: Int
     private var balancingMinutes: Int
-    private let inhale = 6, hold1 = 3, exhale = 6, hold2 = 3
+    private let inhale = 4, hold1 = 3, exhale = 6, hold2 = 3
 
     private let haptics: HapticsClient
     private let actor = ContinuousClockActor(config: .current) // reuse same actor type
@@ -251,7 +251,7 @@ final class RecalibrationVM: ObservableObject {
     }
 
 
-    // MARK: Breathing — 6/3/6/3, tiny cue each phase
+    // MARK: Breathing — 4/4/4/4, tiny cue each phase
     private func runBreathing() {
         
         let phases: [(idx: Int, secs: Int)] = [
