@@ -339,9 +339,6 @@ struct FocusSessionActiveV: View {
         
         @FocusState private var isFocused: Bool
         
-        // Local Color Definitions
-        private let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
-        
         // MARK: - Body
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
@@ -351,7 +348,7 @@ struct FocusSessionActiveV: View {
                     prompt: theme.styledText("Add Your Intended Task", as: .caption, in: .focus
                 ))
                 // set the text color to a dark, contrasting color
-                .foregroundStyle(companyGreen)
+                .foregroundStyle(Color.intGreen)
                 .focused($isFocused)
                 .submitLabel(.done)
                 .validatingField(state: vState, palette: p)
@@ -410,7 +407,6 @@ struct FocusSessionActiveV: View {
         private let minDesiredHeight: CGFloat = 1
         
         // --- Local Color Definitions for Focus ---
-        private let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
         private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
         private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
         private let colorDanger = Color.red
@@ -452,7 +448,7 @@ struct FocusSessionActiveV: View {
                         // Always show a checkmark for filled tiles
                         Image(systemName: trailingIconName)
                             .font(.body)                        // slightly increases size
-                            .foregroundStyle(isCompleted ? companyGreen : p.accent)   // more vivid than "accent"
+                            .foregroundStyle(isCompleted ? p.accent : Color.intGreen)   // more vivid than "accent"
                             .accessibilityHidden(true)
                     }
                     .baselineOffset(1)

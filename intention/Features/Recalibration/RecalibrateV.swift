@@ -9,6 +9,7 @@ import SwiftUI
 
 struct RecalibrationV: View {
     @Environment(\.dismiss) private var dismiss
+    
     @EnvironmentObject var theme: ThemeManager
 
     @ObservedObject var vm: RecalibrationVM
@@ -23,7 +24,8 @@ struct RecalibrationV: View {
     // Tunable presets users expect: quick, obvious, one tap.
     private let breathePreset = 60   // 1 min
     private let balancePreset = 60   // 1 min
-    
+
+    // Theme Hooks
     private let screen: ScreenName = .recalibrate
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
@@ -130,13 +132,13 @@ struct RecalibrationV: View {
                     
                     // MARK: Live indicators
                     if vm.mode == .balancing {
-                        RecalProgressBar(progress: progressFraction, p: p)
+                        RecalProgressBar(progress: progressFraction)
                             .padding(.top, 8)
                         // Balancing - “Switch feet” flashes briefly each minute
-                        BalanceSideDots(activeIndex: vm.balancingPhaseIndex, p: p)
+                        BalanceSideDots(activeIndex: vm.balancingPhaseIndex)
                                 .padding(.top, 12)
                     } else if vm.mode == .breathing, vm.phase != .none, vm.phase != .idle {
-                        RecalProgressBar(progress: progressFraction, p: p)
+                        RecalProgressBar(progress: progressFraction)
                             .padding(.top, 8)
                         // Breathing - modes and expanding dot
                         BreathingPhaseGuide(
@@ -229,7 +231,7 @@ struct RecalibrationV: View {
                     .monospacedDigit()
                     .frame(maxWidth: .infinity, alignment: .center)
                 
-                RecalProgressBar(progress: progressFraction, p: p)
+                RecalProgressBar(progress: progressFraction)
                     .padding(.top, 4)
                 
                 Button(role: .destructive) {
@@ -247,10 +249,7 @@ struct RecalibrationV: View {
 // MARK: Progress bar for Recalibration
 private struct RecalProgressBar: View {
     let progress: CGFloat   // 0.0 ... 1.0
-    let p: ScreenStylePalette
-    
-    // Local Color Definitions
-    private let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
+//    let p: ScreenStylePalette
     
     var body: some View {
         GeometryReader { geo in
@@ -258,7 +257,7 @@ private struct RecalProgressBar: View {
             let h: CGFloat = 10
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: h/2)
-                    .fill(p.surfaces.opacity(0.35))
+                    .fill(Color.intGreen.opacity(0.35))
                     .frame(height: h)
                 
                 // Progress fill - company green gradient
@@ -266,8 +265,8 @@ private struct RecalProgressBar: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                companyGreen,
-                                companyGreen.opacity(0.8)
+                                Color.intGreen,
+                                Color.intGreen.opacity(0.8)
                             ],
                             startPoint: .leading,
                             endPoint: .trailing
@@ -300,6 +299,7 @@ private extension RecalibrationV {
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(items, id: \.self) { Text("• \($0)") }
             }
+            .padding()
             .font(theme.fontTheme.toFont(.footnote))
             .foregroundStyle(p.text)
         }

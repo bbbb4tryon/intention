@@ -15,7 +15,6 @@ struct BreathingPhaseGuide: View {
     let p: ScreenStylePalette
     
     // --- Local Color Definitions by way of Recalibration ---
-    private let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     
@@ -27,7 +26,7 @@ struct BreathingPhaseGuide: View {
                     .font(.footnote.weight(i == activeIndex ? .semibold : .regular))
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(
-                        Capsule().fill(i == activeIndex ? companyGreen.opacity(0.90) : .clear)
+                        Capsule().fill(i == activeIndex ? .clear : Color.intGreen.opacity(0.90))
                     )
                     .overlay(
                         Capsule().stroke(i == activeIndex ? colorBorder : .clear, lineWidth: 1)
@@ -38,7 +37,7 @@ struct BreathingPhaseGuide: View {
                 
                 // MARK: Active phase dot
                 Circle()
-                    .fill(i == activeIndex ? companyGreen : .clear)
+                        .fill(i == activeIndex ? .clear : Color.intGreen)
                     .frame(width: 6, height: 6)
                     .opacity(i == activeIndex ? 1 : 0)
                     .animation(.easeInOut(duration: 0.2), value: activeIndex)

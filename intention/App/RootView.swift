@@ -237,7 +237,7 @@ struct RootView: View {
                 .navigationBarTitleDisplayMode(.inline)
             // Sets Icon tint
                 .tint(palFocus.accent)
-                // Force title to p.text otherwise
+            // Force title to p.text otherwise
                 .foregroundStyle(palFocus.text)
         }
             .tabItem { Image(systemName: "timer") }
@@ -250,9 +250,9 @@ struct RootView: View {
                 .navigationTitle("History")
                 .navigationBarTitleDisplayMode(.inline)
             // Uses focus's default accent (Leaf) - despite "History"
-            .tint(palFocus.accent)
+                .tint(palFocus.accent)
             // Force title to p.text otherwise
-            .foregroundStyle(palFocus.text)
+                .foregroundStyle(palFocus.text)
         }
             .tabItem { Image(systemName: "clock") }
         
@@ -264,9 +264,9 @@ struct RootView: View {
                 .navigationTitle("Settings")
                 .navigationBarTitleDisplayMode(.inline)
             // Uses focus's default accent (Leaf) - despite "Settings"
-            .tint(palFocus.accent)
+                .tint(palFocus.accent)
             // Force title to p.text otherwise
-            .foregroundStyle(palFocus.text)
+                .foregroundStyle(palFocus.text)
         }
             .tabItem { Image(systemName: "gear") }
         
@@ -279,9 +279,9 @@ struct RootView: View {
                         .navigationTitle("BugTest")
                         .navigationBarTitleDisplayMode(.inline)
                     // Uses focus's default accent (Leaf) - despite "History"
-                    .tint(palFocus.accent)
+                        .tint(palFocus.accent)
                     // Force title to p.text otherwise
-                    .foregroundStyle(palFocus.text)
+                        .foregroundStyle(palFocus.text)
                 }
                 .tabItem { Image(systemName: "ladybug") }
             }
@@ -307,29 +307,31 @@ struct RootView: View {
             .overlay(alignment: .bottom) {
                 TripleTapOverlay(height: 90) { _ in
                     requirePINThen(expected: "1521") {
-                        debug.toggleTab()
+                        Task { @MainActor in debug.toggleTab() }
                     }
                 }
             }
-//            .overlay(alignment: .bottom) {
-//                GeometryReader { geo in
-//                    Color.clear
-//                        .frame(height: max(geo.safeAreaInsets.bottom, 60, 60))
-//                        .contentShape(Rectangle())
-//                        .allowsHitTesting(true)
-//                        .ignoresSafeArea(edges: .bottom)
-//                        .simultaneousGesture(
-//                            TapGesture(count: 3).onEnded {
-//                                requirePINThen(expected: "1521") {
-//                                    debug.toggleTab()
-//                                }
-//                            }
-//                        )
-//                }
-//                .frame(height: 0) // we only care about overlay area
-//            }
+        //            .overlay(alignment: .bottom) {
+        //                GeometryReader { geo in
+        //                    Color.clear
+        //                        .frame(height: max(geo.safeAreaInsets.bottom, 60, 60))
+        //                        .contentShape(Rectangle())
+        //                        .allowsHitTesting(true)
+        //                        .ignoresSafeArea(edges: .bottom)
+        //                        .simultaneousGesture(
+        //                            TapGesture(count: 3).onEnded {
+        //                                requirePINThen(expected: "1521") {
+        //                                    debug.toggleTab()
+        //                                }
+        //                            }
+        //                        )
+        //                }
+        //                .frame(height: 0) // we only care about overlay area
+        //            }
         // MARK: draw Z gesture
-        .modifier(ZGestureOpener { debug.toggleTab() })
+            .modifier(ZGestureOpener {
+                Task { @MainActor in debug.toggleTab() }
+            })
         
         
         content
@@ -347,10 +349,10 @@ struct RootView: View {
         // MARK: - Applies current screen theme to background
             .toolbarBackground(tabBG, for: .navigationBar)
             .environmentObject(overlayManager)
-//            .sceneHandlers
-//            .launchHandlers
-//            .membershipHandlers
-//            .rootSheets(activeSheet: $activeSheet, memVM: memVM)
+        //            .sceneHandlers
+        //            .launchHandlers
+        //            .membershipHandlers
+        //            .rootSheets(activeSheet: $activeSheet, memVM: memVM)
         
         // MARK: App lifecycle
         // -- guardrail: scene handling lives at root --
@@ -369,8 +371,8 @@ struct RootView: View {
                         await focusVM.suspendTickingForBackground()
                         isBusy = false
                     }
-                
-                // Active state only calls short synchronous functions
+                    
+                    // Active state only calls short synchronous functions
                 case .active:
                     isBusy = true
                     // 3) recompute remaining (time) from snapshot & resume UI ticking if needed
@@ -414,21 +416,23 @@ struct RootView: View {
                     
                 }
             }
-
+        
         // MARK: Sheets
             .sheet(item: $activeSheet) { sheet in
                 switch sheet {
                 case .legal:
                     LegalAgreementSheetV(
                         onAccept: {
-                            LegalConsent.recordAcceptance()
-                            acceptedVersion = LegalConfig.currentVersion
-                            acceptedAtEpoch = Date().timeIntervalSince1970
-                            activeSheet = nil
+                            Task { @MainActor in
+                                //                                LegalConsent.recordAcceptance()
+                                acceptedVersion = LegalConfig.currentVersion
+                                acceptedAtEpoch = Date().timeIntervalSince1970
+                                activeSheet = nil
+                            }
                         },
-                        onShowTerms: { activeSheet = .terms },
-                        onShowPrivacy: { activeSheet = .privacy },
-                        onShowMedical: { activeSheet = .medical }
+                        onShowTerms: { Task { @MainActor in activeSheet = .terms } },
+                onShowPrivacy: { Task { @MainActor in activeSheet = .privacy } },
+                        onShowMedical: { Task { @MainActor in activeSheet = .medical } }
                     )
                     .environmentObject(theme)
                     
@@ -466,7 +470,9 @@ struct RootView: View {
         // ========== DEBUG PRESENTATION WIRING ==========
         // Recalibration "sheet" as a full-screen chrome for debug
             .fullScreenCover(isPresented: $debug.showRecalibration) {
-                RecalibrationSheetChrome(onClose: { debug.showRecalibration = false }) {
+                RecalibrationSheetChrome(onClose: {
+                    Task { @MainActor in debug.showRecalibration = false }
+                }) {
                     // Use a minimal mock for debug rendering ONLY here.
                     // (Does not mutate live session state.)
                     RecalibrationV(vm: RecalibrationVM.mockForDebug())
@@ -477,7 +483,7 @@ struct RootView: View {
             .fullScreenCover(isPresented: memVM.showSheetBinding) {
                 MembershipSheetChrome(onClose: {
                     // close the chrome and tell the VM to stop prompting
-                    memVM.shouldPrompt = false
+                    Task { @MainActor in memVM.shouldPrompt = false }
                 }) {
                     NavigationStack {
                         MembershipSheetV()
@@ -489,19 +495,24 @@ struct RootView: View {
                 }
                 //        .onDisappear { memVM.shouldPrompt = false }
             }
+        // MARK: onChange ...runs on Main
             .onChange(of: debug.showError) { show in
                 if show {
+                    Task { @MainActor in
                     overlayManager.debugErrorTitle = debug.errorTitle
                     overlayManager.debugErrorMessage = debug.errorMessage
                     overlayManager.isShowingDebugError = true
                     debug.showError = false
                 }
+                }
             }
 
-        // MARK: - PIN sheet
+        // MARK: - PIN sheet, handler safe, on main
             .sheet(isPresented: $debug.askForPin) {
                 PinUnlockSheet { entered in
-                    debug.submit(pin: entered)
+                    Task { @MainActor in debug.submit(pin: entered) }
+                    // return validation result - (toggle sheet internally on success
+                    return debug.isUnlocked
                 }
             }
     }

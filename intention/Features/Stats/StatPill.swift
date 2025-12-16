@@ -7,47 +7,53 @@
 
 import SwiftUI
 
-// Company brand color - matches logo/app icon
 struct StatPill: View {
     @EnvironmentObject var theme: ThemeManager
-
+    
     let icon: String
     let value: String
     let caption: String
     let screen: ScreenName
     
-    
     // Theme Hooks
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
-    // Local Color Definitions
-    private let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
+    // MARK: - Computed properties
+        private var iconGradient:
+    LinearGradient {
+        LinearGradient(colors: [Color.intGreen, Color.intGreen.opacity(0.7)],
+                       startPoint: .topLeading, endPoint: .bottomTrailing
+        )
+    }
+    
+    private var iconView: some View {
+        Image(systemName: icon)
+            .font(.title2)
+            .foregroundStyle(iconGradient)
+            .frame(height: 24)
+    }
+    
+    private var numberView: some View {
+        T(value, .title3)
+            .statNumberStyle(p)
+            .frame(height: 22)
+    }
+    
+    private var captionView: some View {
+        T(caption, .caption)
+            .statCaptionStyle(p)
+            .frame(height: 16)
+    }
     
     var body: some View {
         VStack(spacing: 4) {
-            // Company green as icon tint - subtle brand presence
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [
-                            companyGreen,
-                            companyGreen.opacity(0.7)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(height: 24)
+            // Green as icon tint - subtle brand presence
+            iconView
             
             // Top Row: the number (scales, doesn't wrap)
-            T(value, .title3)
-                .statNumberStyle(p)
-                .frame(height: 22)
-            T(caption, .caption)
-                .statCaptionStyle(p)
-                .frame(height: 16)
+            numberView
+            captionView
         }
         .multilineTextAlignment(.center)
         .accessibilityElement(children: .combine)

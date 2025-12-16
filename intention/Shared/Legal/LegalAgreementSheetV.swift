@@ -39,7 +39,8 @@ struct LegalAgreementSheetV: View {
                     
                     // Links row
                     HStack(alignment: .center, spacing: 10) {
-                        Button { onShowTerms()
+                        Button {
+                            Task { @MainActor in onShowTerms() }
                         } label: { T("Policies & Agreements", .label).underline() }
                             .buttonStyle(.plain).underline()
                     }
@@ -56,12 +57,14 @@ struct LegalAgreementSheetV: View {
                 .safeAreaInset(edge: .bottom){
                     // Sticky, always-visible CTA area
                     VStack(spacing: 8){
-                        Button("Agree & Continue", action: onAccept)
+                        Button("Agree & Continue") {
+                            Task { @MainActor in onAccept() }
+                        }
                             .buttonStyle(.borderedProminent)
                             .tint(p.accent)
                             .controlSize(.large)
                         
-                        T("You can review these anytime in **Settings › Legal**.", .caption)
+                        T("You can review these anytime in Settings › Legal.", .caption)
                     }
                     .padding(.top, 24)
 //                    Spacer(minLength: 0)

@@ -12,9 +12,6 @@ struct PrimaryActionStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     let palette: ScreenStylePalette
     
-    // Company green for subtle brand presence
-    private let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
-    
     func makeBody(configuration: Configuration) -> some View {
         let base = palette.accent
         let pressed = configuration.isPressed
@@ -48,10 +45,10 @@ struct PrimaryActionStyle: ButtonStyle {
                             .shadow(color: Color.black.opacity(isEnabled ? (pressed ? 0.10 : 0.22) : 0.00 ),
                                     radius: pressed ? 6 : 12, y: pressed ? 2 : 6)
                     )
-        // main shadow for depth
+            // main shadow for depth
             .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 3)
-        // subtle companyGreen glow
-            .shadow(color:companyGreen.opacity(0.15), radius: 12, x: 0, y: 4)
+
+            .shadow(color: Color.intGreen.opacity(0.15), radius: 12, x: 0, y: 4)
                     .scaleEffect(pressed ? 0.985 : 1.0)                         // press feedback
                     .opacity(isEnabled ? 1.0 : 0.85)                            // disabled dim
                     .animation(.easeInOut(duration: 0.12), value: configuration.isPressed)
@@ -93,9 +90,6 @@ struct SecondaryActionStyle: ButtonStyle {
 struct RecalibrationActionStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     let palette: ScreenStylePalette
-    
-    // Company green for subtle brand presence
-     private let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
 
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
@@ -119,7 +113,7 @@ struct RecalibrationActionStyle: ButtonStyle {
         // Main shadow
                    .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 3)
                    // Subtle company green glow
-                   .shadow(color: companyGreen.opacity(0.12), radius: 10, x: 0, y: 4)
+                   .shadow(color: Color.intGreen.opacity(0.12), radius: 10, x: 0, y: 4)
             .scaleEffect(pressed ? 0.992 : 1.0)
             .opacity(isEnabled ? 1.0 : 0.80)
             .animation(.easeInOut(duration: 0.12), value: configuration.isPressed)

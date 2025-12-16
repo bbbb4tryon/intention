@@ -27,17 +27,27 @@ enum TextRole {
 
 // MARK: - Loader with fallbacks (safe)
 private extension Color {
+//    static func app(_ name: String, fallback: Color, bundle: Bundle = .main) -> Color {
+//        // Prefer the color asset if it exists
+//        let trait = UITraitCollection.current
+//        if let ui = UIColor(named: name, in: bundle, compatibleWith: trait) {
+//            return Color(uiColor: ui)
+//        } else {
+//            #if DEBUG
+//            print("[Theme] Missing color asset '\(name)'. Using fallback.")
+//            #endif
+//            return fallback
+//        }
+//    }
+    
     static func app(_ name: String, fallback: Color, bundle: Bundle = .main) -> Color {
-        // Prefer the color asset if it exists
-        let trait = UITraitCollection.current
-        if let ui = UIColor(named: name, in: bundle, compatibleWith: trait) {
-            return Color(uiColor: ui)
-        } else {
-            #if DEBUG
-            print("[Theme] Missing color asset '\(name)'. Using fallback.")
-            #endif
+#if DEBUG
+        if bundle.path(forResource: name, ofType: nil) == nil {
+            print("[Theme] Missing color assed '\(name)'. Using ballback.")
             return fallback
         }
+        #endif
+        return Color(name, bundle: bundle)
     }
 }
 
@@ -458,9 +468,4 @@ extension ThemeManager {
 extension Color {
     // New utility color for actions where white might be too harsh
     static let intText = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
-    
-    static let intGreen = Color(red: 0.231, green: 0.733, blue: 0.639) // #3BBBA3
-    
-    static let companyGreen = Color(red: 0.78, green: 0.19, blue: 0.39) // #C73163
-    
 }

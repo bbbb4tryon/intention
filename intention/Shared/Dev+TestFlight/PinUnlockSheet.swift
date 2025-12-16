@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PinUnlockSheet: View {
-    var onSubmit: (String) -> Void
+    var onSubmit: (String) -> Bool
     @Environment(\.dismiss) private var dismiss
     @State private var pin: String = ""
     @State private var showError = false
@@ -31,18 +31,21 @@ struct PinUnlockSheet: View {
                     Button("Unlock") {
                         let p = pin.trimmingCharacters(in: .whitespacesAndNewlines)
                         if p.isEmpty { showError = true; return }
-                        let oldShowError = showError
-                        onSubmit(p)
+                        // UX SHOW ERROR ERROROVERLAY error overlay
                         // Heuristic: if still showing after submit, it failed.
                         Task { @MainActor in
-                            try await Task.sleep(nanoseconds: 150_000_000)  // ~0.15s
+//                            try await Task.sleep(nanoseconds: 150_000_000)  // ~0.15s
+                            let ok = onSubmit(p)
+                            if ok {
+                                dismiss()
+                            } else {
                             showError = true
                         }
 //                        // The router keeps the sheet up when wrong.
 //                        DispatchQueue.main.asyncAfter(deadline: .now()  0.1) {
 //                            showError = true
 //                            if oldShowError { /* keep */ }
-//                        }
+                        }
                     }
                     .disabled(pin.isEmpty)
                 }
