@@ -60,8 +60,12 @@ struct LegalAgreementSheetV: View {
                         Button("Agree & Continue") {
                             Task { @MainActor in onAccept() }
                         }
-                            .buttonStyle(.borderedProminent)
-                            .tint(p.accent)
+                        .primaryActionStyle(screen: screen)
+                        .contentShape(Rectangle())
+                        .pulseAura(color: p.accent, active: true)
+                        .frame(maxWidth: .infinity, minHeight: 40, maxHeight: 48)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.95)
                             .controlSize(.large)
                         
                         T("You can review these anytime in Settings › Legal.", .caption)

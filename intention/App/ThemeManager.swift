@@ -128,14 +128,14 @@ enum AppFontTheme: String, CaseIterable {
 private enum DefaultColors {
     
     static let backgroundLight = Color.app("AppBackground",
-                                           fallback: Color(red: 0.973, green: 0.965, blue: 0.980)) // F8F6FA -> dark would be 3B2F4E
+                                           fallback: Color(red: 0.886, green: 0.937, blue: 0.702)) // F8F6FA -> dark would be 3B2F4E
         .opacity(1) // no-op; forces load
    static let surfaces        = Color.app("AppSurfaces",
-                                       fallback: Color(red: 0.937, green: 0.922, blue: 0.953)) // EFEBF3 
+                                          fallback: Color(red: 0.941, green: 0.969, blue: 0.831)) // EFEBF3
     static let accent          = Color.app("AppAccent",
-                                       fallback: Color(red: 0.784, green: 0.196, blue: 0.392)) // C83264)
+                                           fallback: Color(red: 0.290, green: 0.231, blue: 0.110)) // C83264)
     static let text            = Color.app("AppText",
-                                       fallback: Color(red: 0.102, green: 0.086, blue: 0.118)) // 1A161E 48284D
+                                       fallback: Color(red: 0.239, green: 0.314, blue: 0.000)) // 1A161E 48284D
     
     // Fallbacks for previews / missing assets
     // (used only if the asset is absent in a preview-only context)
@@ -463,4 +463,6 @@ extension ThemeManager {
 extension Color {
     // New utility color for actions where white might be too harsh
     static let intText = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
+    
+//    static let intGreen = Color("intGreen")   
 }

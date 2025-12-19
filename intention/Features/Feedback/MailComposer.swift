@@ -13,7 +13,9 @@ struct MailComposer: UIViewControllerRepresentable {
     let to: [String]
     let subject: String
     let body: String
-    let onComplete: (Result<Void, Error>) -> Void
+//    let onComplete: (Result<Void, Error>) -> Void
+    // MFMailComposeResult: .sent, .cancelled, .saved, .failed
+    let onComplete: (MFMailComposeResult, Error?) -> Void
 
     final class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
         let parent: MailComposer
@@ -22,8 +24,9 @@ struct MailComposer: UIViewControllerRepresentable {
                                    didFinishWith result: MFMailComposeResult,
                                    error: Error?) {
             controller.dismiss(animated: true) {
-                if let error { self.parent.onComplete(.failure(error)) }
-                else { self.parent.onComplete(.success(())) }
+//                if let error { self.parent.onComplete(.failure(error)) }
+//                else { self.parent.onComplete(.success(())) }
+                self.parent.onComplete(result, error)
             }
         }
     }

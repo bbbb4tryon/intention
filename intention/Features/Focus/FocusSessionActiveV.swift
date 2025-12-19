@@ -45,8 +45,8 @@ struct FocusSessionActiveV: View {
     @State private var showValidation: Bool = false
     @State private var isBusy = false
     @State private var isShowingRecalibrationToDebug = false
+    @State private var showCancelConfirm = false
     private let minDesiredHeight: CGFloat = 40
-//    @State private var isShowingOrganizerOverlayToDebug = false
     
     /// Theme hooks
     private let screen: ScreenName = .focus
@@ -302,20 +302,47 @@ struct FocusSessionActiveV: View {
                 .environmentObject(theme)
             }
             
+//            
+//            Button(
+//                action: handlePrimaryCTATap
+//            ) {
+//                primaryCTALabel
+//            }
+//            .primaryActionStyle(screen: screen)
+//            .contentShape(Rectangle())
+//            .pulseAura(color: p.accent, active: focusVM.ui_isReadyForBegin || focusVM.phase == .idle)
+//            .frame(maxWidth: .infinity, minHeight: minDesiredHeight, maxHeight: 48)
+//            .lineLimit(1)
+//            .minimumScaleFactor(0.95)
+//            .disabled(!focusVM.canPrimary)
+//            .accessibilityIdentifier("primaryCTA")
             
-            Button(
-                action: handlePrimaryCTATap
-            ) {
-                primaryCTALabel
+            if focusVM.phase == .running || focusVM.phase == .paused {
+                // === CANCEL during active countdown ===
+                Button(role: .destructive) { showCancelConfirm = true } label: {
+                    HStack {
+                        Image(systemName: "xmark.circle.fill")
+                        T("Cancel Session", .action).monospacedDigit()
+                    }
+                }
+                .secondaryActionStyle(screen: screen)
+                .contentShape(Rectangle())
+                .frame(maxWidth: .infinity, minHeight: minDesiredHeight, maxHeight: 48)
+                .lineLimit(1)
+                .minimumScaleFactor(0.95)
+                .accessibilityIdentifier("cancelCTA")
+            } else {
+                // === Normal Add / Begin / Next ===
+                Button(action: handlePrimaryCTATap) { primaryCTALabel }
+                    .primaryActionStyle(screen: screen)
+                    .contentShape(Rectangle())
+                    .pulseAura(color: p.accent, active: focusVM.ui_isReadyForBegin || focusVM.phase == .idle)
+                    .frame(maxWidth: .infinity, minHeight: minDesiredHeight, maxHeight: 48)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.95)
+                    .disabled(!focusVM.canPrimary)
+                    .accessibilityIdentifier("primaryCTA")
             }
-            .primaryActionStyle(screen: screen)
-            .contentShape(Rectangle())
-            .pulseAura(color: p.accent, active: focusVM.ui_isReadyForBegin || focusVM.phase == .idle)
-            .frame(maxWidth: .infinity, minHeight: minDesiredHeight, maxHeight: 48)
-            .lineLimit(1)
-            .minimumScaleFactor(0.95)
-            .disabled(!focusVM.canPrimary)
-            .accessibilityIdentifier("primaryCTA")
         }
         
         .padding(.top, 12)
@@ -325,6 +352,16 @@ struct FocusSessionActiveV: View {
         .background(.thinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .animation(.easeInOut(duration: 0.2), value: focusVM.tiles)
+        .alert("Cancel?", isPresented: $showCancelConfirm) {
+            Button("Go Back", role: .cancel) { }
+            Button("Cancel Session", role: .destructive) {
+                focusVM.performAsyncAction {
+                    await focusVM.resetSessionStateForNewStart()
+                }
+            }
+        } message: {
+            Text("Stop timer, clear all tiles.")
+        }
     }
 }
     
@@ -350,8 +387,8 @@ struct FocusSessionActiveV: View {
                     text: $text,
                     prompt: theme.styledText("Add Your Intended Task", as: .caption, in: .focus
                 ))
-                // set the text color to a dark, contrasting color
-                .foregroundStyle(Color.intGreen)
+                // matches tile slot text
+                .foregroundStyle(p.text)
                 .focused($isFocused)
                 .submitLabel(.done)
                 .validatingField(state: vState, palette: p)

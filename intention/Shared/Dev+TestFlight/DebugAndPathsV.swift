@@ -18,15 +18,10 @@ struct DebugAndPathsV: View {
         NavigationStack {
             List {
                 Section("Visibility") {
-                    TripleTapOverlay(height: 80) { _ in
-                        requirePINThen(expected: "1521") { debug.toggleTab() }
-                    }
-                    Toggle("Show Debug Tab", isOn: $debug.showTab)
                     Toggle("Short Timers (5s/15s)", isOn: $prefs.debugShortTimers)
                         .onChange(of: prefs.debugShortTimers) { _ in
                             focusVM.applyCurrentTimerConfig()
                         }
-                    Button("Hide Tab Now") { debug.showTab = false }
                 }
 
                 Section("Focus 5s flow") {

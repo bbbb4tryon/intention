@@ -87,10 +87,16 @@ final class MembershipVM: ObservableObject {
         do {
             let paid = try await payment.purchaseMembership()
             await payment.refreshEntitlementStatus()
-            shouldPrompt = !(paid || isMember)
+            shouldPrompt = false
+//            shouldPrompt = !(paid || isMember)
             if !(paid || isMember) { throw MembershipError.purchaseFailed }
-        } catch {
-            shouldPrompt = !before
+        } catch is CancellationError {
+            // User backed out. Don’t keep a spinner/prompt up.
+            shouldPrompt = false
+            lastError = nil
+        }
+        catch {
+            shouldPrompt = !isMember
             lastError = error
             throw error
         }
@@ -99,7 +105,7 @@ final class MembershipVM: ObservableObject {
     func restoreMembershipOrPrompt() async throws {
         do {
             try await payment.restorePurchases()
-            shouldPrompt = !isMember
+            shouldPrompt = false
             if !isMember { throw MembershipError.restoreFailed }
             } catch {
                 let err = MembershipError.restoreFailed; setError(err); throw err

@@ -21,27 +21,27 @@ private extension View {
 
 struct FeedbackV: View {
     @EnvironmentObject var theme: ThemeManager
-
+    
     @EnvironmentObject var prefs: AppPreferencesVM
     
     @Environment(\.openURL) private var openURL
-
+    
     // Inputs
     @State private var name: String = ""
     @State private var email: String = ""
     @State private var message: String = ""
     @State private var userID: String = "" // auto-filled
-
+    
     // Validation states
     @State private var nameState: ValidationState = .none      // optional
     @State private var emailState: ValidationState = .none     // required
     @State private var messageState: ValidationState = .none   // required
-
+    
     @State private var showComposer = false
     @State private var composerPayload: (subject: String, body: String)? = nil
     @State private var showingAlert = false
     @State private var alertMsg = ""
-
+    
     private let maxMessageChars = 2000
     
     private let screen: ScreenName = .settings
@@ -62,136 +62,139 @@ struct FeedbackV: View {
     // --- MAYBE THESE TOO? ---
     private var fieldStrokeShape: RoundedRectangle { .init(cornerRadius: 10, style: .continuous) }
     private var cardShape: RoundedRectangle { .init(cornerRadius: 12, style: .continuous) }
-
+    
     
     // MARK: Section: Header
     @ViewBuilder private var headerRow: some View {
-        T("Send Feedback", .header).cardBackground()
+        T("Send Feedback", .header)
         //TODO: Or use .shadow(radius: 3, y: 1)
     }
     
-        // MARK: Section: Name
-        @ViewBuilder private var nameSection: some View {
-            Group {
-                T("Name (optional)", .label)
-                Spacer()
-                TextField("Jane Doe", text: $name)
-                    .textInputAutocapitalization(.words)
-                    .autocorrectionDisabled(false)
-                    .validatingField(state: nameState, palette: p)
-            }
+    // MARK: Section: Name
+    @ViewBuilder private var nameSection: some View {
+        Group {
+            T("Name (optional)", .label)
+            Spacer()
+            TextField("Jane Doe", text: $name)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled(false)
+                .validatingField(state: nameState, palette: p)
         }
-
-        // MARK: Section: Email
-        @ViewBuilder private var emailSection: some View {
-            Group {
-                T("Email (required)", .label)
-                    .cardBackground()
-
-                Spacer()
-                TextField("name@example.com", text: $email)
-                    .keyboardType(.emailAddress)
-                    .textContentType(.emailAddress)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled(true)
-                    .validatingField(state: emailState, palette: p)
-                ValidationCaption(state: emailState)
-            }
+    }
+    
+    // MARK: Section: Email
+    @ViewBuilder private var emailSection: some View {
+        Group {
+            T("Email (required)", .label)
+            
+            Spacer()
+            TextField("name@example.com", text: $email)
+                .keyboardType(.emailAddress)
+                .textContentType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled(true)
+                .validatingField(state: emailState, palette: p)
+            ValidationCaption(state: emailState)
         }
-        
-        // MARK: Section: Message
-        @ViewBuilder private var messageSection: some View {
-            Group {
-                HStack {
-                    T("Message", .label)
-                        .cardBackground()
-                    Spacer()
-                    Text(messageCountText)
-                        .font(.caption)
-                        .foregroundStyle(textSecondary)
-                        .monospacedDigit()
-                }
+    }
+    
+    // MARK: Section: Message
+    @ViewBuilder private var messageSection: some View {
+        Group {
+            HStack {
+                T("Message", .label)
                 
-                TextEditor(text: $message)
-                    .frame(minHeight: 160)
-                    .textInputAutocapitalization(.sentences)
-                    .autocorrectionDisabled(false)
-                    .padding(12)
-                    .overlay(
-                        fieldStrokeShape
-                            .stroke(messageState.isInvalid ? colorDanger : colorBorder, lineWidth: 1)
-                    )
-                    .background(fieldStrokeShape.fill(Color.clear))
-                    .fieldClip()
-                ValidationCaption(state: messageState)
+                Spacer()
+                Text(messageCountText)
+                    .font(.caption)
+                    .foregroundStyle(textSecondary)
+                    .monospacedDigit()
             }
+            
+            TextEditor(text: $message)
+                .frame(minHeight: 160)
+                .textInputAutocapitalization(.sentences)
+                .autocorrectionDisabled(false)
+                .padding(12)
+                .overlay(
+                    fieldStrokeShape
+                        .stroke(messageState.isInvalid ? colorDanger : colorBorder, lineWidth: 1)
+                )
+                .background(fieldStrokeShape.fill(p.background.opacity(0.0001))) // keeps hit-testing safe
+                .fieldClip()
+            ValidationCaption(state: messageState)
         }
-        
-        // MARK: Section: Device Row
-        @ViewBuilder private var deviceRow: some View {
-            // Auto insert userID/deviceID from your Keychain helper
-            T(deviceRowText, .caption)
-                .foregroundStyle(textSecondary)
-                .textSelection(.enabled)
-        }
-        
-        // MARK: Section: Send button
-        @ViewBuilder private var sendButtonSection: some View {
+    }
+    
+    // MARK: Section: Device Row
+    @ViewBuilder private var deviceRow: some View {
+        // Auto insert userID/deviceID from your Keychain helper
+        T(deviceRowText, .caption)
+            .foregroundStyle(textSecondary)
+            .textSelection(.enabled)
+    }
+    
+    // MARK: Section: Send button
+    @ViewBuilder private var sendButtonSection: some View {
         Button(action: sendTapped) {
             T("Send", .action)
-                .cardBackground()
                 .monospacedDigit()
         }
         .primaryActionStyle(screen: screen)
         .disabled(!canSend)
     }
-        
+    
     // Keep the heavy sheet content out of the main body closure
-        // MARK: Mail sheet content
-        @ViewBuilder private var composerSheet: some View {
-            if MFMailComposeViewController.canSendMail(), let payload = composerPayload {
-                MailComposer(
-                    to: ["feedback@argonnesoftware.com"],
-                    subject: payload.subject,
-                    body: payload.body
-                ) { result in
-                    switch result {
-                    case .success:
-                        alertMsg = "Thanks! Feedback sent!"
-                    case .failure(let err):
-                        alertMsg = "Could not send: \(err.localizedDescription)"
-                    }
-                    showingAlert = true
+    // MARK: Mail sheet content
+    @ViewBuilder private var composerSheet: some View {
+        if MFMailComposeViewController.canSendMail(), let payload = composerPayload {
+            MailComposer(
+                to: ["feedback@argonnesoftware.com"],
+                subject: payload.subject,
+                body: payload.body
+            ) { result, err in
+                switch result {
+                case .sent:
+                    alertMsg = "Thanks! Feedback sent!"; showingAlert = true
+                case .failed:
+                    alertMsg = "Could not send: \(err?.localizedDescription ??  "Unknown error")"; showingAlert = true
+                case .saved, .cancelled:
+                    // backed out or saved draft - no alert
+                    break
+                @unknown default:
+                    break
                 }
-            } else {
-                // Fallback shouldn’t appear as a sheet; we’ll use openURL instead.
-                EmptyView()
             }
+        } else {
+            // Fallback shouldn’t appear as a sheet; we’ll use openURL instead.
+            EmptyView()
         }
+    }
     
     // MARK: CanSend: Bool
     private var canSend: Bool {
         emailIsValid(email) && !trimmedMessage.isEmpty
     }
-
+    
     var body: some View {
         // Email body with useful info for bug reports
         //        let body = "\n\nApp Version: \(version)\nDevice: \(deviceType)\niOS: \(osVersion)"
         
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                headerRow
-                nameSection
-                emailSection
-                messageSection
-                deviceRow
-                sendButtonSection
+            Page(top: 4, alignment: .leading) {
+                T("Feedback", .header)
+                    .padding(.bottom, 4)
+                
+                Card {  nameSection }
+                Card { emailSection }
+                Card { messageSection }
+                Card { deviceRow }
+                Card { sendButtonSection }
             }
-            .padding(20)
-            .frame(maxWidth: 700, alignment: .leading)
+            //            .padding(20)
+            //            .frame(maxWidth: 700, alignment: .leading)
         }
         .background(p.background.ignoresSafeArea())
-        .allowsHitTesting(false)
         .tint(p.accent)
         .navigationTitle("Feedback")
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
@@ -229,7 +232,7 @@ struct FeedbackV: View {
     @discardableResult
     private func openMailTo(subject: String, body: String) -> Bool {
         let to = "feedback@argonnesoftware.com"
-
+        
         var comps = URLComponents()
         comps.scheme = "mailto"
         comps.path = to
@@ -237,73 +240,78 @@ struct FeedbackV: View {
             URLQueryItem(name: "subject", value: subject),
             URLQueryItem(name: "body", value: body)
         ]
-
+        
         guard let url = comps.url else { return false }
-
+        
         // Prefer the environment's openURL (respects scene), but also probe UIApplication as a fallback.
         var opened = false
         openURL(url) { success in opened = success }
         if opened { return true }
-
+        
         // Fallback probe (some contexts call this synchronously)
         if UIApplication.shared.canOpenURL(url) {
             UIApplication.shared.open(url)
             return true
         }
-
+        
         return false
     }
-
+    
     // MARK: - SendTapped()
     @MainActor
     private func sendTapped() {
         // validate now (gate surfacing)
         emailState = emailIsValid(email) ? .valid : .invalid(messages: ["Enter a valid email address."])
         messageState = message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? .invalid(messages: ["Message can’t be empty."])
-            : .valid
+        ? .invalid(messages: ["Message can’t be empty."])
+        : .valid
         guard canSend else { return }
-
+        
         let subject = "Intendly Feedback"
         let body = composedBody()
         composerPayload = (subject, body)
-
-        // 1) Try user's default mail client via mailto:
-        if openMailTo(subject: subject, body: body) {
-            alertMsg = "Your mail app was opened with a pre-filled message."
-            showingAlert = true
-            return
-        }
-
-        // 2) Fallback to in-app composer (Apple Mail backend)
+//        
+//        // 1) Try user's default mail client via mailto:
+//        if openMailTo(subject: subject, body: body) {
+//            alertMsg = "Your mail app was opened with a pre-filled message."
+//            showingAlert = true
+//            return
+//        }
+        
         if MFMailComposeViewController.canSendMail() {
+            // prefer in-app composer -> definite sent/failed callback
             showComposer = true
             return
         }
-
-        // 3) No handler + no Mail account: show a helpful message
+        
+        // fallback to user's default mail app via mailto: (no alert needed)
+        if openMailTo(subject: subject, body: body) {
+            return
+        }
+        
+        // no handler + no Mail account: show a helpful message
         alertMsg = "No mail app available. Please configure a mail app or copy your message."
         showingAlert = true
     }
-
+    
     // MARK: ComposedBody()
     private func composedBody() -> String {
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
         let sys = UIDevice.current.systemVersion
         let model = UIDevice.current.model
-
+        
         return """
         Name: \(name.isEmpty ? "(not provided)" : name)
         Email: \(email)
         Device ID: \(userID)
         App: \(appVersion) (\(build)) • iOS \(sys) • \(model)
-
+        
         ---- Message ----
         \(message)
         """
     }
-
+    
     private func fallbackMailToIfNeeded() {
         guard let payload = composerPayload else { return }
         // URL-encode (simple)
@@ -317,7 +325,7 @@ struct FeedbackV: View {
             showingAlert = true
         }
     }
-
+    
     private func emailIsValid(_ s: String) -> Bool {
         let trimmed = s.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count <= 254 else { return false }

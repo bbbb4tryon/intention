@@ -16,7 +16,9 @@ struct DynamicCountdown: View {
     let progress: CGFloat
     private let activeSize: CGFloat = 280       // was 220
     private let compactSize: CGFloat = 72       // was 60
-    let digitSize: CGFloat = 44                 // small so circle/pause feel larger
+    private let ringWidth: CGFloat = 26         // thickness of the strip
+    let digitSize: CGFloat = 144                 // small so circle/pause feel larger
+    
     
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: .focus) }
@@ -88,6 +90,11 @@ struct DynamicCountdown: View {
                 // Use opacity(0.2) or Color.clear here, the dimmed effect is applied below
                     .fill(palette.background.opacity( 0.2))
                 
+                // track shadows - shows full circle behind the arc
+                Circle()
+                    .stroke(palette.background.opacity(0.15), lineWidth: ringWidth)
+//                .fill(palette.background.opacity(0.12)) // a platform, instead
+                
                 // Pause overlay -- appears last, on top of everything
                 if fVM.phase == .paused {
                     // PAUSED STATE
@@ -113,10 +120,18 @@ struct DynamicCountdown: View {
                     // RUNNING/ACTIVE STATE
                     
                     // Pie slicing
-                    UnwindingPieShape(progress: progress)
-                        .fill(palette.accent)
-                    
-                    
+//                    UnwindingPieShape(progress: progress)
+//                        .fill(palette.accent)
+  
+                    // Ring that unwinds remaining progress
+                    Circle()
+                        .trim(from: 0, to: max(0, min(1, progress)))
+                        // start at 12 o'clock
+                        .rotation(Angle(degrees: -90))
+                        .stroke(
+                            palette.accent,
+                            style: StrokeStyle(lineWidth: ringWidth, lineCap: .round, lineJoin: .round)
+                        )
                     // Time text in the center
                     countdownLabel
                     // optional dim when paused; here it's only active/running so keep full
