@@ -336,7 +336,9 @@ private struct CategoryCard: View {
     private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        Card {
+            VStack(alignment: .leading, spacing: 8) {
+
             CategoryHeaderRow(
                 title: isArchive ? "Archive" : category.persistedInput.ifEmpty("Untitled"),
                 count: category.tiles.count,
@@ -352,7 +354,8 @@ private struct CategoryCard: View {
             .environmentObject(viewModel)
             .environmentObject(theme)
         }
-        .padding(.horizontal, 6)
+    }
+//        .padding(.horizontal, 6)
     }
 }
 

@@ -1,21 +1,28 @@
 //
-//  Pie.swift
+//  Ring.swift
 //  intention
 //
 //  Created by Benjamin Tryon on 11/3/25.
 //
 import SwiftUI
 
-struct Pie: View {
+/// `Ring` strokes a circle;
+/// controls diminishing ring movement;
+/// should not have inset;
+/// controls timestring but not the timestring style;
+/// controls ticks via its internal `Timer`; no pause/resume
+struct Ring: View {
     @EnvironmentObject var theme: ThemeManager
 
     @State private var remainingTime = 60.0
     let totalTime: TimeInterval = 60.0
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
-    // Visual constants
-    private let size: CGFloat = 280           // square to avoid oval artifacts
-    private let ringWidth: CGFloat = 26       // thick purple strip
+    // Geometry, not text fill
+    // Square the ring nests inside
+    private let size: CGFloat = 80
+    // Thickness the purple strip
+    private let ringWidth: CGFloat = 26
     private let digitSize: CGFloat = 96       // giant countdown
     
     var body: some View {
@@ -24,7 +31,7 @@ struct Pie: View {
 //            Circle()
 //                .fill(palette.background.opacity(0.2))
 //            
-//            UnwindingPieShape(progress: remainingTime / totalTime)
+//            UnwindingRing(progress: remainingTime / totalTime)
 //                .fill(palette.accent)
 //            
 //        }
@@ -64,7 +71,7 @@ struct Pie: View {
 
 #if DEBUG
 #Preview {
-    Pie()
+    Ring()
         
 }
 #endif

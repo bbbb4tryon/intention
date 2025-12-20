@@ -4,8 +4,10 @@
 //
 //  Created by Benjamin Tryon on 6/19/25.
 //
-//What’s happening (why it “finishes”)
 
+/*
+ === ternary order ( __ ? last : first) "remember as LAF aka Laugh"
+ */
 
 import SwiftUI
 
@@ -224,7 +226,7 @@ struct RootView: View {
         
         
         // Focus Tab
-        let focusContent    = FocusSessionActiveV(
+        let focusContent    = FocusV(
             focusVM: focusVM,     // not viewModel:focusVM - focusVM: focusVM matches view's property name
             recalibrationVM: recalVM
         )
@@ -236,11 +238,9 @@ struct RootView: View {
         
         let focusNav        = NavigationStack {
             focusScreen
-                .navigationTitle("Focus")
-                .navigationBarTitleDisplayMode(.inline)
-            // Sets Icon tint
+                // Sets Icon tint
                 .tint(palFocus.accent)
-            // Force title to p.text otherwise
+                // Force title to p.text otherwise
                 .foregroundStyle(palFocus.text)
         }
             .tabItem { Image(systemName: "timer") }

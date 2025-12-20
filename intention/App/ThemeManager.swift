@@ -26,18 +26,6 @@ enum TextRole {
 
 // MARK: - Loader with fallbacks (safe)
 private extension Color {
-//    static func app(_ name: String, fallback: Color, bundle: Bundle = .main) -> Color {
-//        // Prefer the color asset if it exists
-//        let trait = UITraitCollection.current
-//        if let ui = UIColor(named: name, in: bundle, compatibleWith: trait) {
-//            return Color(uiColor: ui)
-//        } else {
-//            #if DEBUG
-//            print("[Theme] Missing color asset '\(name)'. Using fallback.")
-//            #endif
-//            return fallback
-//        }
-//    }
     
     static func app(_ name: String, fallback: Color, bundle: Bundle = .main) -> Color {
         // Compiled color assets aren’t files; just resolve directly.
@@ -97,32 +85,6 @@ enum AppFontTheme: String, CaseIterable {
     }
 }
 
-// MARK: Color Constants
-// Theme Name,Background Feel,Primary Text,Vibrant Accent
-// Pale Apricot,"Warm, Soft, Encouraging",Deep Umber (#4A3B1C),Electric Blue (#007AFF)
-// Sea,"Cool, Crisp, Professional",Deep Teal (#1C3B4A),Vibrant Citron (#B5C808)
-// Dusk,"Subtle, Clean, Elegant",Very Dark Plum (#1A161E),Deep Rose (#C83264)
-// Primary Background: Pale Apricot (FBF6F3) - Soft & Encouraging
-
-// MARK: - DefaultColors (Assets are the truth)
-//private enum DefaultColors {
-//    // Apricot FBF6F3
-//    static let backgroundLight = Color(red: 0.984, green: 0.965, blue: 0.953)
-//    
-//    // Surfaces/Card: Slightly darker Apricot (F4EDE9) - Subtle Warm Depth
-//    static let surfaces = Color(red: 0.957, green: 0.929, blue: 0.914)
-//    
-//    // Accent: Electric Blue (007AFF) - High-impact CTA
-//    static let accent = Color(red: 0.000, green: 0.480, blue: 1.000)
-//    
-//    // Deep Umber (4A3B1C) - High contrast & Warm
-//    static let text = Color(red: 0.290, green: 0.231, blue: 0.110)
-//    
-//    // Dark Text/Surface (Recalibrate): Same as text for consistency
-//    static let topDark = text // #4A3B1C
-//    // Recalibrate bottom light: Matches background for clean transition
-//    static let bottomLight = backgroundLight // #FBF6F3
-//}
 
 //// New Primary Background: Pale Dusk Gray (F8F6FA) - Subtle & Clean
 private enum DefaultColors {
@@ -136,30 +98,9 @@ private enum DefaultColors {
                                            fallback: Color(red: 0.290, green: 0.231, blue: 0.110)) // C83264)
     static let text            = Color.app("AppText",
                                        fallback: Color(red: 0.239, green: 0.314, blue: 0.000)) // 1A161E 48284D
-    
-    // Fallbacks for previews / missing assets
-    // (used only if the asset is absent in a preview-only context)
-//    static let _fallbackBackground = Color(red: 0.973, green: 0.965, blue: 0.980) // F8F6FA
-//    static let _fallbackSurfaces    = Color(red: 0.937, green: 0.922, blue: 0.953) // EFEBF3
-//    static let _fallbackAccent     = Color(red: 0.784, green: 0.196, blue: 0.392) // C83264
-//    static let _fallbackText       = Color(red: 0.102, green: 0.086, blue: 0.118) // 1A161E
+
     static let _topDark = text // Dark Text/Surface (Recalibrate): Same as text for consistency
     static let bottomLight = backgroundLight // Recalibrate bottom light: Matches new background for clean transition
-//    static let backgroundLight = Color(red: 0.973, green: 0.965, blue: 0.980)
-//
-//    // New Surface/Card: Slightly darker Dusk Gray (EFEBF3) - Elegant Depth
-//    static let surface = Color(red: 0.937, green: 0.922, blue: 0.953)
-//
-//    // New Accent: Deep Rose (C83264) - Vibrant CTA
-//    static let accent = Color(red: 0.784, green: 0.196, blue: 0.392)
-//
-//    // Text: Very Dark Plum (1A161E) - Highest contrast
-//    static let text = Color(red: 0.102, green: 0.086, blue: 0.118)
-//
-//    // Dark Text/Surface (Recalibrate): Same as text for consistency
-//    static let topDark = text // #1A161E
-//    // Recalibrate bottom light: Matches new background for clean transition
-//    static let bottomLight = backgroundLight // #F8F6FA
 }
 
 // Primary Background: Pale Blue-Gray (F3F6F9) - Crisp & Calm
@@ -193,21 +134,13 @@ private enum SeaDefaultColors {
     )
 }
 
-//
-//
-//// MARK: OrganizerOverlay
-//private enum OrgBG {
-//    // TopLight and BottomDark are now assigned based on the new backgroundMedium color if needed
-//    static let topLight = DefaultColors.backgroundLight
-//    static let middleLight = DefaultColors.backgroundMiddle
-//    static let bottomDark = DefaultColors.backgroundMedium
-//}
 
 // MARK: Recalibrate Sheet
 private enum RecalibrateBG {
     static let gradient: ScreenStylePalette.LinearGradientSpecial = .init(
         colors: [
-            DefaultColors.text.opacity(0.92),   // top: very dark, better contrast
+//            DefaultColors.text.opacity(0.92),   // top: very dark, better contrast
+            Color.gray.opacity(0.92),
             DefaultColors.text.opacity(0.66),   // soften banding
             DefaultColors.backgroundLight       // bottom: page bg
         ],
@@ -219,8 +152,9 @@ private enum RecalibrateBG {
 private enum MembershipBG {
     static let gradient: ScreenStylePalette.LinearGradientSpecial = .init(
         colors: [
-            DefaultColors.accent.opacity(0.92),
-            DefaultColors.accent.opacity(0.75),
+//            DefaultColors.accent.opacity(0.92),
+//            DefaultColors.accent.opacity(0.75),
+            Color.gray.opacity(0.92),
             DefaultColors.surfaces                 // calmer base for legibility
         ],
         start: .topLeading, end: .bottomTrailing
@@ -276,22 +210,6 @@ enum AppColorTheme: String, CaseIterable {
                        text: DefaultColors.text,                 // content mostly on light tones
                        gradientBackground: MembershipBG.gradient
                 )
-                //
-                //            case .organizer:
-                //                // superior contrast (6.1:1) against the light gradient
-                //                /*#7b6428*/ let organizerText = Color(red: 0.4824, green: 0.3922, blue: 0.1569)
-                //                return .init(
-                //                    primary: DefaultColors.accent,               // CTA color (citron)
-                //                    background: .clear,                         // clear, to see gradient
-                //                    surface: .clear,                            // let gradient breath
-                //                    accent: organizerText,                      // toolbar tint (X button, etc)
-                //                    text: organizerText,          // primary text
-                //                    gradientBackground: .init(
-                //                        colors: [OrgBG.topLight, OrgBG.bottomDark],
-                //                        start: .topLeading,
-                //                        end: .bottomTrailing // ↖️ Diagonal flow
-                //                    )
-                //                )
             }
             
             // MARK: - Sea
@@ -334,21 +252,6 @@ enum AppColorTheme: String, CaseIterable {
                                             end: .trailing // ➡️ Horizontal flow
                                         )
                 )
-                //
-                //            case .organizer:
-                //                // Unique Gradient Direction: Vertical
-                //                    return .init(
-                //                        primary: SeaDefaultColors.surface,
-                //                        background: .clear, // clear, to see gradient through FocusShell
-                //                        surface: SeaDefaultColors.surfaces.opacity(0.12),
-                //                        accent: SeaDefaultColors.accent,
-                //                        text: SeaDefaultColors.text,
-                //                        gradientBackground: .init(
-                //                            colors: seaGradientColors,
-                //                            start: .top,
-                //                            end: .bottom // ⬇️ Vertical flow
-                //                        )
-                //                        )
             }
         }
     }

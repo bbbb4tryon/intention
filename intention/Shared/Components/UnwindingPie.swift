@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct UnwindingPieShape: Shape {
+struct UnwindingRing: Shape {
     var progress: Double        // from 0.0 to 1.0
     
     var animatableData: Double {
@@ -37,7 +37,7 @@ struct UnwindingPieShape: Shape {
     }
 }
 
-//struct Pie: View {
+//struct Ring: View {
 //    @EnvironmentObject var theme: ThemeManager \r private var systemScheme
 //    @State private var remainingTime = 60.0
 //    let totalTime: TimeInterval = 60.0
@@ -49,7 +49,7 @@ struct UnwindingPieShape: Shape {
 //            Circle()
 //                .fill(palette.background.opacity(0.2))
 //            
-//            UnwindingPieShape(progress: remainingTime / totalTime)
+//            UnwindingRing(progress: remainingTime / totalTime)
 //                .fill(palette.accent)
 //            
 //        }
@@ -63,7 +63,7 @@ struct UnwindingPieShape: Shape {
 //
 //#if DEBUG
 //#Preview {
-//    Pie()
+//    Ring()
 //        
 //}
 //#endif

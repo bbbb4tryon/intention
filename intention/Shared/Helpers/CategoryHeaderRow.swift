@@ -58,7 +58,7 @@ struct CategoryHeaderRow: View {
                     .foregroundStyle(iconTint)
             }
             
-            T(title, .label)
+            T(title, .section)
                 .lineLimit(2)
             
             Spacer()

@@ -196,7 +196,7 @@ struct FeedbackV: View {
         }
         .background(p.background.ignoresSafeArea())
         .tint(p.accent)
-        .navigationTitle("Feedback")
+        .navigationTitle("Feedback For Us")
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
         //TODO: Or use .shadow(radius: 3, y: 1)
         .navigationBarTitleDisplayMode(.inline)

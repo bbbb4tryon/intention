@@ -1,5 +1,5 @@
 //
-//  DynamicMessageAndActionArea.swift
+//  CountdownMessages.swift
 //  intention
 //
 //  Created by Benjamin Tryon on 6/18/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct DynamicMessageAndActionArea: View {
+struct CountdownMessages: View {
     @EnvironmentObject var theme: ThemeManager
     @EnvironmentObject var focusVM: FocusSessionVM
     
@@ -82,7 +82,7 @@ struct DynamicMessageAndActionArea: View {
             } else if focusVM.tiles.count < 2, focusVM.phase == .running {
                 T("Finish adding", .label)
             } else if focusVM.phase == .idle {                           // if needed, hint like "Add next intention above"
-            } else if focusVM.phase == .paused {                        // no text needed - handled in DynamicCountdown()
+            } else if focusVM.phase == .paused {                        // no text needed - handled in Countdown()
             }
         }
             .padding(.vertical, 8)

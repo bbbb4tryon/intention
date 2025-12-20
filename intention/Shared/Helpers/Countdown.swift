@@ -1,5 +1,5 @@
 //
-//  DynamicCountdown.swift
+//  Countdown.swift
 //  intention
 //
 //  Created by Benjamin Tryon on 8/13/25.
@@ -7,19 +7,31 @@
 
 import SwiftUI
 
-struct DynamicCountdown: View {
+/// `Countdown` applies inset to both the track and active arc - controls inward growth;
+/// controls timestring style;
+/// builds `countdownLabel` - monospaced bold, soft outline, shadow;
+/// adjusts digit fonts
+/// --- note: digits are auto-scale to ring, that is, `digitSize`proportionally ties font inside inner diameter...always fits, regardless of `activeSize` or `ringWidth`---
+/// no pause/resume
+struct Countdown: View {
     @EnvironmentObject var theme: ThemeManager
     @EnvironmentObject var fVM: FocusSessionVM
+    
+    // MARK: Theme Hooks
     let palette: ScreenStylePalette
     
-    /// Current progress sizes (0.0 to 1.0), passed from FocusSessionActiveV
+    // MARK: Derived
     let progress: CGFloat
-    private let activeSize: CGFloat = 280       // was 220
-    private let compactSize: CGFloat = 72       // was 60
-    private let ringWidth: CGFloat = 26         // thickness of the strip
-    let digitSize: CGFloat = 144                 // small so circle/pause feel larger
-    
-    
+    // Geometry, not text fill
+    // - activeSize enlarges/shrinks outer ring diameter
+    private let activeSize: CGFloat = 220
+    private let compactSize: CGFloat = 72
+    private let ringWidth: CGFloat = 20
+    // Last Double value after 2nd `*` controls digit size within the hole of the ring
+    private var digitSize: CGFloat { (activeSize - ringWidth * 2) * 0.92 }      // fill 52% of that hole
+    private var insetComputed: CGFloat { ringWidth / 2 }
+//    private var insetComputed: CGFloat = ringWidth
+        
     private var T: (String, TextRole) -> Text {
         { key, role in theme.styledText(key, as: role, in: .focus) }
     }
@@ -49,15 +61,15 @@ struct DynamicCountdown: View {
         }
     }
     
-    // --- Local Color Definitions for the Pie and Countdown ---
-    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
-    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
+    // --- Local Color Definitions for the Ring and Countdown ---
+//    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
+//    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     private let colorDanger = Color.red
     
     // MARK: Countdown Label (digits with outline + shadow)
     private var countdownLabel: some View {
-        // Base styled text from ThemeManager (role: .label)
-        let base = T(fVM.formattedTime, .label)
+        // TODO: COUNTDOWN TIMESTRING FONT SIZE IS HERE
+        let base = T(fVM.formattedTime, .largeTitle)
         
         // Apply the monospaced, large font *once*
         let styled = base
@@ -90,8 +102,10 @@ struct DynamicCountdown: View {
                 // Use opacity(0.2) or Color.clear here, the dimmed effect is applied below
                     .fill(palette.background.opacity( 0.2))
                 
-                // track shadows - shows full circle behind the arc
+                // (1) faint track ring (center remains empty
                 Circle()
+                    // bias thickness towards center
+                    .inset(by: insetComputed)
                     .stroke(palette.background.opacity(0.15), lineWidth: ringWidth)
 //                .fill(palette.background.opacity(0.12)) // a platform, instead
                 
@@ -119,12 +133,14 @@ struct DynamicCountdown: View {
                 } else {
                     // RUNNING/ACTIVE STATE
                     
-                    // Pie slicing
-//                    UnwindingPieShape(progress: progress)
+                    // Ring slicing
+//                    UnwindingRing(progress: progress)
 //                        .fill(palette.accent)
   
-                    // Ring that unwinds remaining progress
+                    // (2) active unwinding rings
                     Circle()
+                        // keep, is outer radius; meaning (1) is where you adjust any thickness
+                        .inset(by: insetComputed)
                         .trim(from: 0, to: max(0, min(1, progress)))
                         // start at 12 o'clock
                         .rotation(Angle(degrees: -90))

@@ -22,7 +22,7 @@ struct StatPill: View {
     // MARK: - Computed properties
         private var iconGradient:
     LinearGradient {
-        LinearGradient(colors: [Color.intGreen, Color.intGreen.opacity(0.7)],
+        LinearGradient(colors: [Color.intGreen, Color.appText.opacity(0.9)],
                        startPoint: .topLeading, endPoint: .bottomTrailing
         )
     }

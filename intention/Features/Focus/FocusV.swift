@@ -1,5 +1,5 @@
 //
-//  FocusSessionActiveV.swift
+//  FocusV.swift
 //  intention
 //
 //  Created by Benjamin Tryon on 6/11/25.
@@ -23,7 +23,7 @@ enum ActiveSheet: Equatable { case none, membership }
 
 /// Primary screen. Accepts two intention tiles and runs a 20-min countdown.
 /// Hosts validation UI, dynamic messages and the recalibration sheet
-struct FocusSessionActiveV: View {
+struct FocusV: View {
     
     // MARK: Environment
     @EnvironmentObject var theme: ThemeManager
@@ -91,7 +91,7 @@ struct FocusSessionActiveV: View {
                             _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed)
                         } catch {
                             debugPrint(
-                                "[FocusSessionActiveV] handlePrimaryTap(from IntentionField) failed: \(error)"
+                                "[FocusV] handlePrimaryTap(from IntentionField) failed: \(error)"
                             )
                         }
                     }
@@ -105,29 +105,45 @@ struct FocusSessionActiveV: View {
     // MARK: - Message Section
     private var messageSection: some View {
         // Guidance  Messages (no Add/Begin here)
-        DynamicMessageAndActionArea(
+        CountdownMessages(
             onRecalibrateNow: { focusVM.showRecalibrate = true }
         )
         .environmentObject(focusVM)
-        .padding(.top, 8)
+        .padding(.top, 2)
         .environmentObject(theme)
     }
     
-    // MARK: - DynamicCountdown
-    //  Centered countdown (its internal own logic self-selects paused/running visuals
-    //      inside it, `isActive` includes .running  .paused
-    //      In .paused, it draws the clipped overlay  "Paused"; in .running, it draws the unwinding pie  time
-    //      The tap target persists across both states, thanks to .onTapGesture { handleTap() }.
+    // MARK: Countdown layout contract
+    // - as a computed layout contract, controls ring location above BottomComposer
+    // - View decides layout, not VM
+    private struct CountdownLayout {
+        // space below Stats
+        let topPadding: CGFloat
+        // height of ring "float"
+        let minHeight: CGFloat
+    }
+    private var countdownLayout: CountdownLayout {
+        // Controls visual dominance; ring = relative to BottomComposer
+        CountdownLayout(topPadding: 40, minHeight: 40)
+    }
+    
+    
+    // MARK: - Countdown spacing & timestring
+    // Centered countdown (its internal own logic self-selects paused/running visuals)
+    // - .onTapGesture { handleTap() } handle state swap between paused & running
     private var countdownSection: some View {
-        DynamicCountdown(
+        Countdown(
             palette: p,
             progress: Double(focusVM.countdownRemaining) / Double( TimerConfig.current.chunkDuration )
         )
         .environmentObject(focusVM)
-        .padding(.top, 28)  // separates from Stats and messages
-        .frame(maxWidth: .infinity)  // centers fixed-size content
-        .frame(minHeight: 320)          // reserves vertical space so it dominates the section
-        .contentShape(Rectangle())      // keeps taps clean in the area
+        // fixed-size content
+        .frame(maxWidth: .infinity)
+        // reserves vertical space; proportional values
+        .padding(.top, countdownLayout.topPadding)
+        .frame(minHeight: countdownLayout.minHeight)
+        // keeps taps clean in the area
+        .contentShape(Rectangle())
     }
     
     // MARK: Slot helpers
@@ -146,7 +162,7 @@ struct FocusSessionActiveV: View {
     
     /// Active = white; inactive = brown/gray (segment look)
     private func isActiveSlot(_ slot: Int) -> Bool {
-        // 1) Before any tiles exist, guide the user by highlighting Tile 1
+        // Before any tiles exist, guide the user by highlighting Tile 1
         if slot == 0 && !focusVM.tiles.indices.contains(0) { return true }
         
         let firstCompleted  = completionForSlot(0)
@@ -154,7 +170,7 @@ struct FocusSessionActiveV: View {
         
         switch slot {
         case 0:
-            // 2) Keep tile 1 active until completed
+            // Keep tile 1 active until completed
             return focusVM.tiles.indices.contains(0) ? !firstCompleted : true
         case 1:
             // Active after first completes, until second completes
@@ -194,7 +210,7 @@ struct FocusSessionActiveV: View {
         Task {
             do { _ = try await focusVM.handlePrimaryTap(validatedInput: trimmed) }
             catch {
-                debugPrint("[FocusSessionActiveV] handlePrimaryTap(from primary CTA) failed: \(error)")
+                debugPrint("[FocusV] handlePrimaryTap(from primary CTA) failed: \(error)")
                 // If you later add focusVM.setError(_:) or similar, plug it in here.
                 /* show error overlay? */
             }
@@ -211,6 +227,9 @@ struct FocusSessionActiveV: View {
         VStack(spacing: 0){
             ScrollView {
                 Page(top: 6, alignment: .center) {
+                    
+                    T("Focus", .header)
+                        .padding(.bottom, 4)
                     
                     upperComposer
                         .padding(.top, 8)
@@ -302,21 +321,6 @@ struct FocusSessionActiveV: View {
                 .environmentObject(theme)
             }
             
-//            
-//            Button(
-//                action: handlePrimaryCTATap
-//            ) {
-//                primaryCTALabel
-//            }
-//            .primaryActionStyle(screen: screen)
-//            .contentShape(Rectangle())
-//            .pulseAura(color: p.accent, active: focusVM.ui_isReadyForBegin || focusVM.phase == .idle)
-//            .frame(maxWidth: .infinity, minHeight: minDesiredHeight, maxHeight: 48)
-//            .lineLimit(1)
-//            .minimumScaleFactor(0.95)
-//            .disabled(!focusVM.canPrimary)
-//            .accessibilityIdentifier("primaryCTA")
-            
             if focusVM.phase == .running || focusVM.phase == .paused {
                 // === CANCEL during active countdown ===
                 Button(role: .destructive) { showCancelConfirm = true } label: {
@@ -325,7 +329,9 @@ struct FocusSessionActiveV: View {
                         T("Cancel Session", .action).monospacedDigit()
                     }
                 }
-                .secondaryActionStyle(screen: screen)
+                
+                .primaryActionStyle(screen: screen)
+                .pulseAura(color: p.accent, active: true)
                 .contentShape(Rectangle())
                 .frame(maxWidth: .infinity, minHeight: minDesiredHeight, maxHeight: 48)
                 .lineLimit(1)
@@ -364,8 +370,47 @@ struct FocusSessionActiveV: View {
         }
     }
 }
+// MARK: Countdown (digits with outline + shadow)
+private struct TextFieldInputStyle: ViewModifier {
+    @EnvironmentObject var theme: ThemeManager
+    let fontSize: CGFloat // as: .section in: .focus?
+    /// STYLED TEXT - .section
     
-    // MARK: - IntentionField struct
+    /// Theme hooks
+    private let screen: ScreenName = .focus
+    private var p: ScreenStylePalette { theme.palette(for: screen) }
+
+    func body(content: Content) -> some View {
+        let base = content
+        //        theme.styledText("", as: .section, in: .focus)
+            .font(.system(size: fontSize, weight: .bold, design: .monospaced))
+            .monospacedDigit()
+        // never wrap
+            .lineLimit(1)
+        // but shrink, instead
+            .minimumScaleFactor(0.75)
+            .allowsTightening(true)
+        
+        let mainLayer = base
+            .foregroundStyle(p.text)
+        
+        // Soft pseudo-outline by drawing the same text 4x slightly offset
+        let outlineLayer = ZStack {
+            base.foregroundStyle(Color.intText).offset(x:  0.75, y:  0.75)
+            base.foregroundStyle(Color.intText).offset(x: -0.75, y:  0.75)
+            base.foregroundStyle(Color.intText).offset(x:  0.75, y: -0.75)
+            base.foregroundStyle(Color.intText).offset(x: -0.75, y: -0.75)
+        }
+        
+        return mainLayer
+            .overlay(outlineLayer)
+            .shadow(color: .black.opacity(0.20), radius: 2, x: 0, y: 1)
+    }
+}
+    
+
+
+    // MARK: IntentionField struct
     // keeps "show validation, submit, text" in one location
     private struct IntentionField: View {
         @EnvironmentObject var theme: ThemeManager
@@ -388,7 +433,9 @@ struct FocusSessionActiveV: View {
                     prompt: theme.styledText("Add Your Intended Task", as: .caption, in: .focus
                 ))
                 // matches tile slot text
-                .foregroundStyle(p.text)
+                
+                .monospacedDigit()
+//                .foregroundStyle(p.text)
                 .focused($isFocused)
                 .submitLabel(.done)
                 .validatingField(state: vState, palette: p)
@@ -475,11 +522,11 @@ struct FocusSessionActiveV: View {
                     HStack(alignment: .top, spacing: 8) {
                         theme.styledText(text, as: .tile, in: .focus)
                             .foregroundStyle(p.text)
-                        // Tiny leading for multi-line readability
+                            // Tiny leading for multi-line readability
                             .lineSpacing(2)
-                        // Allow text to wrap to as many lines as needed
+                            // Allow text to wrap to as many lines as needed
                             .lineLimit(nil)
-                        // This allows the Text view to expand vertically while being constrained horizontally
+                            // This allows the Text view to expand vertically while being constrained horizontally
                             .fixedSize(horizontal: false, vertical: true)
                         
                         // Fills the button width, actually
@@ -487,8 +534,10 @@ struct FocusSessionActiveV: View {
                         
                         // Always show a checkmark for filled tiles
                         Image(systemName: trailingIconName)
-                            .font(.body)                        // slightly increases size
-                            .foregroundStyle(isCompleted ? p.accent : Color.intGreen)   // more vivid than "accent"
+                            // control checkmark size
+                            .font(.body)
+                            // control checkmark fill color ( __ ? last : first) "remember as LAF aka Laugh"
+                            .foregroundStyle(isCompleted ? Color.intGreen : Color.intGreen.opacity(0.1) )
                             .accessibilityHidden(true)
                     }
                     .baselineOffset(1)
@@ -554,22 +603,29 @@ struct FocusSessionActiveV: View {
 #endif
     
     
-#if DEBUG
-    #Preview("Focus (dumb)") {
-        let theme = ThemeManager()
-        let focus = FocusSessionVM(previewMode: true,
-                                   haptics: NoopHapticsClient(),
-                                   config: .current)
-        let recal  = RecalibrationVM(haptics: NoopHapticsClient())
-        
-        FocusSessionActiveV(
-            focusVM: focus,
-            recalibrationVM: recal
-        )
-        .environmentObject(theme)
-        /* readd ONLY if/when everything else is stable */
-        /// .canvasCheap()
-        .frame(maxWidth: 430)
-    }
-#endif
+//#if DEBUG
+//    #Preview("Focus (dumb)") {
+//        let theme = ThemeManager()
+//        let focus = FocusSessionVM(previewMode: true,
+//                                   haptics: NoopHapticsClient(),
+//                                   config: .current)
+//        let recal  = RecalibrationVM(haptics: NoopHapticsClient())
+//        
+//        FocusV(
+//            focusVM: focus,
+//            recalibrationVM: recal
+//        )
+//        .environmentObject(theme)
+//        .environmentObject(focus)
+//        .environmentObject(recal)
+//        /* read ONLY if/when everything else is stable */
+//        /// .canvasCheap()
+//        .frame(maxWidth: 430)
+//    }
+//#endif
     
+#if DEBUG
+#Preview("App Root") {
+    RootView()
+}
+#endif
