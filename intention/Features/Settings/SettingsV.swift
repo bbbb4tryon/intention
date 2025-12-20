@@ -13,7 +13,7 @@ struct SettingsV: View {
     @EnvironmentObject var theme: ThemeManager
     @EnvironmentObject var prefs: AppPreferencesVM
     @EnvironmentObject var memVM: MembershipVM
-    @EnvironmentObject var focusVM: FocusSessionVM
+    @EnvironmentObject var focusVM: FocusVM
     @ObservedObject var statsVM: StatsVM
     @AppStorage(DebugKeys.forceLegalNextLaunch) private var debugShowLegalNextLaunch = false
     
@@ -294,7 +294,7 @@ struct SwatchesFormSection: View {
     let theme  = ThemeManager()
     let prefs  = AppPreferencesVM()
     let memVM  = MembershipVM(payment: PaymentService(productIDs: [])) // empty product list = inert
-    let focus  = FocusSessionVM(previewMode: true,
+    let focus  = FocusVM(previewMode: true,
                                 haptics: NoopHapticsClient(),
                                 config: .current)
     let stats  = StatsVM(persistence: PersistenceActor())

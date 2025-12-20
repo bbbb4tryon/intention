@@ -98,14 +98,15 @@ struct RecalibrationV: View {
 //                            .padding(.vertical, 4)
                     }
                     
-                    // MARK: Supporting copy
+                    // MARK:  - Supporting copy
                     /* left-aligned, subdued */
                     T("Even though these short activities are only a few minutes in duration, because they're physical movements, they energize and invigorate your ability to focus.", .title3)
                         .foregroundStyle(textSecondary)
+                        .multilineTextAlignment(.center)
                         // a bit below the separator
 //                        .padding(.top, 1)
                     
-                    // MARK: \--\ separator \--\
+                    // MARK: a separator
                     Rectangle()
                         .fill(p.accent)
                         .frame(height: 2)
@@ -120,7 +121,7 @@ struct RecalibrationV: View {
                         // a bit below the separator
                         .padding(.top, 28)
                     
-                    // MARK: - ONLY CTA/timer block
+                    // MARK: ONLY CTA/timer block
                     actionArea
                         .padding(.top, 16)
                     
@@ -171,16 +172,21 @@ struct RecalibrationV: View {
         // MARK: error overlay
         .overlay {
             if let err = vm.lastError {
+                // block any sheet behind it -- ErrorOverlay handles own taps
                 ErrorOverlay(error: err) { vm.lastError = nil }
+                    .allowsHitTesting(true)
+                    .transition(.opacity)
+                    .zIndex(1)
             }
         }
-        .allowsHitTesting(false)
+        // only block tapping/interaction when error is visible
+        .allowsHitTesting(vm.lastError == nil)
         
         // MARK: Let people leave
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { dismiss() } label: {
-                    Image(systemName: "xmark").imageScale(.small).font(.headline).controlSize(.large)
+                    Image(systemName: "x.square").imageScale(.large).font(.headline).controlSize(.large)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Close")

@@ -360,7 +360,7 @@ final class RecalibrationVM: ObservableObject {
             do {
                 try await action()
             } catch {
-                debugPrint("[FocusSessionVM.performAsyncAction] error:", error)
+                debugPrint("[FocusVM.performAsyncAction] error:", error)
                 self.lastError = error
             }
         }

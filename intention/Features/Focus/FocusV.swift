@@ -35,7 +35,7 @@ struct FocusV: View {
     @Environment(\.accessibilityDifferentiateWithoutColor) private var diffNoColor
     
     // MARK: View Models
-    @ObservedObject var focusVM: FocusSessionVM
+    @ObservedObject var focusVM: FocusVM
     @ObservedObject var recalibrationVM: RecalibrationVM
     
     // MARK: Local UI State
@@ -325,7 +325,7 @@ struct FocusV: View {
                 // === CANCEL during active countdown ===
                 Button(role: .destructive) { showCancelConfirm = true } label: {
                     HStack {
-                        Image(systemName: "xmark.circle.fill")
+                        Image(systemName: "xmark.square.fill")
                         T("Cancel Session", .action).monospacedDigit()
                     }
                 }
@@ -358,6 +358,7 @@ struct FocusV: View {
         .background(.thinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .animation(.easeInOut(duration: 0.2), value: focusVM.tiles)
+        .tint(.blue)
         .alert("Cancel?", isPresented: $showCancelConfirm) {
             Button("Go Back", role: .cancel) { }
             Button("Cancel Session", role: .destructive) {
@@ -589,9 +590,9 @@ private struct TextFieldInputStyle: ViewModifier {
     }
     
 #if DEBUG
-    @MainActor private extension FocusSessionVM {
-        static var preview: FocusSessionVM {
-            let vm = FocusSessionVM(previewMode: true, haptics: NoopHapticsClient())
+    @MainActor private extension FocusVM {
+        static var preview: FocusVM {
+            let vm = FocusVM(previewMode: true, haptics: NoopHapticsClient())
             // In preview, show two tiles and a plausible remaining time
             vm.tiles = [TileM(text: "Write intro"), TileM(text: "Outline section 1")]
             vm.phase = .running                   // UI shows active state
@@ -606,7 +607,7 @@ private struct TextFieldInputStyle: ViewModifier {
 //#if DEBUG
 //    #Preview("Focus (dumb)") {
 //        let theme = ThemeManager()
-//        let focus = FocusSessionVM(previewMode: true,
+//        let focus = FocusVM(previewMode: true,
 //                                   haptics: NoopHapticsClient(),
 //                                   config: .current)
 //        let recal  = RecalibrationVM(haptics: NoopHapticsClient())

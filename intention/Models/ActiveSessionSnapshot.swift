@@ -10,7 +10,7 @@ import SwiftUI
 /// Preserve session state (so tiles/timer don’t vanish on relaunch)
 struct ActiveSessionSnapshot: Codable, Sendable {
     let tileTexts: [String]
-    let phase: FocusSessionVM.Phase
+    let phase: FocusVM.Phase
     let chunkIndex: Int
     let deadline: Date       // <- single source of truth
 }

@@ -9,7 +9,7 @@ import SwiftUI
 
 struct CountdownMessages: View {
     @EnvironmentObject var theme: ThemeManager
-    @EnvironmentObject var focusVM: FocusSessionVM
+    @EnvironmentObject var focusVM: FocusVM
     
     let onRecalibrateNow: () -> Void
     

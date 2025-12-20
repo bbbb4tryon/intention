@@ -154,7 +154,7 @@ struct RootView: View {
     @StateObject private var theme: ThemeManager
     @StateObject private var memVM: MembershipVM
     @StateObject private var historyVM: HistoryVM
-    @StateObject private var focusVM: FocusSessionVM
+    @StateObject private var focusVM: FocusVM
     @StateObject private var recalVM: RecalibrationVM
     @StateObject private var statsVM: StatsVM
     @StateObject private var prefs: AppPreferencesVM
@@ -176,7 +176,7 @@ struct RootView: View {
         let engine          = HapticsService()
         let liveHaptics     = LiveHapticsClient(prefs: prefs, engine: engine)
         let history         = HistoryVM(persistence: persistence)
-        let focus           = FocusSessionVM(
+        let focus           = FocusVM(
             previewMode: false, haptics: liveHaptics, config: config, persistence: persistence, notifications: notifications
         )
         let recal           = RecalibrationVM(haptics: liveHaptics)

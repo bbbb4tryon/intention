@@ -1,5 +1,5 @@
 //
-//  FocusSessionVM.swift
+//  FocusVM.swift
 //  intention
 //
 //  Created by Benjamin Tryon on 6/11/25.
@@ -11,7 +11,7 @@ import Foundation
 /// FocusSessionVM talks to ContinuousClockActor and drives the UI
 /// Errors: make UI-called methods async throws (no wrapper)
 @MainActor
-final class FocusSessionVM: ObservableObject {
+final class FocusVM: ObservableObject {
     
     // MARK: - Chunk Phases
     /// UI state of the current 20-min chunk
@@ -156,13 +156,7 @@ final class FocusSessionVM: ObservableObject {
         return !t.isEmpty && t.taskValidationMessages.isEmpty
     }
     
-    /// Tap handler here, the button widget lives in the Focus view -> Lets the View bind `.disabled(!viewModel.canPrimary)`
-    //    var primaryCTATile: String {
-    //        if !hasTwoTiles { return "Add" }
-    //        if phase == .finished && currentSessionChunk == 1 { return "Next" }
-    //        return "Begin"
-    //    }
-    
+    // Tap handler here, the button widget lives in the Focus view -> Lets the View bind `.disabled(!viewModel.canPrimary)`
     var primaryCTATile: String {
         switch logicalPhase {
         case .empty, .ready:                return hasTwoTiles ? "Begin" : "Add"
@@ -587,14 +581,14 @@ final class FocusSessionVM: ObservableObject {
         Task {
             do { try await action() }
             catch {
-                debugPrint("[FocusSessionVM.performAsyncAction] error:", error)
+                debugPrint("[FocusVM.performAsyncAction] error:", error)
                 self.lastError = error
             }
         }
     }
 }
 
-extension FocusSessionVM {
+extension FocusVM {
     var inputValidationState: ValidationState {
         let msgs = tileText.taskValidationMessages
         return msgs.isEmpty ? .valid : .invalid(messages: msgs)
@@ -609,7 +603,7 @@ extension FocusSessionVM {
 enum FocusSessionError: Error, Equatable, LocalizedError {
     case emptyInput
     case tooManyTiles(limit: Int = 2)
-    case invalidBegin(phase: FocusSessionVM.Phase, tilesCount: Int)
+    case invalidBegin(phase: FocusVM.Phase, tilesCount: Int)
     case persistenceFailed
     case unexpected
     

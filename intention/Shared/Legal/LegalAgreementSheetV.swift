@@ -30,12 +30,17 @@ struct LegalAgreementSheetV: View {
             ZStack {
                 p.background.ignoresSafeArea().allowsHitTesting(false)
                 
+                
                 VStack(spacing: 14){
+                    
+                    T("Legal", .header)
+                        .padding(.bottom, 4)
+                    
                     T("Made By And For Humans", .body)
                         .padding()
                         .padding(.top, 8)
                     
-                    T("Please review the policies below. By tapping *Agree & Continue*, you accept them.", .body)
+                    T("Please review the policies below. By tapping Agree & Continue, you accept them.", .body)
                         .lineLimit(nil)
                     // Links row
                     HStack(alignment: .center, spacing: 10) {
@@ -49,7 +54,7 @@ struct LegalAgreementSheetV: View {
                         .frame(maxWidth: 520)
                 }
                 .frame(maxWidth: 520)
-                .navigationTitle("Legal")
+//                .navigationTitle("Legal")
                 .navigationBarTitleDisplayMode(.inline)
                 .interactiveDismissDisabled(true)
                 // Full-screen style

@@ -37,7 +37,7 @@ struct RecalibrationSheetChrome<Content: View>: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .overlay(alignment: .trailing) {
                             Button(action: onClose) {
-                                Image(systemName: "xmark.app.fill")
+                                Image(systemName: "x.square")
                                     .font(.headline)
                                     .contentShape(Rectangle())
                                                             }

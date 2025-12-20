@@ -123,7 +123,7 @@ struct MembershipSheetV: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button{ dismiss() }
-                    label: { Image(systemName: "xmark").imageScale(.small).font(.body).controlSize(.large) }.buttonStyle(.plain).accessibilityLabel("Close")}
+                    label: { Image(systemName: "x.square").imageScale(.large).controlSize(.large) }.buttonStyle(.plain).accessibilityLabel("Close")}
             }
         }
         // Sheet behavior tuned for iPhone

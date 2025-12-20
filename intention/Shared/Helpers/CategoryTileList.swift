@@ -89,6 +89,7 @@ struct CategoryTileList: View {
             actions: archiveAlertActions,
             message: archiveAlertMessage
         )
+        .tint(.blue)
         .alert("Delete this tile?",
                isPresented: deleteAlertBinding,
                actions: deleteAlertActions,

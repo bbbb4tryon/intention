@@ -32,7 +32,8 @@ struct MembershipSheetChrome<Content: View>: View {
                         .frame(maxWidth: .infinity)
                         .overlay(alignment: .trailing) {
                             Button(action: onClose) {
-                                Image(systemName: "xmark").font(.headline).padding(12)
+//                                Image(systemName: "x.square").font(.headline).padding(12)
+                                Image(systemName: "x.square").imageScale(.medium).controlSize(.large)
                             }
                             .tint(p.accent)
                         }

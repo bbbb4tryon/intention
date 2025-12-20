@@ -112,6 +112,7 @@ struct HistoryV: View {
             renameCategorySheet
         }
         
+        .tint(.blue)
         .alert("Delete category?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) {
                 if let id = targetCategoryID {

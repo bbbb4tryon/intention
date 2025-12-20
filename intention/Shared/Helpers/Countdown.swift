@@ -15,7 +15,7 @@ import SwiftUI
 /// no pause/resume
 struct Countdown: View {
     @EnvironmentObject var theme: ThemeManager
-    @EnvironmentObject var fVM: FocusSessionVM
+    @EnvironmentObject var fVM: FocusVM
     
     // MARK: Theme Hooks
     let palette: ScreenStylePalette

@@ -213,6 +213,7 @@ struct FeedbackV: View {
             }
         }
         .sheet(isPresented: $showComposer) { composerSheet }
+        .tint(.blue)
         .alert("Feedback", isPresented: $showingAlert) {
             Button("OK", role: .cancel) { }
         } message: {

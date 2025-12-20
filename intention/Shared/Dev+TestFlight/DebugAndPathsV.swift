@@ -9,7 +9,7 @@ import SwiftUI
 /// No theming here on purpose. Plain Apple defaults.
 struct DebugAndPathsV: View {
     @EnvironmentObject var historyVM: HistoryVM
-    @EnvironmentObject var focusVM: FocusSessionVM
+    @EnvironmentObject var focusVM: FocusVM
     @EnvironmentObject var recalVM: RecalibrationVM
     @EnvironmentObject var prefs: AppPreferencesVM
     @EnvironmentObject var debug: DebugRouter
