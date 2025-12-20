@@ -75,7 +75,7 @@ struct CountdownMessages: View {
                 }
             } else if isBetweenChunks {
                 // text only here, relies on bottom CTA for "Next" button
-                T("Done, Continue Your Streak to the Next One?", .largeTitle)
+                T("Done, Continue Your Streak?", .largeTitle)
                     .foregroundStyle(p.text)
                     .multilineTextAlignment(.center)
                 

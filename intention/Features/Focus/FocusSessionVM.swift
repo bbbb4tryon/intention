@@ -337,19 +337,23 @@ final class FocusSessionVM: ObservableObject {
     
     // MARK: Begin overall session (two chunks)
     func beginOverallSession() async throws {
-        //        guard hasTwoTiles, (phase == .idle || phase == .none || (phase == .finished && currentSessionChunk == 1)) else {
-        //            throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
-        //        }
+  
         guard hasTwoTiles else {
             throw FocusSessionError.invalidBegin(phase: phase, tilesCount: tiles.count)
         }
+        
+        // If we are BETWEEN CHUNKS (chunk 1 done, waiting to start chunk 2),
+        // → just start chunk 2 timer
+        if currentSessionChunk == 1 && phase == .finished {
+            await startCurrent20MinCountdown()
+            return
+        }
+        
+        // Normal FIRST BEGIN (idle/none) -> first chunk -> begin path,
+        // → start full session tracking + chunk 1
         guard !IS_PREVIEW else { return }
         await timeActor.startSessionTracking()
         await startCurrent20MinCountdown()
-        /*
-         after await timeActor.startSessionTracking(), you always hit startCurrent20MinCountdown() regardless of phase/currentSessionChunk
-         need different behavior for “next chunk,” pass a parameter there instead of duplicating the call
-         */
     }
     
     // MARK: User pause / resume
