@@ -78,17 +78,19 @@ struct RecalibrationV: View {
                     // MARK: - Header
                     T("Reset your nervous system", .header)
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 20)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 2)
                     
                     T("A few minutes of guided movement restores focus and momentum", .title3)
                         .foregroundStyle(textSecondary)
                         .multilineTextAlignment(.center)
-                    
-                    T("Choose one below:", .title3)
-                        .foregroundStyle(textSecondary)
-                        // a bit below the separator
-                        .padding(.top, 10)
-                        .padding(.horizontal, 8)
+//                    
+//                    T("Choose one below:", .title3)
+//                        .foregroundStyle(textSecondary)
+//                        .multilineTextAlignment(.center)
+//                        // a bit below the separator
+//                        .padding(.top, 10)
+//                        .padding(.horizontal, 8)
                     
                     // MARK: Action and spacing
                     actionArea
@@ -101,24 +103,25 @@ struct RecalibrationV: View {
                             .padding(.top, 12)
                     }
                     
+                    RecalProgressBar(progress: progressFraction)
+                        .padding(.top, 8)
+                    
                     // MARK: Live indicators
                     if vm.mode == .balancing {
                         T("Switch sides every minute", .caption)
                             .foregroundStyle(p.text)
                         
-                        RecalProgressBar(progress: progressFraction)
-                            .padding(.top, 8)
-                        
+
                         // Balancing - “Switch feet” flashes briefly each minute
                         BalanceSideDots(activeIndex: vm.balancingPhaseIndex)
-                                .padding(.top, 12)
+                                .padding(.top, 6)
                     } else if vm.mode == .breathing, vm.phase != .none, vm.phase != .idle {
                         T("Follow the rhythm below", .caption)
                             .foregroundStyle(p.text)
                             .padding(.top, 6)
-                        
-                        RecalProgressBar(progress: progressFraction)
-                            .padding(.top, 8)
+//                        
+//                        RecalProgressBar(progress: progressFraction)
+//                            .padding(.top, 8)
                         
                         // Breathing - modes and expanding dot
                         BreathingPhaseGuide(
@@ -179,22 +182,34 @@ struct RecalibrationV: View {
         switch vm.phase {
         case .none, .idle:
             VStack(spacing: 12) {
-                if vm.phase == .none || vm.phase == .idle { PresetPicker }   // 2m / 3m / 4m
+                // MARK:  2m / 3m / 4m
+                if vm.phase == .none || vm.phase == .idle {
+                    PresetPicker
+                }
+                
+                // MARK: Breathing
                 Button {
                     vm.performAsyncAction { try await vm.start(mode: .breathing) }
-                } label: { T("Breathing", .action) }
+                } label: {
+                    T("Breathing", .action) }
                     .recalibrationActionStyle(screen: screen)
+
+                T("", .title3)
+                    .padding(.top, 24)
+                    .padding(.bottom, 12)
                 
-                Divider()
+                
+                // MARK:
                 if vm.phase == .none || vm.phase == .idle { PresetPickerBal }
                 Button {
                     vm.performAsyncAction { try await vm.start(mode: .balancing) }
-                } label: { T("Balancing", .action) }
+                } label: {
+                    T("Balancing", .action) }
                     .recalibrationActionStyle(screen: screen)
                 
-                // MARK: skip path -> routes back to Focus without running --
+                // MARK: skip path
+                // - routes back to Focus without running --
                 Button {
-                    // Allows reset focusVM and closing the sheet
                     onSkip?()
                     // Fallback: dismiss locally
                     if onSkip == nil { dismiss() }
@@ -286,7 +301,7 @@ private extension RecalibrationV {
         let theme: ThemeManager
         var body: some View {
             VStack(alignment: .leading, spacing: 4) {
-                ForEach(items, id: \.self) { Text("Now, Lift \($0)") }
+                ForEach(items, id: \.self) { Text("\($0)") }
             }
             .padding()
             .font(theme.fontTheme.toFont(.footnote))

@@ -89,14 +89,14 @@ struct BreathingPhaseGuide: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(10)
-        // thin container stroke
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(p.text.opacity(0.06), lineWidth: 1)
-        )
-        .padding(.horizontal, 4)
-        .padding(.vertical, 4)
+//        .padding(10)
+//        // thin container stroke
+//        .overlay(
+//            RoundedRectangle(cornerRadius: 12)
+//                .stroke(p.text.opacity(0.06), lineWidth: 1)
+//        )
+//        .padding(.horizontal, 4)
+        .padding(.vertical, 8)
     }
 }
 

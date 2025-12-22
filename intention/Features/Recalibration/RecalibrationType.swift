@@ -38,10 +38,10 @@ enum RecalibrationMode: String, Hashable, Codable, CaseIterable {
                     "Level up: close eyes and repeat."
                 ]
             case .breathing:
-                /// 6-3, 6-3
+                /// 4-4, 4-4
                 return [
-                    "Inhale 6 sec, hold 3 sec.",
-                    "Exhale 6 sec, hold 3 sec.",
+                    "Inhale 4 sec, hold 4 sec.",
+                    "Exhale 4 sec, hold 4 sec.",
                     "Repeat until timer ends."
                 ]
             }
