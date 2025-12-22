@@ -82,33 +82,7 @@ struct RecalibrationV: View {
                     .padding(.horizontal, 16)
             }
         }
-                        // MARK: Live indicators
-                        if vm.mode == .balancing {
-                            T("Switch sides every minute", .caption)
-                                .foregroundStyle(p.text.opacity(0.7))
-                            
-                            BalanceSideDots(activeIndex: vm.balancingPhaseIndex)
-                                .padding(.top, 6)
-                        } else if vm.mode == .breathing, vm.phase != .none, vm.phase != .idle {
-                            T("Follow the rhythm", .caption)
-                                .foregroundStyle(p.text.opacity(0.7))
-                                .padding(.top, 6)
-                            
-                            BreathingPhaseGuide(
-                                phases: vm.breathingPhases,
-                                activeIndex: vm.breathingPhaseIndex,
-                                p: p
-                            )
-                            .padding(.top, 10)
-                        }
                     
-                    // Sticky: never covers buttons/picker
-                    .padding(.bottom, insetHeight + 16)
-                    .padding(.horizontal, 16)
-                }
-            }
-        
-        
         .tint(p.accent)
         .task { breathingChoice = vm.currentBreathingMinutes }
         .presentationDetents([.large])
@@ -124,19 +98,7 @@ struct RecalibrationV: View {
             }
         }
 }
-        // MARK: error overlay
-        .overlay {
-            if let err = vm.lastError {
-                // block any sheet behind it -- ErrorOverlay handles own taps
-                ErrorOverlay(error: err) { vm.lastError = nil }
-                    .allowsHitTesting(true)
-                    .transition(.opacity)
-                    .zIndex(1)
-            }
-        }
-        // only block tapping/interaction when error is visible
-        .allowsHitTesting(vm.lastError == nil)
-    }
+
     
     // MARK: content Phase router
     @ViewBuilder
@@ -290,8 +252,20 @@ private extension View {
             .onPreferenceChange(HeightKey.self) { binding.wrappedValue = $0 }
     }
 }
-
-
+//
+//// MARK: error overlay
+//.overlay {
+//    if let err = vm.lastError {
+//        // block any sheet behind it -- ErrorOverlay handles own taps
+//        ErrorOverlay(error: err) { vm.lastError = nil }
+//            .allowsHitTesting(true)
+//            .transition(.opacity)
+//            .zIndex(1)
+//    }
+//}
+//// only block tapping/interaction when error is visible
+//.allowsHitTesting(vm.lastError == nil)
+//}
 
 #if DEBUG
 #Preview("Recalibrate (dumb)") {
