@@ -48,12 +48,12 @@ struct RecalibrationV: View {
     }
     
     private var BalancePicker: some View {
-            // placeholder if reintroduce options later
-            EmptyView()
+        // placeholder if reintroduce options later
+        EmptyView()
             .onChange(of: balancingChoice) { new in
                 do { try vm.setBalancingMinutes(new) }
                 catch { vm.lastError = error }
-        }
+            }
     }
     
     init(vm: RecalibrationVM, onSkip: (() -> Void)? = nil) {
@@ -82,7 +82,7 @@ struct RecalibrationV: View {
                     .padding(.horizontal, 16)
             }
         }
-                    
+        
         .tint(p.accent)
         .task { breathingChoice = vm.currentBreathingMinutes }
         .presentationDetents([.large])
@@ -97,80 +97,103 @@ struct RecalibrationV: View {
                 .accessibilityLabel("Close")
             }
         }
-}
-
+    }
     
     // MARK: content Phase router
     @ViewBuilder
     private var content: some View {
         switch vm.phase {
         case .none, .idle:
-            VStack(spacing: 12) {
-                // MARK:  2m / 3m / 4m
-                if vm.phase == .none || vm.phase == .idle {
-                    BreathPicker
-                }
-                
-                // MARK: Breathing
-                Button {
-                    vm.performAsyncAction { try await vm.start(mode: .breathing) }
-                } label: {
-                    T("Breathing", .action) }
-                .recalibrationActionStyle(screen: screen)
-                
-                T("", .title3)
-                    .padding(.top, 24)
-                    .padding(.bottom, 12)
-                
-                
-                // MARK:
-                if vm.phase == .none || vm.phase == .idle { BalancePicker }
-                Button {
-                    vm.performAsyncAction { try await vm.start(mode: .balancing) }
-                } label: {
-                    T("Balancing", .action) }
-                .recalibrationActionStyle(screen: screen)
-                
-                // MARK: skip path
-                // - routes back to Focus without running --
-                Button {
-                    onSkip?()
-                    // Fallback: dismiss locally
-                    if onSkip == nil { dismiss() }
-                } label: {
-                    T("Skip", .action)
-                        .recalibrationActionStyle(screen: screen)
-                        .tint(p.accent)
-                        .shadow(color: Color.blue.opacity(0.09), radius: 8, x: 0, y: 3)
-                        .opacity(0.9)
-                        .accessibilityIdentifier(("Skip recalibration screen"))
-                }
-            }
+            chooseView
             
         case .running, .pause:
-            VStack(spacing: 8) {
-                T(vm.mode == .breathing ? "Breathing" : "Balancing", .section)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                
-                Text(vm.formattedTime)
-                    .font(.system(size: 56, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .frame(maxWidth: .infinity, alignment: .center)
-                
-                RecalProgressBar(progress: progressFraction)
-                    .padding(.top, 4)
-                
-                // Keeping and explicit "end early"
-                Button(role: .destructive) {
-                    vm.performAsyncAction { try await vm.stop() }
-                } label: {
-                    T("End early", .action)
-                        .recalibrationActionStyle(screen: screen)
-                }
-            }
+            runView
+            
         case .finished:
             EmptyView()
         }
+    }
+    
+    // MARK: CHOOSE
+    private var chooseView: some View {
+        VStack(spacing: 16) {
+            // MARK:  2m / 3m / 4m
+            //        if vm.phase == .none || vm.phase == .idle {
+            BreathPicker
+            //        }
+            
+            Button {
+                vm.performAsyncAction {
+                    try await vm.start(mode: .breathing)
+                }
+            } label: {
+                T("Breathing", .action)
+            }
+            .recalibrationActionStyle(screen: screen)
+            
+            Spacer().frame(height: 24)
+            
+            BalancePicker
+            
+            
+            //            if vm.phase == .none || vm.phase == .idle { BalancePicker }
+            Button {
+                vm.performAsyncAction {
+                    try await vm.start(mode: .balancing)
+                }
+            } label: {
+                T("Balancing", .action)
+            }
+            .recalibrationActionStyle(screen: screen)
+            
+            Button {
+                onSkip?()
+                if onSkip == nil { dismiss() }
+            } label: {
+                T("Skip", .action)
+            }
+            //                    .recalibrationActionStyle(screen: screen)
+            //                    .tint(p.accent)
+            //                    .shadow(color: Color.blue.opacity(0.09), radius: 8, x: 0, y: 3)
+            .opacity(0.85)
+            //                    .accessibilityIdentifier(("Skip recalibration screen"))
+        }
+    }
+    
+    // MARK: RUN
+    private var runView: some View {
+        VStack(spacing: 16){
+            
+            T(vm.mode == .breathing ? "Breathing" : "Balancing", .section)
+            
+            Text(vm.formattedTime)
+                .font(.system(size: 56, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+            
+            RecalProgressBar(progress: progressFraction)
+            
+            if vm.mode == .breathing {
+                T("Follow the rhythm", .caption)
+                    .foregroundStyle(p.text.opacity(0.7))
+                
+                BreathingPhaseGuide(phases: vm.breathingPhases, activeIndex: vm.breathingPhaseIndex, p: p)
+            }
+            
+            if vm.mode == .balancing {
+                T("Switch sides every minute", .caption)
+                    .foregroundStyle(p.text.opacity(0.7))
+                
+                BalanceSideDots(activeIndex: vm.balancingPhaseIndex)
+            }
+            
+            Button(role: .destructive) {
+                vm.performAsyncAction { try await vm.stop() }
+            } label: {
+                T("End early", .action)
+            }
+            .recalibrationActionStyle(screen: screen)
+        }
+        .padding(.top, 12)
     }
 }
 
