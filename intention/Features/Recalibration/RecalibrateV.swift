@@ -76,23 +76,13 @@ struct RecalibrationV: View {
             ScrollView {
                 Page {
                     // MARK: - Header
-                    T("Reset & Recalibrate", .section)
+                    T("Reset your nervous system", .header)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 20)
                     
-                    // -- separator --
-                        Rectangle()
-                        .fill(p.accent.opacity(0.85))
-                        .frame(height: 2)
-                        .padding(.vertical, 8)
-
-                    
-                    // MARK:  - Supporting copy
-                    /* left-aligned, subdued */
-                    T("Even though these short activities are only a few minutes in duration, because they're physical movements, they energize and invigorate your ability to focus.", .title3)
+                    T("A few minutes of guided movement restores focus and momentum", .title3)
                         .foregroundStyle(textSecondary)
                         .multilineTextAlignment(.center)
-                       .padding(.top, 2)
                     
                     T("Choose one below:", .title3)
                         .foregroundStyle(textSecondary)
@@ -100,9 +90,10 @@ struct RecalibrationV: View {
                         .padding(.top, 10)
                         .padding(.horizontal, 8)
                     
-                    // MARK: ONLY CTA/timer block
+                    // MARK: Action and spacing
                     actionArea
-                        .padding(.top, 16)
+                        .padding(.top, 24)
+                        .padding(.bottom, 12)
                     
                     // MARK: Guidance
                     if vm.phase == .none || vm.phase == .idle, let theMode = vm.mode {
@@ -112,14 +103,23 @@ struct RecalibrationV: View {
                     
                     // MARK: Live indicators
                     if vm.mode == .balancing {
+                        T("Switch sides every minute", .caption)
+                            .foregroundStyle(p.text)
+                        
                         RecalProgressBar(progress: progressFraction)
                             .padding(.top, 8)
+                        
                         // Balancing - “Switch feet” flashes briefly each minute
                         BalanceSideDots(activeIndex: vm.balancingPhaseIndex)
                                 .padding(.top, 12)
                     } else if vm.mode == .breathing, vm.phase != .none, vm.phase != .idle {
+                        T("Follow the rhythm below", .caption)
+                            .foregroundStyle(p.text)
+                            .padding(.top, 6)
+                        
                         RecalProgressBar(progress: progressFraction)
                             .padding(.top, 8)
+                        
                         // Breathing - modes and expanding dot
                         BreathingPhaseGuide(
                             phases: vm.breathingPhases,
@@ -221,9 +221,11 @@ struct RecalibrationV: View {
                 RecalProgressBar(progress: progressFraction)
                     .padding(.top, 4)
                 
+                // Keeping and explicit "end early"
                 Button(role: .destructive) {
                     vm.performAsyncAction { try await vm.stop() }
-                } label: { T("Cancel", .action)
+                } label: {
+                    T("End early", .action)
                         .recalibrationActionStyle(screen: screen)
                 }
             }

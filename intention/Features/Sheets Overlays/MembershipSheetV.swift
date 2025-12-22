@@ -33,7 +33,7 @@ struct MembershipSheetV: View {
             ScrollView {
                 VStack {
                     // Hero
-                    T("Support your focus practice", .header)        // it's information body copy
+                    T("Support your focus practice", .header)
                     T("Unlimited sessions, stats, and customization.", .title3)
                     T("About 30¢ per day.", .secondary)
                         .lineLimit(2)
@@ -55,7 +55,7 @@ struct MembershipSheetV: View {
                     
                     // Primary CTA row (above the fold)
                     if viewModel.isMember {
-                        Label { T("Member!", .label) } icon: { Image(systemName: "star.fill").foregroundStyle(p.primary)
+                        Label { T("Member", .label) } icon: { Image(systemName: "star.fill").foregroundStyle(p.primary)
                         }
                         .symbolBounceIfAvailable()
                     } else {
