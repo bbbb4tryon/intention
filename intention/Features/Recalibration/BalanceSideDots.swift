@@ -51,7 +51,7 @@ struct BalanceSideDots: View {
                 .animation(.snappy(duration: 0.2), value: isActive)
             
            Text(label)
-                .font(.footnote.weight(isActive ? .semibold : .regular)
+                .font(.footnote.weight(isActive ? .semibold : .regular))
                     .animation(.snappy(duration: 0.25), value: isActive)
 
         }

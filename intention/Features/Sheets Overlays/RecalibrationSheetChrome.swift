@@ -38,7 +38,7 @@ struct RecalibrationSheetChrome<Content: View>: View {
                 Image("Noise64")
                     .resizable()
                     .scaledToFit()
-                    .opacity(0.05)
+                    .opacity(0.035)
                     .blendMode(.overlay)
                     .ignoresSafeArea()
                     .accessibilityHidden(true)

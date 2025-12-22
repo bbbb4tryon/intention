@@ -43,7 +43,7 @@ struct MembershipSheetChrome<Content: View>: View {
                 Image("Noise64")
                     .resizable()
                     .scaledToFill()
-                    .opacity(0.05)
+                    .opacity(0.035)
                     .blendMode(.overlay)
                     .ignoresSafeArea()
                     .accessibilityHidden(true)

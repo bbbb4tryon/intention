@@ -40,6 +40,14 @@ struct BreathingPhaseGuide: View {
         isActive(i) ? 1.1 : 1.0
     }
     
+    private func activeBackground(_ i: Int) -> Color {
+        isActive(i) ? Color.intGreen : .clear
+    }
+    
+    private func activeOpacity(_ i: Int) -> CGFloat {
+        isActive(i) ? 1 : 0
+    }
+    
     // --- Local Color Definitions by way of Recalibration ---
     private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
@@ -49,26 +57,35 @@ struct BreathingPhaseGuide: View {
             ForEach(phases.indices, id: \.self) { i in
                 VStack(spacing: 4){
                 Text(phases[i])
-                    .font(.footnote.weight(i == activeIndex ? .semibold : .regular))
-                    .padding(.horizontal, 10).padding(.vertical, 6)
+//                    .font(.footnote.weight(i == activeIndex ? .semibold : .regular))
+                        .font(phaseFont(i))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
                     .background(
-                        Capsule().fill(i == activeIndex ? p.accent.opacity(0.16) : .clear)
+                        Capsule()
+//                            .fill(i == activeIndex ? p.accent.opacity(0.16) : .clear)
+                            .fill(phaseBackground(i))
                     )
                     .overlay(
-                        Capsule().stroke(i == activeIndex ? p.accent : colorBorder, lineWidth: 1)
+                        Capsule()
+//                            .stroke(i == activeIndex ? p.accent : colorBorder, lineWidth: 1)
+                            .stroke(phaseStroke(i), lineWidth: 1)
                     )
-                    .foregroundStyle(i == activeIndex ? p.text : textSecondary)
-                    .scaleEffect(i == activeIndex ? 1.1 : 1.0)
-                    .animation(.spring(response: 0.22, value: activeIndex))
+//                    .foregroundStyle(i == activeIndex ? p.text : textSecondary)
+                    .foregroundStyle(phaseForeground(i))
+//                    .scaleEffect(i == activeIndex ? 1.1 : 1.0)
+                    .scaleEffect(phaseScale(i))
+                    .animation(.spring(response: 0.22), value: activeIndex)
+                    
                 
                 // MARK: Active phase dot
                 Circle()
-                        .fill(i == activeIndex ? Color.intGreen : .clear)
+                        .fill(activeBackground(i))
                     .frame(width: 8, height: 8)
-                    .opacity(i == activeIndex ? 1 : 0)
+                    .opacity(activeOpacity(i))
                     .animation(.easeInOut(duration: 0.2), value: activeIndex)
             }
-                    .accessibilityLabel("\(phases[i])\(i == activeIndex ? ", current" : "")")
+//                    .accessibilityLabel("\(phases[i])\(i == activeIndex ? ", current" : "")")
             }
         }
         .frame(maxWidth: .infinity)

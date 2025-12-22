@@ -33,14 +33,14 @@ struct MembershipSheetV: View {
             ScrollView {
                 VStack {
                     // Hero
-                    T("You’ve completed your free sessions.", .body)        // it's information body copy
-                    T("Unlock Unlimited Focus", .header).padding(.top, 2)
-                    T("For about 30¢ per day", .secondary).padding(.top, 2)
+                    T("Support your focus practice", .header)        // it's information body copy
+                    T("Unlimited sessions, stats, and customization.", .title3)
+                    T("About 30¢ per day.", .secondary)
                         .lineLimit(2)
                 }
                 .multilineTextAlignment(.center)
-                .friendlyHelper()
-                Page(top: 10, alignment: .center){      // FIXME: top 10 MAY BE SCREWING THIS UP
+            
+                Page(top: 10, alignment: .center){
                     
                     // Price hint (optional, tiny): Signals if a product is loaded + VM bridge (sheet cannot create own PaymentService)
                     if let prod = viewModel.primaryProduct {
