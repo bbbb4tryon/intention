@@ -69,6 +69,7 @@ struct MembershipSheetV: View {
                          } label: { T("Upgrade", .action) }
                             .primaryActionStyle(screen: .membership)
                             .frame(maxWidth: .infinity, minHeight: 48)
+                            .shadow(color: p.accent.opacity(0.25), radius: 12, y: 6)
                         
                         // Restore
                         Button {

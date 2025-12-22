@@ -75,9 +75,9 @@ struct CountdownMessages: View {
                 }
             } else if isBetweenChunks {
                 // text only here, relies on bottom CTA for "Next" button
-                T("Done, Continue Your Streak?", .largeTitle)
-                    .foregroundStyle(p.text)
+                T("Done, Continue Your Streak?", .title3)
                     .multilineTextAlignment(.center)
+                    .foregroundStyle(p.text)
                 
             } else if focusVM.tiles.count < 2, focusVM.phase == .running {
                 T("Finish adding", .label)

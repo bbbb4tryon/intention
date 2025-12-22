@@ -12,19 +12,16 @@ struct BalanceSideDots: View {
     
     let activeIndex: Int   // 0 = Left, 1 = Right
     
-    // --- Local Color Definitions by way of Recalibration ---
-    private let textSecondary = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.72)
-    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
-    private let colorDanger = Color.red
-    
-    private let fWOn:  CGFloat = 80
-    private let fWOff: CGFloat = 10
-    private let fHOn:  CGFloat = 80
-    private let fHOff: CGFloat = 10
+    private let fWOn:  CGFloat = 18
+    private let fWOff: CGFloat = 8
+    private let fHOn:  CGFloat = 18
+    private let fHOff: CGFloat = 8
     
     private let screen: ScreenName = .recalibrate
     private var p: ScreenStylePalette { theme.palette(for: screen) }
     private var T: (String, TextRole) -> Text { { key, role in theme.styledText(key, as: role, in: screen) } }
+    
+    private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     
     var body: some View {
         T("On Cue, Lift and Balance On Your: ", .label)
@@ -43,20 +40,20 @@ struct BalanceSideDots: View {
     private func dot(label: String, isActive: Bool) -> some View {
         HStack(spacing: 8) {
             Circle()
-                .fill(isActive ? p.accent : colorBorder)
+                .fill(isActive ? p.accent : .clear)
                 .frame(
                     width: isActive ? fWOn : fWOff,
                     height: isActive ? fHOn : fHOff)
-                .overlay(Circle()
-                    .stroke(colorBorder, lineWidth: isActive ? 0 : 1)
+                .overlay(
+                    Circle()
+                        .stroke(isActive ? p.accent : colorBorder, lineWidth: 1)
                 )
-                .scaleEffect(isActive ? 1.2 : 1.0)
-                .animation(
-                    .spring(response: 0.20, dampingFraction: 0.85), value: isActive)
+                .animation(.snappy(duration: 0.2), value: isActive)
             
-            Text(label)
-                .font(.callout.weight(isActive ? .semibold : .regular))
-                .foregroundStyle(isActive ? p.text : textSecondary)
+           Text(label)
+                .font(.footnote.weight(isActive ? .semibold : .regular)
+                    .animation(.snappy(duration: 0.25), value: isActive)
+
         }
         .padding(.horizontal, 10)
                .padding(.vertical, 6)

@@ -70,56 +70,35 @@ struct RecalibrationV: View {
     
     var body: some View {
         ZStack {
-            // True gradient if available
-            BackplateGradient(p: p)
-            
+//Chrome paints gradient + texture, leave clear
+            Color.clear
         VStack {
             ScrollView {
                 Page {
-                    // MARK: - Recal
-                    /*left-aligned = calmer eye path*/
-                    T("Reset & Recalibrate", .largeTitle)
+                    // MARK: - Header
+                    T("Reset & Recalibrate", .section)
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 24)
+                        .padding(.top, 20)
                     
                     // -- separator --
-                    VStack(spacing: 2) {
                         Rectangle()
-                            .fill(recColor)
-                            .frame(height: 2)
-                            .shadow(radius: 2, y: 1)
-                        // ↑ was 4
-                        // .padding(.vertical, 8)
-                        Rectangle()
-                            .fill(recColor)
-                            .frame(height: 2)
-                            .shadow(radius: 2, y: 1)
-                        // ↑ was 4
-//                            .padding(.vertical, 4)
-                    }
+                        .fill(p.accent.opacity(0.85))
+                        .frame(height: 2)
+                        .padding(.vertical, 8)
+
                     
                     // MARK:  - Supporting copy
                     /* left-aligned, subdued */
                     T("Even though these short activities are only a few minutes in duration, because they're physical movements, they energize and invigorate your ability to focus.", .title3)
                         .foregroundStyle(textSecondary)
                         .multilineTextAlignment(.center)
-                        // a bit below the separator
-//                        .padding(.top, 1)
-                    
-                    // MARK: a separator
-                    Rectangle()
-                        .fill(p.accent)
-                        .frame(height: 2)
-                        // was 4, ↑ a touch
-                        .padding(.vertical, 4)
-                        .shadow(radius: 2, y: 1)
-                    
-                    Spacer()
+                       .padding(.top, 2)
                     
                     T("Choose one below:", .title3)
                         .foregroundStyle(textSecondary)
                         // a bit below the separator
-                        .padding(.top, 28)
+                        .padding(.top, 10)
+                        .padding(.horizontal, 8)
                     
                     // MARK: ONLY CTA/timer block
                     actionArea

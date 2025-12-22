@@ -81,7 +81,8 @@ final class FocusVM: ObservableObject {
     private var runningDeadline: Date?                  /// property to mark a deadline when a chunk starts or resumes
     private var editingIndex: Int? = nil                /// when editing, remember location, reinsert there
     
-    var chunkDuration: Int { config.chunkDuration }     /// Default 20 min chunk duration constant
+//    var chunkDuration: Int { config.chunkDuration }     /// Default 20 min chunk duration constant
+    var chunkDuration: Int { TimerConfig.current.chunkDuration }    // live: respects shorter timers for debugging
     
     // MARK: - Cancel or teardown
     deinit {
@@ -113,7 +114,7 @@ final class FocusVM: ObservableObject {
         self.config = config
         self.persistence = persistence
         self.notifications = notifications
-        self.countdownRemaining = config.chunkDuration
+        self.countdownRemaining = TimerConfig.current.chunkDuration
         self.timeActor = ContinuousClockActor(config: config)
         
         if previewMode {
@@ -123,7 +124,7 @@ final class FocusVM: ObservableObject {
             sessionActive = true
             currentSessionChunk = 1
             phase = .running
-            countdownRemaining = config.chunkDuration / 20
+            countdownRemaining = TimerConfig.current.chunkDuration / 20
         }
     }
     
@@ -302,7 +303,7 @@ final class FocusVM: ObservableObject {
         //        stopCurrent20MinCountdown()
         //        phase = .running
         
-        let total = seconds ?? config.chunkDuration
+        let total = seconds ?? TimerConfig.current.chunkDuration
         countdownRemaining = total
         saveVMSnapshot()
         // schedule background alert
@@ -500,7 +501,7 @@ final class FocusVM: ObservableObject {
         //        completedTileIDs.removeAll()
         currentSessionChunk = 0
         phase = .none
-        countdownRemaining = config.chunkDuration
+        countdownRemaining = TimerConfig.current.chunkDuration
         didHapticForChunk.removeAll()
         await timeActor.resetSessionTracking()
         cancelEndNotification()
@@ -566,6 +567,7 @@ final class FocusVM: ObservableObject {
     // Calls countdowns when testflight/debug tab
     func applyCurrentTimerConfig() {
         let now = TimerConfig.current
+        // Pull fresh durations after debug toggle
         countdownRemaining = now.chunkDuration
     }
     

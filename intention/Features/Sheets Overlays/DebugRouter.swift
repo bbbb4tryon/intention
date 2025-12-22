@@ -23,9 +23,7 @@ final class DebugRouter: ObservableObject {
 //    @Published private(set) var isUnlocked = false
     
     // MARK: Config
-//    private let pinKey = "debug_unlock_pin"     // Userdefault key for cached unlock expiry
-//    private let unlockTTL: TimeInterval = 0.25 * 60 * 60 // 15m cache
-    private let requiredPin = "314159"            // change as needed; in DEBUG you can keep this 1521
+    private let requiredPin = DebugSecrets.requiredPIN
     private let failHandoffDelay: TimeInterval = 0.15
     
     init() { }

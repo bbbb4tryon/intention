@@ -420,7 +420,19 @@ final class HistoryVM: ObservableObject {
         
         if capped10.contains(catID) {
             let overflow = categories[idx].tiles.count - 10
-            if overflow > 0 { categories[idx].tiles.removeLast(overflow) }
+            if overflow > 0 {
+                // oldest items offloaded into Archive
+                let removed = Array(categories[idx].tiles.suffix(overflow))
+                categories[idx].tiles.removeLast(overflow)
+                
+                if let aIdx = categories.firstIndex(where:  { $0.id == archiveCategoryID }) {
+                    // insert newest-to-Archive at the top - keep newest first
+                    categories[aIdx].tiles.insert(contentsOf: removed.reversed(), at: 0)
+                    // enforce archive cap & mirror to archiveactor
+                    applyCaps(afterInsertingIn: aIdx)
+                    mirrorArchiveIfInvolved(fromCategory: catID, toCategory: archiveCategoryID)
+                }
+            }
         }
     }
     

@@ -26,6 +26,7 @@ struct HistoryV: View {
     @State private var renameText = ""
     @State private var showDeleteConfirm = false
     @State private var isBusy = false
+    @State private var editMode: EditMode = .inactive
     
     /// Theme hooks
     private let screen: ScreenName = .history
@@ -95,8 +96,12 @@ struct HistoryV: View {
         .toolbarBackground(.visible, for: .navigationBar)
         .animation(.easeInOut(duration: 0.2), value: viewModel.lastUndoableMove != nil)
         .toolbar { historyToolbar }
+        
+        .environment(\.editMode, $editMode)
+        
         .environmentObject(theme)
         .environmentObject(viewModel)
+
         .overlay {
             if let error = viewModel.lastError {
                 ErrorOverlay(error: error) { viewModel.setError(nil) }
@@ -176,6 +181,9 @@ struct HistoryV: View {
         ToolbarItem(placement: .principal) {
             historyTitleMenu
         }
+        ToolbarItem(placement: .topBarTrailing) {
+            EditButton()
+        }
     }
     
     private var historyTitleMenu: some View {
@@ -228,6 +236,7 @@ struct HistoryV: View {
     
     private var deleteCategoryToolbarButton: some View {
         Button(role: .destructive, action: {
+            editMode = .active
             if let only = viewModel.userCategoryIDs.only {
                 targetCategoryID = only
                 showDeleteConfirm = true
@@ -325,8 +334,13 @@ extension Array {
 private struct CategoryCard: View {
     @EnvironmentObject private var viewModel: HistoryVM
     @EnvironmentObject private var theme: ThemeManager
-    
 
+    // Binding<EditMode>
+    @Environment(\.editMode) private var editMode
+    private var isEditing: Bool {
+        (editMode?.wrappedValue.isEditing) == true
+    }
+    
     @Binding var category: CategoriesModel
     let isArchive: Bool
     var onRename: (UUID) -> Void
@@ -340,13 +354,29 @@ private struct CategoryCard: View {
         Card {
             VStack(alignment: .leading, spacing: 8) {
 
-            CategoryHeaderRow(
-                title: isArchive ? "Archive" : category.persistedInput.ifEmpty("Untitled"),
-                count: category.tiles.count,
-                isArchive: isArchive,
-                allowEdit: !isArchive && category.id != viewModel.generalCategoryID,
-                onRename: {  onRename(category.id) },       // NOTE: CategoryHeaderRow expects () -> Void, adapt by calling the closure with category.id
-            )
+                   if isEditing,
+                    !isArchive,
+                   category.id != viewModel.generalCategoryID {
+                    // Inline rename while in Edit mode
+                    TextField("Untitled", text: $category.persistedInput)
+                        .textInputAutocapitalization(.words)
+                        .disableAutocorrection(true)
+                        .padding(10)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        .onSubmit {
+                            viewModel.renameCategory(id: category.id, to: category.persistedInput)
+                        }
+                } else {
+                    CategoryHeaderRow(
+                        title: isArchive ? "Archive" : category.persistedInput.ifEmpty("Untitled"),
+                        count: category.tiles.count,
+                        isArchive: isArchive,
+                        allowEdit: !isArchive && category.id != viewModel.generalCategoryID,
+                        onRename: { onRename(category.id) }
+                    )
+                }
+                
+                
             CategoryTileList(
                 category: $category,
                 isArchive: isArchive
