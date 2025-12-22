@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+// The sheet is containment enough
+// Visual role becomes instrument, not instruction
 struct BreathingPhaseGuide: View {
     @EnvironmentObject var theme: ThemeManager
     

@@ -24,14 +24,15 @@ struct BalanceSideDots: View {
     private let colorBorder = Color(red: 0.333, green: 0.333, blue: 0.333).opacity(0.22)
     
     var body: some View {
-        T("On Cue, Lift and Balance On Your: ", .label)
-            .padding()
+        T("Current side", .caption)
+            .foregroundStyle(p.text.opacity(0.7))
+            .padding(.bottom, 6)
         
         HStack(spacing: 16) {
             dot(label: "Left", isActive: activeIndex == 0)
             dot(label: "Right", isActive: activeIndex == 1)
         }
-        .padding()
+        .padding(.vertical, 8)
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(activeIndex == 0 ? "Left Leg" : "Right Leg")
