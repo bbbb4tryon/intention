@@ -80,6 +80,7 @@ struct RecalibrationV: View {
                 
                 content
                     .padding(.horizontal, 16)
+                    .animation(.easeInOut(duration: 0.25), value: vm.phase)
             }
         }
         
@@ -105,12 +106,24 @@ struct RecalibrationV: View {
         switch vm.phase {
         case .none, .idle:
             chooseView
+                .transition(
+                    .asymmetric(
+                        insertion: .opacity,
+                        removal: .move(edge: .top).combined(with: .opacity)
+                    )
+                )
             
         case .running, .pause:
             runView
-            
+                .transition(
+                    .asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                                removal: .opacity
+                    )
+                )
         case .finished:
-            EmptyView()
+            // auto-return to choice
+            chooseView
         }
     }
     
@@ -134,7 +147,6 @@ struct RecalibrationV: View {
             Spacer().frame(height: 24)
             
             BalancePicker
-            
             
             //            if vm.phase == .none || vm.phase == .idle { BalancePicker }
             Button {
@@ -195,12 +207,18 @@ struct RecalibrationV: View {
         }
         .padding(.top, 12)
     }
+    
+    // MARK: progress
+    private var progressFraction: CGFloat {
+        let total = max(1, vm.totalDuration)
+        let remaining = max(0, vm.timeRemaining)
+        return CGFloat(total - remaining) / CGFloat(total)
+    }
 }
 
 // MARK: Progress bar for Recalibration
 private struct RecalProgressBar: View {
     let progress: CGFloat   // 0.0 ... 1.0
-    //    let p: ScreenStylePalette
     
     var body: some View {
         GeometryReader { geo in
@@ -232,15 +250,6 @@ private struct RecalProgressBar: View {
     }
 }
 
-// MARK: Progress calculation helper
-private extension RecalibrationV {
-    var progressFraction: CGFloat {
-        let total = max(1, vm.totalDuration)
-        let remaining = max(0, vm.timeRemaining)
-        let done = total - remaining
-        return CGFloat(Double(done) / Double(total))
-    }
-}
 // MARK: - Computed Helpers
 private struct InstructionList: View {
     let items: [String]
