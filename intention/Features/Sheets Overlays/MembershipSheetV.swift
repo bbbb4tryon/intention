@@ -33,9 +33,9 @@ struct MembershipSheetV: View {
             ScrollView {
                 VStack {
                     // Hero
-                    T("Support your focus practice", .header)
+                    T("Support your focus practice, its working!", .header)
                     T("Unlimited sessions, stats, and customization.", .title3)
-                    T("About 30¢ per day.", .secondary)
+                    T("Unlimited focus for about 30¢ per day.", .secondary)
                         .lineLimit(2)
                 }
                 .multilineTextAlignment(.center)
@@ -53,69 +53,33 @@ struct MembershipSheetV: View {
                             .padding(.bottom, 6)
                     }
                     
-                    // Primary CTA row (above the fold)
-                    if viewModel.isMember {
-                        Label { T("Member", .label) } icon: { Image(systemName: "star.fill").foregroundStyle(p.primary)
-                        }
-                        .symbolBounceIfAvailable()
-                    } else {
-                        // Upgrade
-                        Button {
-                            Task {
-                                isBusy = true; defer { isBusy = false }
-                                do { try await viewModel.purchaseMembershipOrPrompt() }
-                                catch { viewModel.setError(error) }      // Shows ErrorOverlay
-                            }
-                         } label: { T("Upgrade", .action) }
-                            .primaryActionStyle(screen: .membership)
-                            .frame(maxWidth: .infinity, minHeight: 48)
-                            .shadow(color: p.accent.opacity(0.25), radius: 12, y: 6)
-                        
-                        // Restore
-                        Button {
-                            Task {
-                                do { try await viewModel.restoreMembershipOrPrompt() }
-                                catch { viewModel.setError(error) }     // Shows ErrorOverlay
-                            }
-                        } label: { T("Restore Purchases", .action) }
-                            .secondaryActionStyle(screen: .membership)
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .padding(.top, 6)
-                        
-                        // Apple offer-code redemption (subscription offers)
-                        Button {
-                            Task { await redeemOfferCode() }
-                        } label: { T("Redeem Code (Apple)", .action) }      // it’s a button, not footnote text use .action
-                            .buttonStyle(.plain)
-                            .padding(.top, 4)
-                    }
+                    content
                     
                     Card {
                         VStack(alignment: .leading, spacing: 10) {
-                            T("Why upgrade?", .title3)
-                            T("Your focus fuels our future.", .title3).padding(.top, 2)
+                            T("Benefits of Subscription", .title3)
                             
                             VStack(alignment: .leading, spacing: 8) {
-                                Label("Unlimited focus sessions", systemImage: "infinity")
-                                Label("Detailed stats & categories", systemImage: "chart.bar")
-                                Label("Full customization", systemImage: "paintbrush")
-                                Divider().padding(.vertical, 4)
+                                Label("Unlimited sessions", systemImage: "infinity")
+//                                Label("Detailed stats & categories", systemImage: "chart.bar")
+//                                Label("Customization", systemImage: "paintbrush")
                                 Label("Build momentum", systemImage: "bolt")
                                 Label("Track progress", systemImage: "chart.line.uptrend.xyaxis")
-                                Label("\(tailText)", systemImage: "house").lineLimit(nil)
-                                Label("Thank you.", systemImage: "heart")
+                                Divider().padding(.vertical, 4)
+                                Label("Direct feedback line", systemImage: "envelope")
+                                Label(tailText, systemImage: "house").lineLimit(nil)
                             }
                             .font(theme.fontTheme.toFont(.footnote))
                             .foregroundStyle(.secondary)
                             .symbolRenderingMode(.hierarchical)
                             
-                            T("Apple securely handles your purchase. Cancel anytime in **Settings › Manage Subscription.**", .caption)
+                            T("Apple securely handles your purchase. Cancel anytime in Settings › Manage Subscription.", .caption)
                                 .lineLimit(nil)
                                 .foregroundStyle(.secondary)
                                 .padding(.top, 6)
                         }
                     }
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                    .background(p.background.opacity(0.92), in: RoundedRectangle(cornerRadius: 14))
                 }
             }
             .background(p.background.ignoresSafeArea())
@@ -140,6 +104,82 @@ struct MembershipSheetV: View {
                     .transition(.opacity.combined(with: .scale))
                     .zIndex(1)
             }
+        }
+    }
+    
+    // MARK: content Phase router
+    @ViewBuilder
+    private var content: some View {
+        if viewModel.isMember {
+            successStateView
+        } else {
+            offerStateView
+        }
+    }
+    
+    // MARK: SUCCESS STATE
+    private var successStateView: some View {
+        VStack(spacing: 16){
+            T("Subscribed", .section)
+            
+            T("You're supporting something real. Thank you.", .title3)
+            
+            Button {
+                // back to focus
+                dismiss()
+            } label: {
+                T("Return to your intentions", .action)
+            }
+            .primaryActionStyle(screen: .membership)
+            .frame(minWidth: .infinity, minHeight: 48)
+            
+            Button {
+                // routes to feedback
+                dismiss()
+            } label: {
+                T("Send Feedback", .action)
+            }
+            .primaryActionStyle(screen: .membership)
+        }
+    }
+    
+    // MARK: OFFER STATE
+    private var offerStateView: some View {
+        VStack(spacing: 16){
+            Button {
+                Task {
+                    isBusy = true
+                    defer { isBusy = false }
+                    do { try await viewModel.purchaseMembershipOrPrompt() }
+                    catch { viewModel.setError(error) }      // Shows ErrorOverlay
+                }
+            } label: {
+                T("Upgrade for $0.30 / day", .action)
+            }
+                .primaryActionStyle(screen: .membership)
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .shadow(color: p.accent.opacity(0.25), radius: 12, y: 6)
+            
+            Button {
+                Task {
+                    do { try await viewModel.restoreMembershipOrPrompt() }
+                    catch { viewModel.setError(error) }     // Shows ErrorOverlay
+                }
+            } label: {
+                T("Restore Purchases", .action)
+            }
+                .secondaryActionStyle(screen: .membership)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .padding(.top, 6)
+            
+            // Apple offer-code redemption (subscription offers)
+            Button {
+                Task { await redeemOfferCode() }
+            } label: {
+                T("Redeem Code via Apple", .action)
+            }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
         }
     }
 }

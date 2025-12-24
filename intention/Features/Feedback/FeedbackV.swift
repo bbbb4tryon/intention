@@ -25,6 +25,7 @@ struct FeedbackV: View {
     @EnvironmentObject var prefs: AppPreferencesVM
     
     @Environment(\.openURL) private var openURL
+    @Environment(\.dismiss) private var dismiss
     
     // Inputs
     @State private var name: String = ""
@@ -155,9 +156,18 @@ struct FeedbackV: View {
             ) { result, err in
                 switch result {
                 case .sent:
-                    alertMsg = "Thanks! Feedback sent!"; showingAlert = true
+                    alertMsg = "Thanks! We read every message."
+                    showingAlert = true
+                    
+                    // Auto dismiss Feedback after confirmation
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(1.2))
+                        dismiss()
+                    }
+                    
                 case .failed:
-                    alertMsg = "Could not send: \(err?.localizedDescription ??  "Unknown error")"; showingAlert = true
+                    alertMsg = "Mail couldn't send. Try again."
+                    showingAlert = true
                 case .saved, .cancelled:
                     // backed out or saved draft - no alert
                     break
@@ -197,7 +207,7 @@ struct FeedbackV: View {
         .background(p.background.ignoresSafeArea())
         .tint(p.accent)
         .navigationTitle("Feedback For Us")
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .background(p.background.opacity(0.92), in: RoundedRectangle(cornerRadius: 12))
         //TODO: Or use .shadow(radius: 3, y: 1)
         .navigationBarTitleDisplayMode(.inline)
         .scrollDismissesKeyboard(.interactively) // swipe down to dismiss
@@ -214,7 +224,7 @@ struct FeedbackV: View {
         }
         .sheet(isPresented: $showComposer) { composerSheet }
         .tint(.blue)
-        .alert("Feedback", isPresented: $showingAlert) {
+        .alert("Message", isPresented: $showingAlert) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(alertMsg)

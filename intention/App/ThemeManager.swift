@@ -61,8 +61,8 @@ struct ScreenStylePalette {
     // Uses Color.black for guaranteed darkness/contrast
     let radialBackground: RadialGradientSpecial = .init(
         colors: [
-            Color.black.opacity(0.8), // Inner (visible, near black)
-            Color.black.opacity(0.4), // Middle blend
+//            Color.black.opacity(0.6), // Inner (visible, near black)
+//            Color.black.opacity(0.3), // Middle blend
             Color.clear             // Outer (faded)
         ],
         center: .center,
@@ -90,17 +90,18 @@ enum AppFontTheme: String, CaseIterable {
 private enum DefaultColors {
     
     static let backgroundLight = Color.app("AppBackground",
-                                           fallback: Color(red: 0.886, green: 0.937, blue: 0.702)) // F8F6FA -> dark would be 3B2F4E
+                                           fallback: Color(red: 0.557, green: 0.698, blue: 0.557)) // F8F6FA -> dark would be 3B2F4E
         .opacity(1) // no-op; forces load
    static let surfaces        = Color.app("AppSurfaces",
-                                          fallback: Color(red: 0.941, green: 0.969, blue: 0.831)) // EFEBF3
+                                          fallback: Color(red: 0.851, green: 0.910, blue: 0.651)) // EFEBF3
     static let accent          = Color.app("AppAccent",
-                                           fallback: Color(red: 0.290, green: 0.231, blue: 0.110)) // C83264)
+                                           fallback: Color(red: 0.518, green: 0.000, blue: 0.714)) // C83264)
     static let text            = Color.app("AppText",
                                        fallback: Color(red: 0.239, green: 0.314, blue: 0.000)) // 1A161E 48284D
 
     static let _topDark = text // Dark Text/Surface (Recalibrate): Same as text for consistency
     static let bottomLight = backgroundLight // Recalibrate bottom light: Matches new background for clean transition
+    static let recalibrateFixedBG =  Color(red:0.882, green:0.937, blue:0.702 )
 }
 
 // Primary Background: Pale Blue-Gray (F3F6F9) - Crisp & Calm
@@ -139,10 +140,8 @@ private enum SeaDefaultColors {
 private enum RecalibrateBG {
     static let gradient: ScreenStylePalette.LinearGradientSpecial = .init(
         colors: [
-//            DefaultColors.text.opacity(0.92),   // top: very dark, better contrast
-            Color.gray.opacity(0.92),
-            DefaultColors.text.opacity(0.66),   // soften banding
-            DefaultColors.backgroundLight       // bottom: page bg
+            DefaultColors.surfaces.opacity(0.85),
+            DefaultColors.surfaces.opacity(0.45)
         ],
         start: .top, end: .bottom
     )
@@ -152,10 +151,8 @@ private enum RecalibrateBG {
 private enum MembershipBG {
     static let gradient: ScreenStylePalette.LinearGradientSpecial = .init(
         colors: [
-//            DefaultColors.accent.opacity(0.92),
-//            DefaultColors.accent.opacity(0.75),
-            Color.gray.opacity(0.92),
-            DefaultColors.surfaces                 // calmer base for legibility
+            DefaultColors.surfaces.opacity(0.85),
+            DefaultColors.surfaces.opacity(0.45)
         ],
         start: .topLeading, end: .bottomTrailing
     )
@@ -193,12 +190,12 @@ enum AppColorTheme: String, CaseIterable {
                 
             case .recalibrate:
                 return .init(
-                    primary: DefaultColors.text,
-                            background: RecalibrateBG.bottomLight,
-                            surfaces: DefaultColors.surfaces.opacity(0.12),
-                            accent: DefaultColors.accent,
-                            text: Color.white,                        // over dark gradient top
-                            gradientBackground: RecalibrateBG.gradient
+                    primary: DefaultColors.text,            // The "Primary" identity is now the dark color
+                    background: DefaultColors.backgroundLight,  // The "Sheet" behind the card is still light
+                    surfaces: DefaultColors.surfaces,           // Flip: The card itself is now Dark
+                    accent: DefaultColors.accent,
+                    text: DefaultColors.backgroundLight,    // Flip: Text on the dark card is now Light
+                    gradientBackground: nil
                     )
                 
             case .membership:
@@ -207,8 +204,8 @@ enum AppColorTheme: String, CaseIterable {
                        background: DefaultColors.backgroundLight,
                        surfaces: DefaultColors.surfaces.opacity(0.96),
                        accent: DefaultColors.accent,
-                       text: DefaultColors.text,                 // content mostly on light tones
-                       gradientBackground: MembershipBG.gradient
+                       text: DefaultColors.text,                 
+                       gradientBackground: nil
                 )
             }
             

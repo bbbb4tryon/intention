@@ -98,7 +98,7 @@ struct BreathingPhaseGuide: View {
 //                .stroke(p.text.opacity(0.06), lineWidth: 1)
 //        )
 //        .padding(.horizontal, 4)
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
     }
 }
 

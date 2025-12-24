@@ -362,7 +362,7 @@ private struct CategoryCard: View {
                         .textInputAutocapitalization(.words)
                         .disableAutocorrection(true)
                         .padding(10)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        .background(p.background.opacity(0.92), in: RoundedRectangle(cornerRadius: 8))
                         .onSubmit {
                             viewModel.renameCategory(id: category.id, to: category.persistedInput)
                         }
@@ -416,7 +416,7 @@ private struct RenameCategoryV: View {
                     .textInputAutocapitalization(.words)
                     .disableAutocorrection(true)
                     .padding(12)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .background(p.background.opacity(0.92), in: RoundedRectangle(cornerRadius: 10))
                 
                 HStack(spacing: 12) {
                     Button(action: onCancel) {

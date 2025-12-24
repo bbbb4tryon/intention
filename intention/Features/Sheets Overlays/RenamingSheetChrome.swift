@@ -41,7 +41,7 @@ struct RenamingSheetChrome<Content: View>: View {
                 .contentShape(Rectangle())
 
                 content
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .background(p.background.opacity(0.92), in: RoundedRectangle(cornerRadius: 16))
                     .padding(.horizontal, 12)
                     .padding(.bottom, 8)
             }

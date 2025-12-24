@@ -11,7 +11,7 @@ enum RecalibrationError: LocalizedError {
     case invalidBreathingMinutes, cannotChangeWhileRunning
     var errorDescription: String? {
         switch self {
-        case .invalidBreathingMinutes:   return "Breathing must be 2–4 minutes."
+        case .invalidBreathingMinutes:   return "Timing is preset."
         case .cannotChangeWhileRunning:  return "You can’t change duration while a session is running."
         }
     }
@@ -38,7 +38,6 @@ final class RecalibrationVM: ObservableObject {
     @Published private(set) var totalDuration: Int = 0  // of time bar
     @Published var lastError: Error?
     @Published var breathingPhaseIndex: Int = 0     // 0:Inhale, 1:Hold, 2:Exhale, 3:Hold
-    @Published var promptText: String = ""          // “Switch feet” pulses EMOM
     @Published var eyesClosedMode: Bool = false     // UI toggles this before start()
     @Published var balancingPhaseIndex: Int = 0
     
@@ -54,8 +53,7 @@ final class RecalibrationVM: ObservableObject {
     var currentBalancingMinutes: Int { balancingMinutes }
     
     // Prompts
-    let breathingPhases = ["Inhale for 4 seconds", "Hold for 4 seconds", "Exhale for 4 seconds", "Hold for 4 seconds"]
-    var breathingPhaseLine: String { breathingPhases.joined(separator: " `\n` ") }
+    let breathingPhases = ["Inhale", "Hold", "Exhale", "Hold"]
     
     // Policy knobs (VM decides "when")
     private var breathingMinutes: Int
@@ -90,10 +88,13 @@ final class RecalibrationVM: ObservableObject {
         await actor.startTicking(
             totalSeconds: duration,
             onTick: {_ in },
+            // makes .finished immediately settle into .idle
             onFinish: { [weak self] in
                 Task { @MainActor in
-                    self?.phase = .finished
+//                    self?.phase = .finished
                     self?.haptics.notifyDone()
+                    self?.phase = .idle
+                    self?.mode = nil
                 }
             }
         )
@@ -107,7 +108,7 @@ final class RecalibrationVM: ObservableObject {
         self.recalDeadline = Date().addingTimeInterval(TimeInterval(seconds))
         
         // Reset phase indices and prompt on each start
-        self.promptText = ""
+//        self.promptText = ""
         self.breathingPhaseIndex = 0
         self.balancingPhaseIndex = 0
         
@@ -122,7 +123,7 @@ final class RecalibrationVM: ObservableObject {
         cancel()
         phase = .idle
         mode = nil
-        promptText = ""
+//        promptText = ""
     }
 
     private func cancel() {
@@ -155,10 +156,11 @@ final class RecalibrationVM: ObservableObject {
         if remain != timeRemaining { timeRemaining = remain }
         if remain == 0 {
             // finish immediately
-            phase = .finished
+//            phase = .finished
+            phase = .idle
             let finished = mode
             mode = nil
-            promptText = ""
+//            promptText = ""
             if let m = finished { onCompleted?(m) }
             fireHapticsNotifyDone()
         }
@@ -239,10 +241,11 @@ final class RecalibrationVM: ObservableObject {
             // Finish + notify exactly once, on the main actor.
             await MainActor.run {
                 self.fireHapticsNotifyDone()          // long–long–short
-                self.phase = .finished
+//                self.phase = .finished
+                self.phase = .idle
                 let finishedMode = self.mode
                 self.mode = nil
-                self.promptText = ""
+//                self.promptText = ""
                 if let m = finishedMode {
                     self.onCompleted?(m)
                 }
@@ -308,10 +311,11 @@ final class RecalibrationVM: ObservableObject {
             // all the “we’re finished” work in a single block
             await MainActor.run {
                 self.fireHapticsNotifyDone()
-                self.phase = .finished
+//                self.phase = .finished
+                self.phase = .idle
                 let finishedMode = self.mode
                 self.mode = nil
-                self.promptText = ""
+//                self.promptText = ""
                 if let m = finishedMode { self.onCompleted?(m) }
             }
 //            
@@ -346,14 +350,14 @@ final class RecalibrationVM: ObservableObject {
         }
     }
 
-       private func phaseBlock(label: String, seconds: Int) async {
-           haptics.added()                          // single short cue at each phase start
-           for _ in 0..<seconds {
-               guard !Task.isCancelled else { return }
-               try? await Task.sleep(for: .seconds(1))
-               await MainActor.run { self.timeRemaining = max(0, self.timeRemaining - 1) }  // "clamps": UI never shows -00:01
-           }
-       }
+//       private func phaseBlock(label: String, seconds: Int) async {
+//           haptics.added()                          // single short cue at each phase start
+//           for _ in 0..<seconds {
+//               guard !Task.isCancelled else { return }
+//               try? await Task.sleep(for: .seconds(1))
+//               await MainActor.run { self.timeRemaining = max(0, self.timeRemaining - 1) }  // "clamps": UI never shows -00:01
+//           }
+//       }
     
     func performAsyncAction(_ action: @escaping () async throws -> Void) {
         Task {

@@ -96,16 +96,16 @@ struct RecalibrationActionStyle: ButtonStyle {
         let stroke = palette.accent
 
         return configuration.label
-            .font(.headline)
-            .foregroundStyle(palette.accent)
-            .padding(.vertical, 12)
+            .font(.headline.weight(.semibold))
+            .foregroundStyle(palette.surfaces)      // uses dark for text
+            .padding(.vertical, 14)
             .frame(maxWidth: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.clear)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(palette.accent.opacity(pressed ? 0.9 : 1.0))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(stroke.opacity(pressed ? 0.9 : 1.0), lineWidth: 2)
+                            .stroke(stroke.opacity(pressed ? 0.9 : 1.0), lineWidth: 1.25)
                     )
                     .shadow(color: stroke.opacity(isEnabled ? (pressed ? 0.10 : 0.20) : 0.0),
                             radius: pressed ? 3 : 6, y: pressed ? 1 : 3)

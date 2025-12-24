@@ -10,13 +10,20 @@ struct BackplateGradient: View {
     // drives tiny animation of liveliness
     @State private var tinydrift: CGFloat = 0
     let p: ScreenStylePalette
+    // when true, ignores gradient, uses p.background
+    let forceFlat: Bool
+    
+    init(p: ScreenStylePalette, forceFlat: Bool = false){
+        self.p = p
+        self.forceFlat = forceFlat
+    }
     
     var body: some View {
         // vertical drive amound ~2%
         let offset = 0.02 * sin(tinydrift)
         
         Group {
-            if let g = p.gradientBackground {
+            if !forceFlat, let g = p.gradientBackground {
                 LinearGradient(colors: g.colors,
                                startPoint: UnitPoint(x: g.start.x, y: g.start.y + offset),
                                endPoint: UnitPoint(x: g.end.x, y: g.end.y + offset)

@@ -10,6 +10,7 @@ import SwiftUI
 // `self.lastError = error` to trigger the ErrorOverlay
 struct ErrorOverlay: View {
     @EnvironmentObject var theme: ThemeManager
+    @EnvironmentObject var debugRouter: DebugRouter
 
     let error: Error
     let dismissAction: () -> Void

@@ -11,20 +11,21 @@ struct DebugAndPathsV: View {
     @EnvironmentObject var historyVM: HistoryVM
     @EnvironmentObject var focusVM: FocusVM
     @EnvironmentObject var recalVM: RecalibrationVM
+    @EnvironmentObject var memVM: MembershipVM
     @EnvironmentObject var prefs: AppPreferencesVM
     @EnvironmentObject var debug: DebugRouter
 
     var body: some View {
         NavigationStack {
             List {
-                Section("Visibility") {
-                    Toggle("Short Timers (5s/15s)", isOn: $prefs.debugShortTimers)
+                Section("Testing Slips") {
+                    Toggle("Short Countdowns (5s/15s)", isOn: $prefs.debugShortTimers)
                         .onChange(of: prefs.debugShortTimers) { _ in
                             focusVM.applyCurrentTimerConfig()
                         }
                 }
 
-                Section("Focus 5s flow") {
+                Section("Focus Flow") {
                     Button("Seed 2 Tiles") {
                         Task { @MainActor in
                             focusVM.tileText = "Tile 1"
@@ -41,7 +42,7 @@ struct DebugAndPathsV: View {
                     }
                 }
 
-                Section("Recalibration 15s") {
+                Section("Recalibration") {
                     Button("Show Recalibration Sheet") {
                         focusVM.showRecalibrate = true
                     }
@@ -57,6 +58,21 @@ struct DebugAndPathsV: View {
                     }
                     Button("Stop Recalibration") {
                         recalVM.performAsyncAction { try await recalVM.stop() }
+                    }
+                }
+                
+                Section("Paywall & Membership") {
+                    Button("Tigger Membership Sheet") {
+                        // trigger the binding in RootView
+                        memVM.presentPaywall()
+                    }
+                    
+                    Button("Simulate: Become Member") {
+                        memVM._debugSetIsMember(true)
+                    }
+                    
+                    Button("Simulate: Lose Membership") {
+                        memVM._debugSetIsMember(false)
                     }
                 }
 

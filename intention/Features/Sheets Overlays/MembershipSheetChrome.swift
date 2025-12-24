@@ -24,26 +24,26 @@ struct MembershipSheetChrome<Content: View>: View {
     var body: some View {
         ZStack {
             // Base gradient (membership palette)
-            BackplateGradient(p: p)
+            BackplateGradient(p: p, forceFlat: true)
+                .opacity(1.0)
                 .ignoresSafeArea()
 
-            // Subtle vignette + paper texture (depth + cohesion)
+            // Subtle "lift" vignette + paper texture (depth + cohesion)
             Group {
                 RadialGradient(
                     gradient: Gradient(colors: [
-                        Color.black.opacity(0.38),
-                        Color.black.opacity(0.12),
+                        Color.white.opacity(0.10),
                         .clear
                     ]),
                     center: .center, startRadius: 0, endRadius: 520
                 )
-                .blendMode(.multiply)
+                .blendMode(.overlay)
                 .ignoresSafeArea()
 
                 Image("Noise64")
                     .resizable()
                     .scaledToFill()
-                    .opacity(0.035)
+                    .opacity(0.25)
                     .blendMode(.overlay)
                     .ignoresSafeArea()
                     .accessibilityHidden(true)
@@ -75,7 +75,7 @@ struct MembershipSheetChrome<Content: View>: View {
                 // Inner content sits on a "glass" surface
                 content
                     .padding(16)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(p.background.opacity(0.92), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .stroke(p.text.opacity(0.06), lineWidth: 1)

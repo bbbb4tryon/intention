@@ -80,12 +80,11 @@ struct SettingsV: View {
                         }
                         HStack(spacing: 12) {
                             Button(action: {
-                                /// Instead of Link()
-                                if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
-                                    UIApplication.shared.open(url)
-                                }
+                                // this sets shouldPrompt = true
+                                memVM.presentPaywall()
+//                                    UIApplication.shared.open(url)
                             }) {
-                                T("Purchase", .action)
+                                T(memVM.isMember ? "Manage" : "Purchase", .action)
                             }
                             .primaryActionStyle(screen: .settings)
                             .frame(maxWidth: .infinity)

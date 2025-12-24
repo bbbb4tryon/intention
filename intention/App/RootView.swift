@@ -38,32 +38,31 @@ struct FocusShell<Content: View>: View {
                 pal.background.ignoresSafeArea().allowsHitTesting(false).zIndex(0)
             }
             
-            // subtle backdrop for better text contrast -- on recalibrate
-            if screen == .recalibrate {
-                // Vignette for reliable text contrast
-                RadialGradient(
-                    gradient: Gradient(colors: [
-                        Color.black.opacity(0.55),
-                        Color.black.opacity(0.18),
-                        Color.clear
-                    ]),
-                    center: .center, startRadius: 0, endRadius: 520
-                )
-                .blendMode(.multiply)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
-                
-                // paper-noise texture (tiled)
-                Image("Noise64")
-//                    .resizable(resizingMode: .tile)   // ⬅️ important: tile, don’t stretch
-                    .resizable()
-                    .scaledToFit()
-                    .opacity(0.06)                   // adjust if too/not subtle enough
-                    .blendMode(.overlay)            // merges with bg; doesn't gray out UI
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
+//            // subtle backdrop for better text contrast -- on recalibrate
+//            if screen == .recalibrate {
+//                // Vignette for reliable text contrast
+//                RadialGradient(
+//                    gradient: Gradient(colors: [
+//                        Color.white.opacity(0.08),
+//                        Color.clear
+//                    ]),
+//                    center: .center, startRadius: 0, endRadius: 520
+//                )
+//                .blendMode(.overlay)
+//                .ignoresSafeArea()
+//                .allowsHitTesting(false)
+//                
+//                // paper-noise texture (tiled)
+//                Image("Noise64")
+////                    .resizable(resizingMode: .tile)   // ⬅️ important: tile, don’t stretch
+//                    .resizable()
+//                    .scaledToFit()
+//                    .opacity(0.025)                   // adjust if too/not subtle enough
+//                    .blendMode(.overlay)            // merges with bg; doesn't gray out UI
+//                    .ignoresSafeArea()
+//                    .allowsHitTesting(false)
+//                    .accessibilityHidden(true)
+//            }
             
             // actual content view
             contentWithNoBackground
@@ -148,7 +147,7 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     
     // MARK: Light/Dark mode
-
+    
     
     // MARK: Single sources of truth (owned here, injected downward)
     @StateObject private var theme: ThemeManager
@@ -185,7 +184,7 @@ struct RootView: View {
         // Wiring
         focus.historyVM     = history    // Focus writes completions into History
         stats.memVM         = membership // Stats can query membership state
-
+        
         recal.onCompleted = { [weak stats, weak focus] (mode: RecalibrationMode) in
             guard let stats = stats else { return }
             
@@ -238,9 +237,9 @@ struct RootView: View {
         
         let focusNav        = NavigationStack {
             focusScreen
-                // Sets Icon tint
+            // Sets Icon tint
                 .tint(palFocus.accent)
-                // Force title to p.text otherwise
+            // Force title to p.text otherwise
                 .foregroundStyle(palFocus.text)
         }
             .tabItem { Image(systemName: "timer") }
@@ -280,219 +279,283 @@ struct RootView: View {
             settingsNav
         }
             .zIndex(1)
-        
-        // MARK: - Wrapped content for shares
-        // Wrapped to apply shares (apply tab icon coloring, shared toolbars, backgrounds)
-        let content = tabs
-        // Swipe anywhere to request Debug
-            .gesture(
-        DragGesture(minimumDistance: 20, coordinateSpace: .local)
-            .onEnded { value in
-                guard BuildInfo.isDebugOrTestFlight else { return }
-                // left swipe threshold (negative x)
-                if value.translation.width < -80 {
-                    debug.presentDebugGated(timeout: 75) // X:XX seconds (e.g., 1:15)
-                }
-            }
-)
-            .tint(palFocus.accent)
-            .toolbarBackground(tabBG, for: .tabBar)
-            .toolbarBackground(.visible, for: .tabBar)
-
-        
-        
-        content
-        // the shared environment
-            .environmentObject(theme)
-            .environmentObject(statsVM)
-            .environmentObject(memVM)
-            .environmentObject(historyVM)
-            .environmentObject(prefs)
-            .environmentObject(hapticsEngine)
-            .environmentObject(focusVM)
-            .environmentObject(recalVM)
-            .environmentObject(debug)
-            .progressOverlay($isBusy, text: "Loading...")
-        // MARK: - Applies current screen theme to background
-            .toolbarBackground(tabBG, for: .navigationBar)
-            .environmentObject(overlayManager)
-        //            .sceneHandlers
-        //            .launchHandlers
-        //            .membershipHandlers
-        //            .rootSheets(activeSheet: $activeSheet, memVM: memVM)
-        
-        // MARK: App lifecycle
-        // -- guardrail: scene handling lives at root --
-            .onChange(of: scenePhase, perform: { phase in
-                // Only set busy for background/inactive phases where a long-running Task might fire
-                switch phase {
-                case .inactive, .background:
-                    isBusy = true
-                    Task {
-                        defer { isBusy = false }      // Ensure reset after Task completes
-                        // -- If there is a pending undo window in History, commit it first so moves persist. --
-                        historyVM.commitPendingUndoIfAny()
-                        // -- coalesce + persist any pending History saves now --
-                        historyVM.flushPendingSaves()
-                        // -- snapshot focus session state (not a pause) --
-                        await focusVM.suspendTickingForBackground()
-                        isBusy = false
-                    }
-                    
-                    // Active state only calls short synchronous functions
-                case .active:
-                    isBusy = true
-                    // 3) recompute remaining (time) from snapshot & resume UI ticking if needed
-                    recalVM.appDidBecomeActive()
-                    Task {
-                        await focusVM.resumeTickingAfterForeground(); isBusy = false
-                    }
-                default: break
-                }
-            })
-        // MARK: App launch + restore any active session state + legal gate
-            .onAppear {
-                // Set isBusy for the main async launch process
-                isBusy = true
-                Task {
-                    // Ensure reset after All appear tasks
-                    defer { isBusy = false }
-                    
-                    if !IS_PREVIEW {
-                        await focusVM.restoreActiveSessionIfAny();
-                        // Synchronous, but wrapped in the main Task
-                        hapticsEngine.warm()
-                        if LegalConsent.needsConsent() {
-                            // Keeping the legal sheet on the main thread
-                            await MainActor.run { activeSheet = .legal }
-                        }
-                    } else {
-                        // Previews: no ticking, no persistence, no sheets
-                    }
-                    // implemented as a no-op wrapper than just calls prepare()
-                    hapticsEngine.warm()
-                    
-                    // Wrapped in #if debug to not affect release
-#if DEBUG
-                    if ProcessInfo.processInfo.environment["RESET_LEGAL_ON_LAUNCH"] == "1" {
-                        UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedVersion)
-                        UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedAtEpoch)
-                        if !IS_PREVIEW { activeSheet = .legal }
-                    }
-#endif
-                    
-                }
-            }
-        
-        // MARK: Sheets
-            .sheet(item: $activeSheet) { sheet in
-                switch sheet {
-                case .legal:
-                    LegalAgreementSheetV(
-                        onAccept: {
-                            Task { @MainActor in
-                                //                                LegalConsent.recordAcceptance()
-                                acceptedVersion = LegalConfig.currentVersion
-                                acceptedAtEpoch = Date().timeIntervalSince1970
-                                activeSheet = nil
-                            }
-                        },
-                        onShowTerms: { Task { @MainActor in activeSheet = .terms } },
-                onShowPrivacy: { Task { @MainActor in activeSheet = .privacy } },
-                        onShowMedical: { Task { @MainActor in activeSheet = .medical } }
-                    )
-                    .environmentObject(theme)
-                    
-                case .terms:
-                    NavigationStack {
-                        LegalDocV(
-                            title: "Terms of Use",
-                            markdown: MarkdownLoader.load(named: LegalConfig.termsFile),
-                            palette: theme.palette(for: .settings)
-                        )
-                    }
-                    .environmentObject(theme)
-                    
-                case .privacy:
-                    NavigationStack {
-                        LegalDocV(
-                            title: "Privacy Policy",
-                            markdown: MarkdownLoader.load(named: LegalConfig.privacyFile),
-                            palette: theme.palette(for: .settings)
-                        )
-                    }
-                    .environmentObject(theme)
-                    
-                case .medical:
-                    NavigationStack {
-                        LegalDocV(
-                            title: "Wellness Disclaimer",
-                            markdown: MarkdownLoader.load(named: LegalConfig.medicalFile),
-                            palette: theme.palette(for: .settings)
-                        )
-                    }
-                    .environmentObject(theme)
-                }
-            }
-        // ========== DEBUG PRESENTATION WIRING ==========
-            .fullScreenCover(isPresented: $debug.showDebug) {
-                NavigationStack {
-                    DebugAndPathsV()
-                        .environmentObject(theme)
-                        .environmentObject(memVM)
-                        .environmentObject(historyVM)
-                        .environmentObject(prefs)
-                        .environmentObject(hapticsEngine)
-                        .environmentObject(focusVM)
-                        .environmentObject(recalVM)
-        
-                        .navigationTitle("Debug")
-                        .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                Button("Close") { debug.showDebug = false }
+        ZStack {
+            // MARK: Content
+            let content =
+            
+            tabs
+            // Swipe anywhere to request Debug
+                .gesture(
+                    DragGesture(minimumDistance: 20, coordinateSpace: .local)
+                        .onEnded { value in
+                            guard BuildInfo.isDebugOrTestFlight else { return }
+                            // left swipe threshold (negative x)
+                            if value.translation.width < -80 {
+                                debug.presentDebugGated(timeout: 75) // X:XX seconds (e.g., 1:15)
                             }
                         }
-                }
-            }
-        // Recalibration "sheet" as a full-screen chrome for debug
-            .fullScreenCover(isPresented: $debug.showRecalibration) {
-                RecalibrationSheetChrome(onClose: {
-                    Task { @MainActor in debug.showRecalibration = false }
-                }) {
-                    // Use a minimal mock for debug rendering ONLY here.
-                    // (Does not mutate live session state.)
-                    RecalibrationV(vm: RecalibrationVM.mockForDebug())
-                }
+                )
+                .tint(palFocus.accent)
+                .toolbarBackground(tabBG, for: .tabBar)
+                .toolbarBackground(.visible, for: .tabBar)
+            
+            
+            
+            content
+            // the shared environment
                 .environmentObject(theme)
+                .environmentObject(statsVM)
+                .environmentObject(memVM)
+                .environmentObject(historyVM)
                 .environmentObject(prefs)
-            }
-        
-            .fullScreenCover(isPresented: memVM.showSheetBinding) {
-                MembershipSheetChrome(onClose: {
-                    // close the chrome and tell the VM to stop prompting
-                    Task { @MainActor in memVM.shouldPrompt = false }
-                }) {
-                    NavigationStack {
-                        MembershipSheetV()
-                            .navigationBarHidden(true)  // chrome owns close
-                            .environmentObject(memVM)
-                            .environmentObject(theme)
-                            .environmentObject(prefs)
+                .environmentObject(hapticsEngine)
+                .environmentObject(focusVM)
+                .environmentObject(recalVM)
+                .environmentObject(debug)
+                .progressOverlay($isBusy, text: "Loading...")
+            // MARK: - Applies current screen theme to background
+                .toolbarBackground(tabBG, for: .navigationBar)
+                .environmentObject(overlayManager)
+            //            .sceneHandlers
+            //            .launchHandlers
+            //            .membershipHandlers
+            //            .rootSheets(activeSheet: $activeSheet, memVM: memVM)
+            
+            
+            // MARK: App lifecycle
+            // -- guardrail: scene handling lives at root --
+                .onChange(of: scenePhase, perform: { phase in
+                    // Only set busy for background/inactive phases where a long-running Task might fire
+                    switch phase {
+                    case .inactive, .background:
+                        isBusy = true
+                        Task {
+                            defer { isBusy = false }      // Ensure reset after Task completes
+                            // -- If there is a pending undo window in History, commit it first so moves persist. --
+                            historyVM.commitPendingUndoIfAny()
+                            // -- coalesce + persist any pending History saves now --
+                            historyVM.flushPendingSaves()
+                            // -- snapshot focus session state (not a pause) --
+                            await focusVM.suspendTickingForBackground()
+                            isBusy = false
+                        }
+                        
+                        // Active state only calls short synchronous functions
+                    case .active:
+                        isBusy = true
+                        // 3) recompute remaining (time) from snapshot & resume UI ticking if needed
+                        recalVM.appDidBecomeActive()
+                        Task {
+                            await focusVM.resumeTickingAfterForeground(); isBusy = false
+                        }
+                    default: break
                     }
-                    .interactiveDismissDisabled(false)
+                })
+            // MARK: App launch + restore any active session state + legal gate
+                .onAppear {
+                    // Set isBusy for the main async launch process
+                    isBusy = true
+                    Task {
+                        // Ensure reset after All appear tasks
+                        defer { isBusy = false }
+                        
+                        if !IS_PREVIEW {
+                            await focusVM.restoreActiveSessionIfAny();
+                            // Synchronous, but wrapped in the main Task
+                            hapticsEngine.warm()
+                            if LegalConsent.needsConsent() {
+                                // Keeping the legal sheet on the main thread
+                                await MainActor.run { activeSheet = .legal }
+                            }
+                        } else {
+                            // Previews: no ticking, no persistence, no sheets
+                        }
+                        // implemented as a no-op wrapper than just calls prepare()
+                        hapticsEngine.warm()
+                        
+                        // Wrapped in #if debug to not affect release
+#if DEBUG
+                        if ProcessInfo.processInfo.environment["RESET_LEGAL_ON_LAUNCH"] == "1" {
+                            UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedVersion)
+                            UserDefaults.standard.removeObject(forKey: LegalKeys.acceptedAtEpoch)
+                            if !IS_PREVIEW { activeSheet = .legal }
+                        }
+#endif
+                        
+                    }
                 }
-                //        .onDisappear { memVM.shouldPrompt = false }
+            
+            // MARK: Sheets
+                .sheet(item: $activeSheet) { sheet in
+                    
+                    NavigationStack {
+                        legalDocNav(for: sheet)
+                    }
+                    .environmentObject(theme)
+                }
+            //                switch sheet {
+            //                case .legal:
+            //                    LegalAgreementSheetV(
+            //                        onAccept: {
+            //                            Task { @MainActor in
+            //                                //                                LegalConsent.recordAcceptance()
+            //                                acceptedVersion = LegalConfig.currentVersion
+            //                                acceptedAtEpoch = Date().timeIntervalSince1970
+            //                                activeSheet = nil
+            //                            }
+            //                        },
+            //                        onShowTerms: { Task { @MainActor in activeSheet = .terms } },
+            //                onShowPrivacy: { Task { @MainActor in activeSheet = .privacy } },
+            //                        onShowMedical: { Task { @MainActor in activeSheet = .medical } }
+            //                    )
+            //                    .environmentObject(theme)
+            //
+            //                case .terms:
+            //                    NavigationStack {
+            //                        LegalDocV(
+            //                            title: "Terms of Use",
+            //                            markdown: MarkdownLoader.load(named: LegalConfig.termsFile),
+            //                            palette: theme.palette(for: .settings)
+            //                        )
+            //                    }
+            //                    .environmentObject(theme)
+            //
+            //                case .privacy:
+            //                    NavigationStack {
+            //                        LegalDocV(
+            //                            title: "Privacy Policy",
+            //                            markdown: MarkdownLoader.load(named: LegalConfig.privacyFile),
+            //                            palette: theme.palette(for: .settings)
+            //                        )
+            //                    }
+            //                    .environmentObject(theme)
+            //
+            //                case .medical:
+            //                    NavigationStack {
+            //                        LegalDocV(
+            //                            title: "Wellness Disclaimer",
+            //                            markdown: MarkdownLoader.load(named: LegalConfig.medicalFile),
+            //                            palette: theme.palette(for: .settings)
+            //                        )
+            //                    }
+            //                    .environmentObject(theme)
+            //                }
+            //            }
+            // ========== DEBUG PRESENTATION WIRING ==========
+                .fullScreenCover(isPresented: $debug.showDebug) {
+                    NavigationStack {
+                        DebugAndPathsV()
+                            .environmentObject(theme)
+                            .environmentObject(memVM)
+                            .environmentObject(historyVM)
+                            .environmentObject(prefs)
+                            .environmentObject(hapticsEngine)
+                            .environmentObject(focusVM)
+                            .environmentObject(recalVM)
+                            .environmentObject(debug)
+                        
+                            .navigationTitle("Debug")
+                            .toolbar {
+                                ToolbarItem(placement: .topBarTrailing) {
+                                    Button("Close") { debug.showDebug = false }
+                                }
+                            }
+                    }
+                }
+            // Recalibration "sheet" as a full-screen chrome for debug
+                .fullScreenCover(isPresented: $debug.showRecalibration) {
+                    RecalibrationSheetChrome(onClose: {
+                        Task { @MainActor in debug.showRecalibration = false }
+                    }) {
+                        // Use a minimal mock for debug rendering ONLY here.
+                        // (Does not mutate live session state.)
+                        RecalibrationV(vm: RecalibrationVM.mockForDebug())
+                    }
+                    .environmentObject(theme)
+                    .environmentObject(prefs)
+                }
+            
+                .fullScreenCover(isPresented: memVM.showSheetBinding) {
+                    MembershipSheetChrome(onClose: {
+                        // close the chrome and tell the VM to stop prompting
+                        Task { @MainActor in memVM.shouldPrompt = false }
+                    }) {
+                        NavigationStack {
+                            MembershipSheetV()
+                                .navigationBarHidden(true)  // chrome owns close
+                                .environmentObject(memVM)
+                                .environmentObject(theme)
+                                .environmentObject(prefs)
+                        }
+                        .interactiveDismissDisabled(false)
+                    }
+                    //        .onDisappear { memVM.shouldPrompt = false }
+                }
+            // MARK: onChange ...runs on Main
+                .onChange(of: debug.showError) { show in
+                    if show {
+                        Task { @MainActor in
+                            overlayManager.debugErrorTitle = debug.errorTitle
+                            overlayManager.debugErrorMessage = debug.errorMessage
+                            overlayManager.isShowingDebugError = true
+                            debug.showError = false
+                        }
+                    }
+                }
+        }
+    }
+}
+
+extension RootView {
+    @ViewBuilder
+    private func legalDocNav(for sheet: RootSheet) -> some View {
+        let settingsPalette = theme.palette(for: .settings)
+        
+        switch sheet {
+        case .legal:
+            LegalAgreementSheetV(
+                onAccept: {
+                    acceptedVersion = LegalConfig.currentVersion
+                    acceptedAtEpoch = Date().timeIntervalSince1970
+                    activeSheet = nil
+                },
+                onShowTerms: { activeSheet = .terms },
+                onShowPrivacy: { activeSheet = .privacy },
+                onShowMedical: { activeSheet = .medical }
+            )
+        case .terms:
+            LegalDocV(
+                title: "Terms of Use",
+                markdown: MarkdownLoader.load(named: LegalConfig.termsFile),
+                palette: settingsPalette
+            )
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Back") { activeSheet = .legal }
+                }
             }
-        // MARK: onChange ...runs on Main
-            .onChange(of: debug.showError) { show in
-                if show {
-                    Task { @MainActor in
-                    overlayManager.debugErrorTitle = debug.errorTitle
-                    overlayManager.debugErrorMessage = debug.errorMessage
-                    overlayManager.isShowingDebugError = true
-                    debug.showError = false
-                }
+        case .privacy:
+            LegalDocV(
+                title: "Privacy Policy",
+                markdown: MarkdownLoader.load(named: LegalConfig.privacyFile),
+                palette: settingsPalette
+            )
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Back") { activeSheet = .legal }
                 }
             }
+        case .medical:
+            LegalDocV(
+                title: "Wellness Disclaimer",
+                markdown: MarkdownLoader.load(named: LegalConfig.medicalFile),
+                palette: settingsPalette
+            )
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Back") { activeSheet = .legal }
+                }
+            }
+        }
     }
 }

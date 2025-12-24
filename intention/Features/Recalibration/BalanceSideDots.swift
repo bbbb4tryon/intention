@@ -65,7 +65,7 @@ struct BalanceSideDots: View {
                .overlay(
                    RoundedRectangle(cornerRadius: 999)
                        .stroke(isActive ? p.accent : colorBorder,
-                               lineWidth: isActive ? 1.5 : 1.0)
+                               lineWidth: isActive ? 1.25 : 1.0)
                )
                .animation(.spring(response: 0.25, dampingFraction: 0.85),
                           value: isActive)
